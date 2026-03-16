@@ -188,7 +188,7 @@ export class StableWSConnection<ErmisChatGenerics extends ExtendableGenerics = D
     const token = this.client.tokenManager.getToken();
 
     let rawURL = `${this.client.wsBaseURL}/connect?json=${qs}&api_key=${
-      this.client.key
+      this.client.apiKey
     }&authorization=${token}&stream-auth-type=${this.client.getAuthType()}&X-Stream-Client=${this.client.getUserAgent()}`;
     rawURL = encodeURI(rawURL);
     return rawURL;

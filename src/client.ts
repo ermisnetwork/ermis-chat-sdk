@@ -23,8 +23,6 @@ import {
   getDirectChannelName,
   getLatestCreatedAt,
   isFunction,
-  isOnline,
-  isOwnUserBaseProperty,
   normalizeQuerySort,
   randomId,
   retryInterval,
@@ -34,104 +32,54 @@ import {
 import {
   APIErrorResponse,
   APIResponse,
-  BannedUsersFilters,
-  BannedUsersPaginationOptions,
-  BannedUsersResponse,
-  BannedUsersSort,
-  BanUserOptions,
   ChannelAPIResponse,
   ChannelData,
   ChannelFilters,
-  ChannelMute,
   ChannelOptions,
   ChannelResponse,
   ChannelSort,
   ChannelStateOptions,
   Configs,
   ConnectAPIResponse,
-  CustomPermissionOptions,
   DefaultGenerics,
-  EndpointName,
   ErrorFromResponse,
   Event,
   EventHandler,
   ExtendableGenerics,
-  FlagMessageResponse,
-  FlagUserResponse,
-  GetCallTokenResponse,
-  GetMessageAPIResponse,
-  GetUnreadCountAPIResponse,
-  GetUnreadCountBatchAPIResponse,
   Logger,
-  MarkChannelsReadOptions,
-  Message,
-  MessageFilters,
-  MessageFlagsFilters,
-  MessageFlagsPaginationOptions,
-  MessageFlagsResponse,
-  MessageResponse,
   Mute,
-  MuteUserOptions,
-  MuteUserResponse,
   OGAttachment,
   OwnUserResponse,
-  PartialMessageUpdate,
-  PartialUserUpdate,
-  PermissionAPIResponse,
-  PermissionsAPIResponse,
   QueryChannelsAPIResponse,
-  ReactionResponse,
-  ReservedMessageFields,
-  SearchAPIResponse,
-  SearchMessageSortBase,
-  SearchOptions,
-  SearchPayload,
   SendFileAPIResponse,
   ErmisChatOptions,
   SyncOptions,
   SyncResponse,
-  TaskResponse,
-  TaskStatus,
   TokenOrProvider,
-  UnBanUserOptions,
-  UpdatedMessage,
-  UpdateMessageAPIResponse,
-  UpdateMessageOptions,
-  UserCustomEvent,
   UserResponse,
-  GetMessageOptions,
-  ReactionFilters,
-  ReactionSort,
-  QueryReactionsAPIResponse,
-  QueryReactionsOptions,
   ContactResponse,
   UsersResponse,
   ChainsResponse,
   ContactResult,
-  GetTokenResponse,
   Contact,
 } from './types';
 
 function isString(x: unknown): x is string {
   return typeof x === 'string' || x instanceof String;
 }
-const ERMIS_PROJECT_ID = '6fbdecb0-1ec8-4e32-99d7-ff2683e308b7';
 export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> {
   private static _instance?: unknown | ErmisChat; // type is undefined|ErmisChat, unknown is due to TS limitations with statics
 
-  _user?: OwnUserResponse<ErmisChatGenerics> | UserResponse<ErmisChatGenerics>;
   activeChannels: {
     [key: string]: Channel<ErmisChatGenerics>;
   };
-  anonymous: boolean;
-  persistUserOnConnectionFailure?: boolean;
   axiosInstance: AxiosInstance;
   baseURL?: string;
   browser: boolean;
   cleaningIntervalRef?: NodeJS.Timeout;
   clientID?: string;
   configs: Configs<ErmisChatGenerics>;
-  key: string;
+  apiKey: string;
   projectId: string;
   listeners: Record<string, Array<(event: Event<ErmisChatGenerics>) => void>>;
   logger: Logger;
@@ -145,8 +93,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
    * manually calling queryChannels endpoint.
    */
   recoverStateOnReconnect?: boolean;
-  mutedChannels: ChannelMute<ErmisChatGenerics>[];
-  mutedUsers: Mute<ErmisChatGenerics>[];
   node: boolean;
   options: ErmisChatOptions;
   setUserPromise: ConnectAPIResponse<ErmisChatGenerics> | null;
@@ -157,59 +103,38 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
   userID?: string;
   wsBaseURL?: string;
   wsConnection: StableWSConnection<ErmisChatGenerics> | null;
-
   wsPromise: ConnectAPIResponse<ErmisChatGenerics> | null;
   consecutiveFailures: number;
-
-  defaultWSTimeoutWithFallback: number;
   defaultWSTimeout: number;
 
   private eventSource: EventSourcePolyfill | null = null;
-
-  // Chain
-  chains?: ChainsResponse<ErmisChatGenerics>;
-  private nextRequestAbortController: AbortController | null = null;
 
   /**
    * Initialize a client
    *
    * **Only use constructor for advanced usages. It is strongly advised to use `ErmisChat.getInstance()` instead of `new ErmisChat()` to reduce integration issues due to multiple WebSocket connections**
-   * @param {string} key - the api key
-   * @param {string} [secret] - the api secret
+   * @param {string} apiKey - the api key
+   * @param {string} projectId - the project id
    * @param {ErmisChatOptions} [options] - additional options, here you can pass custom options to axios instance
    * @param {boolean} [options.browser] - enforce the client to be in browser mode
    * @param {boolean} [options.warmUp] - default to false, if true, client will open a connection as soon as possible to speed up following requests
    * @param {Logger} [options.Logger] - custom logger
    * @param {number} [options.timeout] - default to 3000
    * @param {httpsAgent} [options.httpsAgent] - custom httpsAgent, in node it's default to https.agent()
-   * @example <caption>initialize the client in user mode</caption>
-   * new ErmisChat('api_key')
-   * @example <caption>initialize the client in user mode with options</caption>
-   * new ErmisChat('api_key', { warmUp:true, timeout:5000 })
-   * @example <caption>secret is optional and only used in server side mode</caption>
-   * new ErmisChat('api_key', "secret", { httpsAgent: customAgent })
    */
-  constructor(key: string, projectId: string, options?: ErmisChatOptions);
-  constructor(key: string, projectId: string, secret?: string, options?: ErmisChatOptions);
-  constructor(key: string, projectId: string, secretOrOptions?: ErmisChatOptions | string, options?: ErmisChatOptions) {
-    // set the key
-    this.key = key;
+  constructor(apiKey: string, projectId: string, options?: ErmisChatOptions) {
+    this.apiKey = apiKey;
     this.projectId = projectId;
     this.listeners = {};
     this.state = new ClientState<ErmisChatGenerics>();
-    // a list of channels to hide ws events from
-    this.mutedChannels = [];
-    this.mutedUsers = [];
 
-    // set the options... and figure out defaults...
-    const inputOptions = options ? options : secretOrOptions && !isString(secretOrOptions) ? secretOrOptions : {};
+    const inputOptions = options || {};
 
     this.browser = typeof inputOptions.browser !== 'undefined' ? inputOptions.browser : typeof window !== 'undefined';
     this.node = !this.browser;
 
     this.options = {
-      // timeout: 3000,
-      withCredentials: false, // making sure cookies are not sent
+      withCredentials: false,
       warmUp: false,
       recoverStateOnReconnect: true,
       ...inputOptions,
@@ -243,73 +168,15 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
 
     // mapping between channel groups and configs
     this.configs = {};
-    this.anonymous = false;
-    this.persistUserOnConnectionFailure = this.options?.persistUserOnConnectionFailure;
 
     this.tokenManager = new TokenManager();
     this.consecutiveFailures = 0;
-
-    this.defaultWSTimeoutWithFallback = 6000;
     this.defaultWSTimeout = 15000;
 
     this.axiosInstance.defaults.paramsSerializer = axiosParamsSerializer;
 
-    /**
-     * logger function should accept 3 parameters:
-     * @param logLevel string
-     * @param message   string
-     * @param extraData object
-     *
-     * e.g.,
-     * const client = new ErmisChat('api_key', {}, {
-     * 		logger = (logLevel, message, extraData) => {
-     * 			console.log(message);
-     * 		}
-     * })
-     *
-     * extraData contains tags array attached to log message. Tags can have one/many of following values:
-     * 1. api
-     * 2. api_request
-     * 3. api_response
-     * 4. client
-     * 5. channel
-     * 6. connection
-     * 7. event
-     *
-     * It may also contains some extra data, some examples have been mentioned below:
-     * 1. {
-     * 		tags: ['api', 'api_request', 'client'],
-     * 		url: string,
-     * 		payload: object,
-     * 		config: object
-     * }
-     * 2. {
-     * 		tags: ['api', 'api_response', 'client'],
-     * 		url: string,
-     * 		response: object
-     * }
-     * 3. {
-     * 		tags: ['api', 'api_response', 'client'],
-     * 		url: string,
-     * 		error: object
-     * }
-     * 4. {
-     * 		tags: ['event', 'client'],
-     * 		event: object
-     * }
-     * 5. {
-     * 		tags: ['channel'],
-     * 		channel: object
-     * }
-     */
     this.logger = isFunction(inputOptions.logger) ? inputOptions.logger : () => null;
     this.recoverStateOnReconnect = this.options.recoverStateOnReconnect;
-
-    this.chains = {
-      chains: [],
-      joined: [],
-      not_joined: [],
-    };
   }
 
   /**
@@ -338,25 +205,9 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     key: string,
     projectId: string,
     options?: ErmisChatOptions,
-  ): ErmisChat<ErmisChatGenerics>;
-  public static getInstance<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics>(
-    key: string,
-    projectId: string,
-    secret?: string,
-    options?: ErmisChatOptions,
-  ): ErmisChat<ErmisChatGenerics>;
-  public static getInstance<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics>(
-    key: string,
-    projectId: string,
-    secretOrOptions?: ErmisChatOptions | string,
-    options?: ErmisChatOptions,
   ): ErmisChat<ErmisChatGenerics> {
     if (!ErmisChat._instance) {
-      if (typeof secretOrOptions === 'string') {
-        ErmisChat._instance = new ErmisChat<ErmisChatGenerics>(key, projectId, secretOrOptions, options);
-      } else {
-        ErmisChat._instance = new ErmisChat<ErmisChatGenerics>(key, projectId, secretOrOptions);
-      }
+      ErmisChat._instance = new ErmisChat<ErmisChatGenerics>(key, projectId, options);
     }
 
     return ErmisChat._instance as ErmisChat<ErmisChatGenerics>;
@@ -366,7 +217,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     return await this.post<APIResponse>(this.baseURL + '/uss/v1/refresh_token', { refresh_token });
   }
   getAuthType() {
-    return this.anonymous ? 'anonymous' : 'jwt';
+    return 'jwt';
   }
 
   setBaseURL(baseURL: string) {
@@ -434,7 +285,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     if (extenal_auth) {
       // this.tokenManager.setTokenOrProvider(userTokenOrProvider, user);
       const data = {
-        apiKey: this.key,
+        apiKey: this.apiKey,
         user,
         token: userTokenOrProvider,
       };
@@ -461,7 +312,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
       );
     }
 
-    if ((this._isUsingServerAuth() || this.node) && !this.options.allowServerSideConnect) {
+    if (this.node && !this.options.allowServerSideConnect) {
       console.warn(
         'Please do not use connectUser server side. connectUser impacts MAU and concurrent connection usage and thus your bill. If you have a valid use-case, add "allowServerSideConnect: true" to the client options to disable this warning.',
       );
@@ -469,7 +320,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
 
     // we generate the client id client side
     this.userID = user.id;
-    this.anonymous = false;
 
     const setTokenPromise = this._setToken(user, userTokenOrProvider);
     this._setUser(user);
@@ -487,12 +337,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
       await this.connectToSSE();
       return result;
     } catch (err) {
-      if (this.persistUserOnConnectionFailure) {
-        // cleanup client to allow the user to retry connectUser again
-        this.closeConnection();
-      } else {
-        this.disconnectUser();
-      }
+      this.disconnectUser();
       throw err;
     }
   };
@@ -513,14 +358,8 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     this.tokenManager.setTokenOrProvider(userTokenOrProvider, user);
 
   _setUser(user: OwnUserResponse<ErmisChatGenerics> | UserResponse<ErmisChatGenerics>) {
-    /**
-     * This one is used by the frontend. This is a copy of the current user object stored on backend.
-     * It contains reserved properties and own user properties which are not present in `this._user`.
-     */
-    this.user = user;
+    this.user = { ...user };
     this.userID = user.id;
-    // this one is actually used for requests. This is a copy of current user provided to `connectUser` function.
-    this._user = { ...user };
   }
 
   /**
@@ -551,7 +390,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
    */
   openConnection = async () => {
     if (!this.userID) {
-      throw Error('User is not set on client, use client.connectUser or client.connectAnonymousUser instead');
+      throw Error('User is not set on client, use client.connectUser instead');
     }
 
     if (this.wsConnection?.isConnecting && this.wsPromise) {
@@ -596,10 +435,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
 
     // remove the user specific fields
     delete this.user;
-    delete this._user;
     delete this.userID;
-
-    this.anonymous = false;
 
     const closePromise = this.closeConnection(timeout);
 
@@ -624,34 +460,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
    * Disconnects the websocket and removes the user from client.
    */
   disconnect = this.disconnectUser;
-
-  /**
-   * connectAnonymousUser - Set an anonymous user and open a WebSocket connection
-   */
-  connectAnonymousUser = () => {
-    if ((this._isUsingServerAuth() || this.node) && !this.options.allowServerSideConnect) {
-      console.warn(
-        'Please do not use connectUser server side. connectUser impacts MAU and concurrent connection usage and thus your bill. If you have a valid use-case, add "allowServerSideConnect: true" to the client options to disable this warning.',
-      );
-    }
-
-    this.anonymous = true;
-    this.userID = randomId();
-    const anonymousUser = {
-      id: this.userID,
-      anon: true,
-    } as UserResponse<ErmisChatGenerics>;
-
-    this._setToken(anonymousUser, '');
-    this._setUser(anonymousUser);
-
-    return this._setupConnection();
-  };
-
-  /**
-   * @deprecated Please use connectAnonymousUser. Its naming is more consistent with its functionality.
-   */
-  setAnonymousUser = this.connectAnonymousUser;
 
   /**
    * on - Listen to events on all channels and users your watching
@@ -1030,62 +838,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     }
   };
 
-  /**
-   * @private
-   *
-   * Handle following user related events:
-   * - user.presence.changed
-   * - user.updated
-   * - user.deleted
-   *
-   * @param {Event} event
-   */
-  // _handleUserEvent = (event: Event<ErmisChatGenerics>) => {
-  //   if (!event.user) {
-  //     return;
-  //   }
-
-  //   /** update the client.state with any changes to users */
-  //   if (event.type === 'user.presence.changed' || event.type === 'user.updated') {
-  //     if (event.user.id === this.userID) {
-  //       const user = { ...(this.user || {}) };
-  //       const _user = { ...(this._user || {}) };
-
-  //       // Remove deleted properties from user objects.
-  //       for (const key in this.user) {
-  //         if (key in event.user || isOwnUserBaseProperty(key)) {
-  //           continue;
-  //         }
-
-  //         delete user[key];
-  //         delete _user[key];
-  //       }
-
-  //       /** Updating only available properties in _user object. */
-  //       for (const key in event.user) {
-  //         if (_user && key in _user) {
-  //           _user[key] = event.user[key];
-  //         }
-  //       }
-
-  //       // @ts-expect-error
-  //       this._user = { ..._user };
-  //       this.user = { ...user, ...event.user };
-  //     }
-
-  //     this.state.updateUser(event.user);
-  //     this._updateMemberWatcherReferences(event.user);
-  //   }
-
-  //   if (event.type === 'user.updated') {
-  //     this._updateUserMessageReferences(event.user);
-  //   }
-
-  //   if (event.type === 'user.deleted' && event.user.deleted_at && (event.mark_messages_deleted || event.hard_delete)) {
-  //     this._deleteUserMessageReference(event.user, event.hard_delete);
-  //   }
-  // };
-
   _handleClientEvent(event: Event<ErmisChatGenerics>) {
     const client = this;
     const postListenerCallbacks = [];
@@ -1093,10 +845,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
       tags: ['event', 'client'],
       event,
     });
-
-    // if (event.type === 'user.presence.changed' || event.type === 'user.updated' || event.type === 'user.deleted') {
-    //   this._handleUserEvent(event);
-    // }
 
     if (event.type === 'health.check' && event.me) {
       // client.user = event.me;
@@ -1108,19 +856,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     if (event.channel && event.type === 'notification.message_new') {
       this._addChannelConfig(event.channel);
     }
-
-    // if (event.type === 'notification.channel_mutes_updated' && event.me?.channel_mutes) {
-    //   this.mutedChannels = event.me.channel_mutes;
-    // }
-
-    // if (event.type === 'notification.mutes_updated' && event.me?.mutes) {
-    //   this.mutedUsers = event.me.mutes;
-    // }
-
-    // if (event.type === 'notification.mark_read' && event.unread_channels === 0) {
-    //   const activeChannelKeys = Object.keys(this.activeChannels);
-    //   activeChannelKeys.forEach((activeChannelKey) => (this.activeChannels[activeChannelKey].state.unreadCount = 0));
-    // }
 
     if ((event.type === 'channel.deleted' || event.type === 'notification.channel_deleted') && event.cid) {
       client.state.deleteAllChannelReference(event.cid);
@@ -1166,31 +901,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     }
 
     return postListenerCallbacks;
-  }
-
-  _muteStatus(cid: string) {
-    let muteStatus;
-    for (let i = 0; i < this.mutedChannels.length; i++) {
-      const mute = this.mutedChannels[i];
-      if (mute.channel?.cid === cid) {
-        muteStatus = {
-          muted: mute.expires ? new Date(mute.expires).getTime() > new Date().getTime() : true,
-          createdAt: mute.created_at ? new Date(mute.created_at) : new Date(),
-          expiresAt: mute.expires ? new Date(mute.expires) : null,
-        };
-        break;
-      }
-    }
-
-    if (muteStatus) {
-      return muteStatus;
-    }
-
-    return {
-      muted: false,
-      createdAt: null,
-      expiresAt: null,
-    };
   }
 
   _callClientListeners = (event: Event<ErmisChatGenerics>) => {
@@ -1245,8 +955,8 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
    * @private
    */
   async connect() {
-    if (!this.userID || !this._user) {
-      throw Error('Call connectUser or connectAnonymousUser before starting the connection');
+    if (!this.userID || !this.user) {
+      throw Error('Call connectUser before starting the connection');
     }
     if (!this.wsBaseURL) {
       throw Error('Websocket base url not set');
@@ -1313,9 +1023,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
         if (this.user?.id === user.id) {
           this.user = { ...this.user, ...user };
         }
-        if (this._user?.id === user.id) {
-          this._user = { ...this._user, ...user };
-        }
 
         this.state.updateUser(user);
 
@@ -1369,16 +1076,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     } else {
       this.logger('info', 'client:disconnectFromSSE() - SSE connection already closed', {});
     }
-  }
-  /**
-   * Check the connectivity with server for warmup purpose.
-   *
-   * @private
-   */
-  _sayHi() {
-    const client_request_id = randomId();
-    const opts = { headers: { 'x-client-request-id': client_request_id } };
-    this.doAxiosRequest('get', this.baseURL + '/', null, opts).catch((e) => {});
   }
 
   /**
@@ -1483,22 +1180,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     };
   }
 
-  async getChains(): Promise<ChainsResponse> {
-    let chain_response = await this.get<ChainsResponse>(this.baseURL + '/uss/v1/users/chains');
-    this.chains = chain_response;
-    return chain_response;
-  }
-  /**
-   *
-   * @param chain_project includes chain_id and clients.
-   * clients just includes updating client.
-   * projects just includes updating project.
-   */
-  async joinChainProject(project_id: string): Promise<ChainsResponse> {
-    let chains_response = await this.post<ChainsResponse>(this.baseURL + '/uss/v1/users/join', { project_id });
-    this.chains = chains_response;
-    return chains_response;
-  }
   _updateProjectID(project_id: string) {
     this.projectId = project_id;
   }
@@ -1516,9 +1197,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
       const new_user = { ...this.user, avatar: response.avatar };
       this.state.updateUser(new_user);
     }
-    if (this._user) {
-      this._user.avatar = response.avatar;
-    }
+
     return response;
   }
   async updateProfile(name: string, about_me: string) {
@@ -1528,47 +1207,8 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     };
     let response = await this.patch<UserResponse<ErmisChatGenerics>>(this.baseURL + '/uss/v1/users/update', body);
     this.user = response;
-    this._user = response;
     this.state.updateUser(response);
     return response;
-  }
-  /**
-   * queryBannedUsers - Query user bans
-   *
-   * @param {BannedUsersFilters} filterConditions MongoDB style filter conditions
-   * @param {BannedUsersSort} sort Sort options [{created_at: 1}].
-   * @param {BannedUsersPaginationOptions} options Option object, {limit: 10, offset:0, exclude_expired_bans: true}
-   *
-   * @return {Promise<BannedUsersResponse<ErmisChatGenerics>>} Ban Query Response
-   */
-  async queryBannedUsers(
-    filterConditions: BannedUsersFilters = {},
-    sort: BannedUsersSort = [],
-    options: BannedUsersPaginationOptions = {},
-  ) {
-    // Return a list of user bans
-    return await this.get<BannedUsersResponse<ErmisChatGenerics>>(this.baseURL + '/query_banned_users', {
-      payload: {
-        filter_conditions: filterConditions,
-        sort: normalizeQuerySort(sort),
-        ...options,
-      },
-    });
-  }
-
-  /**
-   * queryMessageFlags - Query message flags
-   *
-   * @param {MessageFlagsFilters} filterConditions MongoDB style filter conditions
-   * @param {MessageFlagsPaginationOptions} options Option object, {limit: 10, offset:0}
-   *
-   * @return {Promise<MessageFlagsResponse<ErmisChatGenerics>>} Message Flags Response
-   */
-  async queryMessageFlags(filterConditions: MessageFlagsFilters = {}, options: MessageFlagsPaginationOptions = {}) {
-    // Return a list of message flags
-    return await this.get<MessageFlagsResponse<ErmisChatGenerics>>(this.baseURL + '/moderation/flags/message', {
-      payload: { filter_conditions: filterConditions, ...options },
-    });
   }
 
   /**
@@ -1676,44 +1316,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     return channels;
   }
 
-  /**
-   * @param {ChannelFilters<ErmisChatGenerics>} filterConditions for invited channels: just set roles to ['pending'], The "type" field still has the same options as before.
-   * type: ["general", "team", "messaging"],
-   * roles: ["owner", "moder", "member","pending"],
-   *
-   **/
-  async queryInvitedChannels(
-    filterConditions: ChannelFilters<ErmisChatGenerics>,
-    sort: ChannelSort<ErmisChatGenerics> = [],
-    options: ChannelOptions = {},
-    stateOptions: ChannelStateOptions = {},
-  ) {
-    // Ensure the roles field is always set to pending.
-    const invitedFilter = { ...filterConditions, roles: ['pending'] };
-
-    // Make sure we wait for the connect promise if there is a pending one
-    await this.wsPromise;
-
-    let project_id = this.projectId;
-
-    // Return a list of channels
-    const payload = {
-      filter_conditions: { ...invitedFilter, project_id },
-      sort: normalizeQuerySort(sort),
-      ...options,
-    };
-
-    const data = await this.post<QueryChannelsAPIResponse<ErmisChatGenerics>>(this.baseURL + '/channels', payload);
-
-    const { channels, userIds } = this.hydrateChannels(data.channels, stateOptions);
-
-    if (userIds.length > 0) {
-      await this.getBatchUsers(userIds);
-    }
-
-    return channels;
-  }
-
   async startCall(payload: any) {
     const connection_id = this.wsConnection?.connectionID;
     const data = {
@@ -1722,37 +1324,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     };
 
     return this.post(this.baseURL + '/signal', data);
-  }
-
-  /**
-   * queryReactions - Query reactions
-   *
-   * @param {ReactionFilters<ErmisChatGenerics>} filter object MongoDB style filters
-   * @param {ReactionSort<ErmisChatGenerics>} [sort] Sort options, for instance {created_at: -1}.
-   * @param {QueryReactionsOptions} [options] Pagination object
-   *
-   * @return {Promise<{ QueryReactionsAPIResponse } search channels response
-   */
-  async queryReactions(
-    messageID: string,
-    filter: ReactionFilters<ErmisChatGenerics>,
-    sort: ReactionSort<ErmisChatGenerics> = [],
-    options: QueryReactionsOptions = {},
-  ) {
-    // Make sure we wait for the connect promise if there is a pending one
-    await this.wsPromise;
-
-    // Return a list of channels
-    const payload = {
-      filter,
-      sort: normalizeQuerySort(sort),
-      ...options,
-    };
-
-    return await this.post<QueryReactionsAPIResponse<ErmisChatGenerics>>(
-      this.baseURL + '/messages/' + messageID + '/reactions',
-      payload,
-    );
   }
 
   hydrateChannels(
@@ -1811,42 +1382,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     return { channels, userIds };
   }
 
-  /**
-   * search - Query messages
-   *
-   * @param {ChannelFilters<ErmisChatGenerics>} filterConditions MongoDB style filter conditions
-   * @param {MessageFilters<ErmisChatGenerics> | string} query search query or object MongoDB style filters
-   * @param {SearchOptions<ErmisChatGenerics>} [options] Option object, {user_id: 'tommaso'}
-   *
-   * @return {Promise<SearchAPIResponse<ErmisChatGenerics>>} search messages response
-   */
-  async search(
-    filterConditions: ChannelFilters<ErmisChatGenerics>,
-    query: string | MessageFilters<ErmisChatGenerics>,
-    options: SearchOptions<ErmisChatGenerics> = {},
-  ) {
-    if (options.offset && options.next) {
-      throw Error(`Cannot specify offset with next`);
-    }
-    const payload: SearchPayload<ErmisChatGenerics> = {
-      filter_conditions: filterConditions,
-      ...options,
-      sort: options.sort ? normalizeQuerySort<SearchMessageSortBase<ErmisChatGenerics>>(options.sort) : undefined,
-    };
-    if (typeof query === 'string') {
-      payload.query = query;
-    } else if (typeof query === 'object') {
-      payload.message_filter_conditions = query;
-    } else {
-      throw Error(`Invalid type ${typeof query} for query parameter`);
-    }
-
-    // Make sure we wait for the connect promise if there is a pending one
-    await this.wsPromise;
-
-    return await this.get<SearchAPIResponse<ErmisChatGenerics>>(this.baseURL + '/search', { payload });
-  }
-
   async searchPublicChannel(search_term: string, offset = 0, limit = 25) {
     let project_id = this.projectId;
 
@@ -1864,28 +1399,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
 
   async unpinChannel(channelType: string, channelId: string) {
     return await this.post<APIResponse>(this.baseURL + `/channels/${channelType}/${channelId}/unpin`);
-  }
-
-  /**
-   * getUnreadCount - Returns unread counts for a single user
-   *
-   * @param {string} [userID] User ID.
-   *
-   * @return {<GetUnreadCountAPIResponse>}
-   */
-  async getUnreadCount(userID?: string) {
-    return await this.get<GetUnreadCountAPIResponse>(this.baseURL + '/unread', userID ? { user_id: userID } : {});
-  }
-
-  /**
-   * getUnreadCountBatch - Returns unread counts for multiple users at once. Only works server side.
-   *
-   * @param {string[]} [userIDs] List of user IDs to fetch unread counts for.
-   *
-   * @return {<GetUnreadCountBatchAPIResponse>}
-   */
-  async getUnreadCountBatch(userIDs: string[]) {
-    return await this.post<GetUnreadCountBatchAPIResponse>(this.baseURL + '/unread_batch', { user_ids: userIDs });
   }
 
   _addChannelConfig({ cid, config }: ChannelResponse<ErmisChatGenerics>) {
@@ -1917,8 +1430,8 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     channelIDOrCustom?: string | ChannelData<ErmisChatGenerics> | null,
     custom: ChannelData<ErmisChatGenerics> = {} as ChannelData<ErmisChatGenerics>,
   ) {
-    if (!this.userID && !this._isUsingServerAuth()) {
-      throw Error('Call connectUser or connectAnonymousUser before creating a channel');
+    if (!this.userID) {
+      throw Error('Call connectUser before creating a channel');
     }
 
     if (~channelType.indexOf(':')) {
@@ -1930,11 +1443,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
       return this.getChannel(channelType, channelIDOrCustom);
     }
 
-    // // support channel("messaging", undefined, {options})
-    if (!channelIDOrCustom && typeof custom === 'object' && custom.members?.length) {
-      return this.getChannelByMembers(channelType, custom);
-    }
-
     // support channel("messaging", null, {options})
     // support channel("messaging", undefined, {options})
     // support channel("messaging", "", {options})
@@ -1944,63 +1452,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
 
     return this.getChannelById(channelType, channelIDOrCustom, custom);
   }
-
-  /**
-   * It's a helper method for `client.channel()` method, used to create unique conversation or
-   * channel based on member list instead of id.
-   *
-   * If the channel already exists in `activeChannels` list, then we simply return it, since that
-   * means the same channel was already requested or created.
-   *
-   * Otherwise we create a new instance of Channel class and return it.
-   *
-   * @private
-   *
-   * @param {string} channelType The channel type
-   * @param {object} [custom]    Custom data to attach to the channel
-   *
-   * @return {channel} The channel object, initialize it using channel.watch()
-   */
-  getChannelByMembers = (channelType: string, custom: ChannelData<ErmisChatGenerics>) => {
-    // Check if the channel already exists.
-    // Only allow 1 channel object per cid
-    const membersStr = [...(custom.members || [])].sort().join(',');
-    const tempCid = `${channelType}:!members-${membersStr}`;
-
-    if (!membersStr) {
-      throw Error('Please specify atleast one member when creating unique conversation');
-    }
-
-    // channel could exist in `activeChannels` list with either one of the following two keys:
-    // 1. cid - Which gets set on channel only after calling channel.query or channel.watch or channel.create
-    // 2. Sorted membersStr - E.g., "messaging:amin,vishal" OR "messaging:amin,jaap,tom"
-    //                        This is set when you create a channel, but haven't queried yet. After query,
-    //                        we will replace it with `cid`
-    for (const key in this.activeChannels) {
-      const channel = this.activeChannels[key];
-      if (channel.disconnected) {
-        continue;
-      }
-
-      if (key === tempCid) {
-        return channel;
-      }
-
-      if (key.indexOf(`${channelType}:!members-`) === 0) {
-        const membersStrInExistingChannel = Object.keys(channel.state.members).sort().join(',');
-        if (membersStrInExistingChannel === membersStr) {
-          return channel;
-        }
-      }
-    }
-
-    const channel = new Channel<ErmisChatGenerics>(this, channelType, undefined, custom);
-
-    // For the time being set the key as membersStr, since we don't know the cid yet.
-    // In channel.query, we will replace it with 'cid'.
-    this.activeChannels[tempCid] = channel;
-    return channel;
-  };
 
   /**
    * Its a helper method for `client.channel()` method, used to channel given the id of channel.
@@ -2065,293 +1516,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
   };
 
   /**
-   * partialUpdateUser - Update the given user object
-   *
-   * @param {PartialUserUpdate<ErmisChatGenerics>} partialUserObject which should contain id and any of "set" or "unset" params;
-   * example: {id: "user1", set:{field: value}, unset:["field2"]}
-   *
-   * @return {Promise<{ users: { [key: string]: UserResponse<ErmisChatGenerics> } }>} list of updated users
-   */
-  async partialUpdateUser(partialUserObject: PartialUserUpdate<ErmisChatGenerics>) {
-    return await this.partialUpdateUsers([partialUserObject]);
-  }
-
-  /**
-   * upsertUsers - Batch upsert the list of users
-   *
-   * @param {UserResponse<ErmisChatGenerics>[]} users list of users
-   *
-   * @return {Promise<{ users: { [key: string]: UserResponse<ErmisChatGenerics> } }>}
-   */
-  async upsertUsers(users: UserResponse<ErmisChatGenerics>[]) {
-    const userMap: { [key: string]: UserResponse<ErmisChatGenerics> } = {};
-    for (const userObject of users) {
-      if (!userObject.id) {
-        throw Error('User ID is required when updating a user');
-      }
-      userMap[userObject.id] = userObject;
-    }
-
-    return await this.post<
-      APIResponse & {
-        users: { [key: string]: UserResponse<ErmisChatGenerics> };
-      }
-    >(this.baseURL + '/users', { users: userMap });
-  }
-
-  /**
-   * @deprecated Please use upsertUsers() function instead.
-   *
-   * updateUsers - Batch update the list of users
-   *
-   * @param {UserResponse<ErmisChatGenerics>[]} users list of users
-   * @return {Promise<{ users: { [key: string]: UserResponse<ErmisChatGenerics> } }>}
-   */
-  updateUsers = this.upsertUsers;
-
-  /**
-   * upsertUser - Update or Create the given user object
-   *
-   * @param {UserResponse<ErmisChatGenerics>} userObject user object, the only required field is the user id. IE {id: "myuser"} is valid
-   *
-   * @return {Promise<{ users: { [key: string]: UserResponse<ErmisChatGenerics> } }>}
-   */
-  upsertUser(userObject: UserResponse<ErmisChatGenerics>) {
-    return this.upsertUsers([userObject]);
-  }
-
-  /**
-   * @deprecated Please use upsertUser() function instead.
-   *
-   * updateUser - Update or Create the given user object
-   *
-   * @param {UserResponse<ErmisChatGenerics>} userObject user object, the only required field is the user id. IE {id: "myuser"} is valid
-   * @return {Promise<{ users: { [key: string]: UserResponse<ErmisChatGenerics> } }>}
-   */
-  updateUser = this.upsertUser;
-
-  /**
-   * partialUpdateUsers - Batch partial update of users
-   *
-   * @param {PartialUserUpdate<ErmisChatGenerics>[]} users list of partial update requests
-   *
-   * @return {Promise<{ users: { [key: string]: UserResponse<ErmisChatGenerics> } }>}
-   */
-  async partialUpdateUsers(users: PartialUserUpdate<ErmisChatGenerics>[]) {
-    for (const userObject of users) {
-      if (!userObject.id) {
-        throw Error('User ID is required when updating a user');
-      }
-    }
-
-    return await this.patch<
-      APIResponse & {
-        users: { [key: string]: UserResponse<ErmisChatGenerics> };
-      }
-    >(this.baseURL + '/users', { users });
-  }
-
-  async deleteUser(
-    userID: string,
-    params?: {
-      delete_conversation_channels?: boolean;
-      hard_delete?: boolean;
-      mark_messages_deleted?: boolean;
-    },
-  ) {
-    return await this.delete<
-      APIResponse & { user: UserResponse<ErmisChatGenerics> } & {
-        task_id?: string;
-      }
-    >(this.baseURL + `/users/${userID}`, params);
-  }
-
-  /**
-   * restoreUsers - Restore soft deleted users
-   *
-   * @param {string[]} user_ids which users to restore
-   *
-   * @return {APIResponse} An API response
-   */
-  async restoreUsers(user_ids: string[]) {
-    return await this.post<APIResponse>(this.baseURL + `/users/restore`, {
-      user_ids,
-    });
-  }
-
-  /** banUser - bans a user from all channels
-   *
-   * @param {string} targetUserID
-   * @param {BanUserOptions<ErmisChatGenerics>} [options]
-   * @returns {Promise<APIResponse>}
-   */
-  async banUser(targetUserID: string, options?: BanUserOptions<ErmisChatGenerics>) {
-    return await this.post<APIResponse>(this.baseURL + '/moderation/ban', {
-      target_user_id: targetUserID,
-      ...options,
-    });
-  }
-
-  /** unbanUser - revoke global ban for a user
-   *
-   * @param {string} targetUserID
-   * @param {UnBanUserOptions} [options]
-   * @returns {Promise<APIResponse>}
-   */
-  async unbanUser(targetUserID: string, options?: UnBanUserOptions) {
-    return await this.delete<APIResponse>(this.baseURL + '/moderation/ban', {
-      target_user_id: targetUserID,
-      ...options,
-    });
-  }
-
-  /** muteUser - mutes a user
-   *
-   * @param {string} targetID
-   * @param {string} [userID] Only used with serverside auth
-   * @param {MuteUserOptions<ErmisChatGenerics>} [options]
-   * @returns {Promise<MuteUserResponse<ErmisChatGenerics>>}
-   */
-  async muteUser(targetID: string, userID?: string, options: MuteUserOptions<ErmisChatGenerics> = {}) {
-    return await this.post<MuteUserResponse<ErmisChatGenerics>>(this.baseURL + '/moderation/mute', {
-      target_id: targetID,
-      ...(userID ? { user_id: userID } : {}),
-      ...options,
-    });
-  }
-
-  /** unmuteUser - unmutes a user
-   *
-   * @param {string} targetID
-   * @param {string} [currentUserID] Only used with serverside auth
-   * @returns {Promise<APIResponse>}
-   */
-  async unmuteUser(targetID: string, currentUserID?: string) {
-    return await this.post<APIResponse>(this.baseURL + '/moderation/unmute', {
-      target_id: targetID,
-      ...(currentUserID ? { user_id: currentUserID } : {}),
-    });
-  }
-
-  /** userMuteStatus - check if a user is muted or not, can be used after connectUser() is called
-   *
-   * @param {string} targetID
-   * @returns {boolean}
-   */
-  userMuteStatus(targetID: string) {
-    if (!this.user || !this.wsPromise) {
-      throw new Error('Make sure to await connectUser() first.');
-    }
-
-    for (let i = 0; i < this.mutedUsers.length; i += 1) {
-      if (this.mutedUsers[i].target.id === targetID) return true;
-    }
-    return false;
-  }
-
-  /**
-   * flagMessage - flag a message
-   * @param {string} targetMessageID
-   * @param {string} [options.user_id] currentUserID, only used with serverside auth
-   * @returns {Promise<APIResponse>}
-   */
-  async flagMessage(targetMessageID: string, options: { user_id?: string } = {}) {
-    return await this.post<FlagMessageResponse<ErmisChatGenerics>>(this.baseURL + '/moderation/flag', {
-      target_message_id: targetMessageID,
-      ...options,
-    });
-  }
-
-  /**
-   * flagUser - flag a user
-   * @param {string} targetID
-   * @param {string} [options.user_id] currentUserID, only used with serverside auth
-   * @returns {Promise<APIResponse>}
-   */
-  async flagUser(targetID: string, options: { user_id?: string } = {}) {
-    return await this.post<FlagUserResponse<ErmisChatGenerics>>(this.baseURL + '/moderation/flag', {
-      target_user_id: targetID,
-      ...options,
-    });
-  }
-
-  /**
-   * unflagMessage - unflag a message
-   * @param {string} targetMessageID
-   * @param {string} [options.user_id] currentUserID, only used with serverside auth
-   * @returns {Promise<APIResponse>}
-   */
-  async unflagMessage(targetMessageID: string, options: { user_id?: string } = {}) {
-    return await this.post<FlagMessageResponse<ErmisChatGenerics>>(this.baseURL + '/moderation/unflag', {
-      target_message_id: targetMessageID,
-      ...options,
-    });
-  }
-
-  /**
-   * unflagUser - unflag a user
-   * @param {string} targetID
-   * @param {string} [options.user_id] currentUserID, only used with serverside auth
-   * @returns {Promise<APIResponse>}
-   */
-  async unflagUser(targetID: string, options: { user_id?: string } = {}) {
-    return await this.post<FlagUserResponse<ErmisChatGenerics>>(this.baseURL + '/moderation/unflag', {
-      target_user_id: targetID,
-      ...options,
-    });
-  }
-
-  /**
-   * getCallToken - retrieves the auth token needed to join a call
-   *
-   * @param {string} callID
-   * @param {object} options
-   * @returns {Promise<GetCallTokenResponse>}
-   */
-  async getCallToken(callID: string, options: { user_id?: string } = {}) {
-    return await this.post<GetCallTokenResponse>(this.baseURL + `/calls/${callID}`, { ...options });
-  }
-
-  /**
-   * unblockMessage - unblocks message blocked by automod
-   *
-   *
-   * @param {string} targetMessageID
-   * @param {string} [options.user_id] currentUserID, only used with serverside auth
-   * @returns {Promise<APIResponse>}
-   */
-  async unblockMessage(targetMessageID: string, options: { user_id?: string } = {}) {
-    return await this.post<APIResponse>(this.baseURL + '/moderation/unblock_message', {
-      target_message_id: targetMessageID,
-      ...options,
-    });
-  }
-  // alias for backwards compatibility
-  _unblockMessage = this.unblockMessage;
-
-  /**
-   * @deprecated use markChannelsRead instead
-   *
-   * markAllRead - marks all channels for this user as read
-   * @param {MarkAllReadOptions<ErmisChatGenerics>} [data]
-   *
-   * @return {Promise<APIResponse>}
-   */
-  markAllRead = this.markChannelsRead;
-
-  /**
-   * markChannelsRead - marks channels read -
-   * it accepts a map of cid:messageid pairs, if messageid is empty, the whole channel will be marked as read
-   *
-   * @param {MarkChannelsReadOptions <ErmisChatGenerics>} [data]
-   *
-   * @return {Promise<APIResponse>}
-   */
-  async markChannelsRead(data: MarkChannelsReadOptions<ErmisChatGenerics> = {}) {
-    await this.post<APIResponse>(this.baseURL + '/channels/read', { ...data });
-  }
-
-  /**
    * _normalizeExpiration - transforms expiration value into ISO string
    * @param {undefined|null|number|string|Date} timeoutOrExpirationDate expiration date or timeout. Use number type to set timeout in seconds, string or Date to set exact expiration date
    */
@@ -2387,172 +1551,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     return messageId;
   }
 
-  /**
-   * pinMessage - pins the message
-   * @param {string | { id: string }} messageOrMessageId message object or message id
-   * @param {undefined|null|number|string|Date} timeoutOrExpirationDate expiration date or timeout. Use number type to set timeout in seconds, string or Date to set exact expiration date
-   * @param {undefined|string | { id: string }} [pinnedBy] who will appear as a user who pinned a message. Only for server-side use. Provide `undefined` when pinning message client-side
-   * @param {undefined|number|string|Date} pinnedAt date when message should be pinned. It affects the order of pinned messages. Use negative number to set relative time in the past, string or Date to set exact date of pin
-   */
-  pinMessage(
-    messageOrMessageId: string | { id: string },
-    timeoutOrExpirationDate?: null | number | string | Date,
-    pinnedBy?: string | { id: string },
-    pinnedAt?: number | string | Date,
-  ) {
-    const messageId = this._validateAndGetMessageId(
-      messageOrMessageId,
-      'Please specify the message id when calling unpinMessage',
-    );
-    return this.partialUpdateMessage(
-      messageId,
-      {
-        set: {
-          pinned: true,
-          pin_expires: this._normalizeExpiration(timeoutOrExpirationDate),
-          pinned_at: this._normalizeExpiration(pinnedAt),
-        },
-      } as unknown as PartialMessageUpdate<ErmisChatGenerics>,
-      pinnedBy,
-    );
-  }
-
-  /**
-   * unpinMessage - unpins the message that was previously pinned
-   * @param {string | { id: string }} messageOrMessageId message object or message id
-   * @param {string | { id: string }} [userId]
-   */
-  unpinMessage(messageOrMessageId: string | { id: string }, userId?: string | { id: string }) {
-    const messageId = this._validateAndGetMessageId(
-      messageOrMessageId,
-      'Please specify the message id when calling unpinMessage',
-    );
-    return this.partialUpdateMessage(
-      messageId,
-      {
-        set: { pinned: false },
-      } as unknown as PartialMessageUpdate<ErmisChatGenerics>,
-      userId,
-    );
-  }
-
-  /**
-   * updateMessage - Update the given message
-   *
-   * @param {Omit<MessageResponse<ErmisChatGenerics>, 'mentioned_users'> & { mentioned_users?: string[] }} message object, id needs to be specified
-   * @param {string | { id: string }} [userId]
-   * @param {boolean} [options.skip_enrich_url] Do not try to enrich the URLs within message
-   *
-   * @return {{ message: MessageResponse<ErmisChatGenerics> }} Response that includes the message
-   */
-  async updateMessage(
-    message: UpdatedMessage<ErmisChatGenerics>,
-    userId?: string | { id: string },
-    options?: UpdateMessageOptions,
-  ) {
-    if (!message.id) {
-      throw Error('Please specify the message id when calling updateMessage');
-    }
-
-    const clonedMessage: Message = Object.assign({}, message);
-    delete clonedMessage.id;
-
-    const reservedMessageFields: Array<ReservedMessageFields> = [
-      'command',
-      'created_at',
-      'html',
-      'latest_reactions',
-      'own_reactions',
-      'quoted_message',
-      'reaction_counts',
-      'reply_count',
-      'type',
-      'updated_at',
-      'user',
-      '__html',
-    ];
-
-    reservedMessageFields.forEach(function (item) {
-      if (clonedMessage[item] != null) {
-        delete clonedMessage[item];
-      }
-    });
-
-    if (userId != null) {
-      if (isString(userId)) {
-        clonedMessage.user_id = userId;
-      } else {
-        clonedMessage.user = {
-          id: userId.id,
-        } as UserResponse<ErmisChatGenerics>;
-      }
-    }
-
-    /**
-     * Server always expects mentioned_users to be array of string. We are adding extra check, just in case
-     * SDK missed this conversion.
-     */
-    if (Array.isArray(clonedMessage.mentioned_users) && !isString(clonedMessage.mentioned_users[0])) {
-      clonedMessage.mentioned_users = clonedMessage.mentioned_users.map((mu) => (mu as unknown as UserResponse).id);
-    }
-
-    return await this.post<UpdateMessageAPIResponse<ErmisChatGenerics>>(this.baseURL + `/messages/${message.id}`, {
-      message: clonedMessage,
-      ...options,
-    });
-  }
-
-  /**
-   * partialUpdateMessage - Update the given message id while retaining additional properties
-   *
-   * @param {string} id the message id
-   *
-   * @param {PartialUpdateMessage<ErmisChatGenerics>}  partialMessageObject which should contain id and any of "set" or "unset" params;
-   *         example: {id: "user1", set:{text: "hi"}, unset:["color"]}
-   * @param {string | { id: string }} [userId]
-   *
-   * @param {boolean} [options.skip_enrich_url] Do not try to enrich the URLs within message
-   *
-   * @return {{ message: MessageResponse<ErmisChatGenerics> }} Response that includes the updated message
-   */
-  async partialUpdateMessage(
-    id: string,
-    partialMessageObject: PartialMessageUpdate<ErmisChatGenerics>,
-    userId?: string | { id: string },
-    options?: UpdateMessageOptions,
-  ) {
-    if (!id) {
-      throw Error('Please specify the message id when calling partialUpdateMessage');
-    }
-    let user = userId;
-    if (userId != null && isString(userId)) {
-      user = { id: userId };
-    }
-    return await this.put<UpdateMessageAPIResponse<ErmisChatGenerics>>(this.baseURL + `/messages/${id}`, {
-      ...partialMessageObject,
-      ...options,
-      user,
-    });
-  }
-
-  async deleteMessage(messageID: string, hardDelete?: boolean) {
-    let params = {};
-    if (hardDelete) {
-      params = { hard: true };
-    }
-    return await this.delete<APIResponse & { message: MessageResponse<ErmisChatGenerics> }>(
-      this.baseURL + `/messages/${messageID}`,
-      params,
-    );
-  }
-
-  async getMessage(messageID: string, options?: GetMessageOptions) {
-    return await this.get<GetMessageAPIResponse<ErmisChatGenerics>>(
-      this.baseURL + `/messages/${encodeURIComponent(messageID)}`,
-      { ...options },
-    );
-  }
-
   getUserAgent() {
     return (
       this.userAgent || `ermis-chat-sdk-javascript-client-${this.node ? 'node' : 'browser'}-${process.env.PKG_VERSION}`
@@ -2562,11 +1560,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
   setUserAgent(userAgent: string) {
     this.userAgent = userAgent;
   }
-
-  /**
-   * _isUsingServerAuth - Returns true if we're using server side auth
-   */
-  _isUsingServerAuth = () => false;
 
   _enrichAxiosOptions(
     options: AxiosRequestConfig & { config?: AxiosRequestConfig } = {
@@ -2582,11 +1575,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     }
 
     const authorization = token ? { Authorization: token } : undefined;
-    let signal: AbortSignal | null = null;
-    if (this.nextRequestAbortController !== null) {
-      signal = this.nextRequestAbortController.signal;
-      this.nextRequestAbortController = null;
-    }
 
     if (!options.headers?.['x-client-request-id']) {
       options.headers = {
@@ -2614,14 +1602,14 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
         ...options.headers,
         ...(axiosRequestConfigHeaders || {}),
       },
-      ...(signal ? { signal } : {}),
+
       ...options.config,
       ...(axiosRequestConfigRest || {}),
     };
   }
 
   _getToken() {
-    if (!this.tokenManager || this.anonymous) return null;
+    if (!this.tokenManager) return null;
 
     return this.tokenManager.getToken();
   }
@@ -2647,96 +1635,11 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
   _buildWSPayload = (client_request_id?: string) => {
     return JSON.stringify({
       user_id: this.userID,
-      user_details: this._user,
+      user_details: this.user,
       device: this.options.device,
       client_request_id,
     });
   };
-
-  /**
-   * checks signature of a request
-   * @param {string | Buffer} rawBody
-   * @param {string} signature from HTTP header
-   * @returns {boolean}
-   */
-  // verifyWebhook(requestBody: string | Buffer, xSignature: string) {
-  //   return !!this.secret && CheckSignature(requestBody, this.secret, xSignature);
-  // }
-
-  /** getPermission - gets the definition for a permission
-   *
-   * @param {string} name
-   * @returns {Promise<PermissionAPIResponse>}
-   */
-  getPermission(name: string) {
-    return this.get<PermissionAPIResponse>(`${this.baseURL}/permissions/${name}`);
-  }
-
-  /** createPermission - creates a custom permission
-   *
-   * @param {CustomPermissionOptions} permissionData the permission data
-   * @returns {Promise<APIResponse>}
-   */
-  createPermission(permissionData: CustomPermissionOptions) {
-    return this.post<APIResponse>(`${this.baseURL}/permissions`, {
-      ...permissionData,
-    });
-  }
-
-  /** updatePermission - updates an existing custom permission
-   *
-   * @param {string} id
-   * @param {Omit<CustomPermissionOptions, 'id'>} permissionData the permission data
-   * @returns {Promise<APIResponse>}
-   */
-  updatePermission(id: string, permissionData: Omit<CustomPermissionOptions, 'id'>) {
-    return this.put<APIResponse>(`${this.baseURL}/permissions/${id}`, {
-      ...permissionData,
-    });
-  }
-
-  /** deletePermission - deletes a custom permission
-   *
-   * @param {string} name
-   * @returns {Promise<APIResponse>}
-   */
-  deletePermission(name: string) {
-    return this.delete<APIResponse>(`${this.baseURL}/permissions/${name}`);
-  }
-
-  /** listPermissions - returns the list of all permissions for this application
-   *
-   * @returns {Promise<APIResponse>}
-   */
-  listPermissions() {
-    return this.get<PermissionsAPIResponse>(`${this.baseURL}/permissions`);
-  }
-
-  /** createRole - creates a custom role
-   *
-   * @param {string} name the new role name
-   * @returns {Promise<APIResponse>}
-   */
-  createRole(name: string) {
-    return this.post<APIResponse>(`${this.baseURL}/roles`, { name });
-  }
-
-  /** listRoles - returns the list of all roles for this application
-   *
-   * @returns {Promise<APIResponse>}
-   */
-  listRoles() {
-    return this.get<APIResponse>(`${this.baseURL}/roles`);
-  }
-
-  /** deleteRole - deletes a custom role
-   *
-   * @param {string} name the role name
-   * @returns {Promise<APIResponse>}
-   */
-  deleteRole(name: string) {
-    return this.delete<APIResponse>(`${this.baseURL}/roles/${name}`);
-  }
 
   /** sync - returns all events that happened for a list of channels since last sync
    * @param {string[]} channel_cids list of channel CIDs
@@ -2754,20 +1657,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
   }
 
   /**
-   * sendUserCustomEvent - Send a custom event to a user
-   *
-   * @param {string} targetUserID target user id
-   * @param {UserCustomEvent} event for example {type: 'friendship-request'}
-   *
-   * @return {Promise<APIResponse>} The Server Response
-   */
-  async sendUserCustomEvent(targetUserID: string, event: UserCustomEvent) {
-    return await this.post<APIResponse>(`${this.baseURL}/users/${targetUserID}/event`, {
-      event,
-    });
-  }
-
-  /**
    * enrichURL - Get OpenGraph data of the given link
    *
    * @param {string} url link
@@ -2775,33 +1664,5 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
    */
   async enrichURL(url: string) {
     return this.get<APIResponse & OGAttachment>(this.baseURL + `/og`, { url });
-  }
-
-  /**
-   * getTask - Gets status of a long running task
-   *
-   * @param {string} id Task ID
-   *
-   * @return {TaskStatus} The task status
-   */
-  async getTask(id: string) {
-    return this.get<APIResponse & TaskStatus>(`${this.baseURL}/tasks/${id}`);
-  }
-
-  /**
-   * creates an abort controller that will be used by the next HTTP Request.
-   */
-  createAbortControllerForNextRequest() {
-    return (this.nextRequestAbortController = new AbortController());
-  }
-
-  /**
-   * commits a pending message, making it visible in the channel and for other users
-   * @param id the message id
-   *
-   * @return {APIResponse & MessageResponse} The message
-   */
-  async commitMessage(id: string) {
-    return await this.post<APIResponse & MessageResponse>(this.baseURL + `/messages/${id}/commit`);
   }
 }

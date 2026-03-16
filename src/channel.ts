@@ -806,10 +806,12 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     expiresAt: Date | null;
     muted: boolean;
   } {
-    // this._checkInitialized();
-    return this.getClient()._muteStatus(this.cid);
+    return {
+      muted: false,
+      createdAt: null,
+      expiresAt: null,
+    };
   }
-
   sendAction(messageID: string, formData: Record<string, string>) {
     // this._checkInitialized();
     if (!messageID) {
@@ -922,7 +924,7 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
   async markUnread(data: MarkUnreadOptions<ErmisChatGenerics>) {
     // this._checkInitialized();
 
-    if (!this.getConfig()?.read_events && !this.getClient()._isUsingServerAuth()) {
+    if (!this.getConfig()?.read_events) {
       return Promise.resolve(null);
     }
 
@@ -1473,8 +1475,8 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
    * @returns {Promise<APIResponse>}
    */
   async banUser(targetUserID: string, options: BanUserOptions<ErmisChatGenerics>) {
-    // this._checkInitialized();
-    return await this.getClient().banUser(targetUserID, {
+    return await this.getClient().post<APIResponse>(this.getClient().baseURL + '/moderation/ban', {
+      target_user_id: targetUserID,
       ...options,
       type: this.type,
       id: this.id,
@@ -1518,8 +1520,8 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
    * @returns {Promise<APIResponse>}
    */
   async unbanUser(targetUserID: string) {
-    // this._checkInitialized();
-    return await this.getClient().unbanUser(targetUserID, {
+    return await this.getClient().delete<APIResponse>(this.getClient().baseURL + '/moderation/ban', {
+      target_user_id: targetUserID,
       type: this.type,
       id: this.id,
     });
@@ -2291,7 +2293,7 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
   };
 
   _checkInitialized() {
-    if (!this.initialized && !this.offlineMode && !this.getClient()._isUsingServerAuth()) {
+    if (!this.initialized && !this.offlineMode) {
       throw Error(
         `Channel ${this.cid} hasn't been initialized yet. Make sure to call .watch() and wait for it to resolve`,
       );

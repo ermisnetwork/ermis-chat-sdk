@@ -1117,15 +1117,7 @@ export type ErmisChatOptions = AxiosRequestConfig & {
   device?: BaseDeviceFields;
   enableInsights?: boolean;
   /** experimental feature, please contact support if you want this feature enabled for you */
-  enableWSFallback?: boolean;
   logger?: Logger;
-  /**
-   * When true, user will be persisted on client. Otherwise if `connectUser` call fails, then you need to
-   * call `connectUser` again to retry.
-   * This is mainly useful for chat application working in offline mode, where you will need client.user to
-   * persist even if connectUser call fails.
-   */
-  persistUserOnConnectionFailure?: boolean;
   /**
    * When network is recovered, we re-query the active channels on client. But in single query, you can recover
    * only 30 channels. So its not guaranteed that all the channels in activeChannels object have updated state.
