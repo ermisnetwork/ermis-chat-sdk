@@ -818,20 +818,9 @@ export type UpdateUsersAPIResponse<ErmisChatGenerics extends ExtendableGenerics 
 };
 
 export type UserResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = User<ErmisChatGenerics> & {
-  banned?: boolean;
-  created_at?: string;
-  deactivated_at?: string;
-  deleted_at?: string;
-  language?: TranslationLanguages | '';
-  last_active?: string;
-  online?: boolean;
-  privacy_settings?: PrivacySettings;
-  push_notifications?: PushNotificationSettings;
-  revoke_tokens_issued_before?: string;
-  shadow_banned?: boolean;
-  updated_at?: string;
   project_id?: string;
-  image?: string;
+  created_at?: string;
+  updated_at?: string;
 };
 export type Contact = {
   project_id: string;
@@ -1110,9 +1099,9 @@ export type ErmisChatOptions = AxiosRequestConfig & {
   allowServerSideConnect?: boolean;
   axiosRequestConfig?: AxiosRequestConfig;
   /**
-   * Base url to use for API
+   * Base url for User BE API (uss/v1). Defaults to baseURL + '/uss/v1' if not provided.
    */
-  baseURL?: string;
+  userBaseURL?: string;
   browser?: boolean;
   device?: BaseDeviceFields;
   enableInsights?: boolean;
@@ -2706,13 +2695,9 @@ export type UpdatedMessage<ErmisChatGenerics extends ExtendableGenerics = Defaul
 
 export type User<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = ErmisChatGenerics['userType'] & {
   id: string;
-  anon?: boolean;
   name?: string;
-  role?: string;
-  teams?: string[];
-  username?: string;
-  about_me?: string;
   avatar?: string;
+  about_me?: string;
   email?: string;
   phone?: string;
 };

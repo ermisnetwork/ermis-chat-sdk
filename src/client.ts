@@ -11,7 +11,7 @@ import { StableWSConnection } from './connection';
 
 import { TokenManager } from './token_manager';
 
-import { isErrorResponse, isWSFailure } from './errors';
+import { isErrorResponse } from './errors';
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import {
   addFileToFormData,
@@ -47,19 +47,14 @@ import {
   EventHandler,
   ExtendableGenerics,
   Logger,
-  Mute,
-  OGAttachment,
   OwnUserResponse,
   QueryChannelsAPIResponse,
   SendFileAPIResponse,
   ErmisChatOptions,
-  SyncOptions,
-  SyncResponse,
   TokenOrProvider,
   UserResponse,
   ContactResponse,
   UsersResponse,
-  ChainsResponse,
   ContactResult,
   Contact,
 } from './types';
@@ -75,6 +70,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
   };
   axiosInstance: AxiosInstance;
   baseURL?: string;
+  userBaseURL?: string;
   browser: boolean;
   cleaningIntervalRef?: NodeJS.Timeout;
   clientID?: string;
@@ -83,15 +79,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
   projectId: string;
   listeners: Record<string, Array<(event: Event<ErmisChatGenerics>) => void>>;
   logger: Logger;
-  /**
-   * When network is recovered, we re-query the active channels on client. But in single query, you can recover
-   * only 30 channels. So its not guaranteed that all the channels in activeChannels object have updated state.
-   * Thus in UI sdks, state recovery is managed by components themselves, they don't rely on js client for this.
-   *
-   * `recoverStateOnReconnect` parameter can be used in such cases, to disable state recovery within js client.
-   * When false, user/consumer of this client will need to make sure all the channels present on UI by
-   * manually calling queryChannels endpoint.
-   */
   recoverStateOnReconnect?: boolean;
   node: boolean;
   options: ErmisChatOptions;
@@ -109,20 +96,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
 
   private eventSource: EventSourcePolyfill | null = null;
 
-  /**
-   * Initialize a client
-   *
-   * **Only use constructor for advanced usages. It is strongly advised to use `ErmisChat.getInstance()` instead of `new ErmisChat()` to reduce integration issues due to multiple WebSocket connections**
-   * @param {string} apiKey - the api key
-   * @param {string} projectId - the project id
-   * @param {ErmisChatOptions} [options] - additional options, here you can pass custom options to axios instance
-   * @param {boolean} [options.browser] - enforce the client to be in browser mode
-   * @param {boolean} [options.warmUp] - default to false, if true, client will open a connection as soon as possible to speed up following requests
-   * @param {Logger} [options.Logger] - custom logger
-   * @param {number} [options.timeout] - default to 3000
-   * @param {httpsAgent} [options.httpsAgent] - custom httpsAgent, in node it's default to https.agent()
-   */
-  constructor(apiKey: string, projectId: string, options?: ErmisChatOptions) {
+  constructor(apiKey: string, projectId: string, baseURL: string, options?: ErmisChatOptions) {
     this.apiKey = apiKey;
     this.projectId = projectId;
     this.listeners = {};
@@ -149,15 +123,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
 
     this.axiosInstance = axios.create(this.options);
 
-    this.setBaseURL(this.options.baseURL || 'https://api.ermis.network');
-
-    if (typeof process !== 'undefined' && process.env.STREAM_LOCAL_TEST_RUN) {
-      this.setBaseURL('http://localhost:3030');
-    }
-
-    if (typeof process !== 'undefined' && process.env.STREAM_LOCAL_TEST_HOST) {
-      this.setBaseURL('http://' + process.env.STREAM_LOCAL_TEST_HOST);
-    }
+    this.setBaseURL(baseURL);
 
     // WS connection is initialized when setUser is called
     this.wsConnection = null;
@@ -179,77 +145,48 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     this.recoverStateOnReconnect = this.options.recoverStateOnReconnect;
   }
 
-  /**
-   * Get a client instance
-   *
-   * This function always returns the same Client instance to avoid issues raised by multiple Client and WS connections
-   *
-   * **After the first call, the client configuration will not change if the key or options parameters change**
-   *
-   * @param {string} key - the api key
-   * @param {string} [secret] - the api secret
-   * @param {ErmisChatOptions} [options] - additional options, here you can pass custom options to axios instance
-   * @param {boolean} [options.browser] - enforce the client to be in browser mode
-   * @param {boolean} [options.warmUp] - default to false, if true, client will open a connection as soon as possible to speed up following requests
-   * @param {Logger} [options.Logger] - custom logger
-   * @param {number} [options.timeout] - default to 3000
-   * @param {httpsAgent} [options.httpsAgent] - custom httpsAgent, in node it's default to https.agent()
-   * @example <caption>initialize the client in user mode</caption>
-   * ErmisChat.getInstance('api_key')
-   * @example <caption>initialize the client in user mode with options</caption>
-   * ErmisChat.getInstance('api_key', { timeout:5000 })
-   * @example <caption>secret is optional and only used in server side mode</caption>
-   * ErmisChat.getInstance('api_key', "secret", { httpsAgent: customAgent })
-   */
   public static getInstance<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics>(
     key: string,
     projectId: string,
+    baseURL: string,
     options?: ErmisChatOptions,
   ): ErmisChat<ErmisChatGenerics> {
     if (!ErmisChat._instance) {
-      ErmisChat._instance = new ErmisChat<ErmisChatGenerics>(key, projectId, options);
+      ErmisChat._instance = new ErmisChat<ErmisChatGenerics>(key, projectId, baseURL, options);
     }
 
     return ErmisChat._instance as ErmisChat<ErmisChatGenerics>;
   }
 
   async refreshNewToken(refresh_token: string) {
-    return await this.post<APIResponse>(this.baseURL + '/uss/v1/refresh_token', { refresh_token });
+    return await this.post<APIResponse>(this.userBaseURL + '/refresh_token', { refresh_token });
   }
+
   getAuthType() {
     return 'jwt';
   }
 
   setBaseURL(baseURL: string) {
     this.baseURL = baseURL;
+    this.userBaseURL = this.options.userBaseURL || baseURL + '/uss/v1';
     this.wsBaseURL = this.baseURL.replace('http', 'ws').replace(':3030', ':8800');
   }
 
-  _getConnectionID = () => this.wsConnection?.connectionID;
-
-  _hasConnectionID = () => Boolean(this._getConnectionID());
-
-  /**
-   * connectUser - Set the current user and open a WebSocket connection
-   *
-   * @param {OwnUserResponse<ErmisChatGenerics> | UserResponse<ErmisChatGenerics>} user Data about this user. IE {name: "john"}
-   * @param {TokenOrProvider} userTokenOrProvider Token or provider
-   *
-   * @return {ConnectAPIResponse<ErmisChatGenerics>} Returns a promise that resolves when the connection is setup
-   */
-
-  async getExternalAuthToken(data: any) {
-    const params: any = { apikey: data.apiKey, name: data.user.name };
-    if (data.user.image) {
-      params.avatar = data.user.image;
+  async getExternalAuthToken(
+    user: OwnUserResponse<ErmisChatGenerics> | UserResponse<ErmisChatGenerics>,
+    token: TokenOrProvider,
+  ) {
+    const params: any = { apikey: this.apiKey, name: user.name };
+    if (user.avatar) {
+      params.avatar = user.avatar;
     }
-    const url = this.baseURL + '/uss/v1/get_token/external_auth';
+    const url = this.userBaseURL + '/get_token/external_auth';
     const query = new URLSearchParams(params).toString();
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
-    if (data.token) {
-      const tokenStr = data.token.startsWith('Bearer ') ? data.token : `Bearer ${data.token}`;
+    if (token) {
+      const tokenStr = typeof token === 'string' && token.startsWith('Bearer ') ? token : `Bearer ${token}`;
       headers['Authorization'] = tokenStr;
     }
     const response = await fetch(`${url}?${query}`, {
@@ -283,13 +220,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
 
     // If external auth is enabled, get the token from the server
     if (extenal_auth) {
-      // this.tokenManager.setTokenOrProvider(userTokenOrProvider, user);
-      const data = {
-        apiKey: this.apiKey,
-        user,
-        token: userTokenOrProvider,
-      };
-      const external_auth_token = await this.getExternalAuthToken(data);
+      const external_auth_token = await this.getExternalAuthToken(user, userTokenOrProvider);
 
       userTokenOrProvider = external_auth_token.token;
       user.id = external_auth_token.user_id;
@@ -323,7 +254,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
 
     const setTokenPromise = this._setToken(user, userTokenOrProvider);
     this._setUser(user);
-    this.state.updateUser({ id: user.id, name: user?.name || user.id, avatar: user?.image || '' });
+    this.state.updateUser({ id: user.id, name: user?.name || user.id, avatar: user?.avatar || '' });
 
     const wsPromise = this.openConnection();
 
@@ -342,16 +273,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     }
   };
 
-  /**
-   * @deprecated Please use connectUser() function instead. Its naming is more consistent with its functionality.
-   *
-   * setUser - Set the current user and open a WebSocket connection
-   *
-   * @param {OwnUserResponse<ErmisChatGenerics> | UserResponse<ErmisChatGenerics>} user Data about this user. IE {name: "john"}
-   * @param {TokenOrProvider} userTokenOrProvider Token or provider
-   *
-   * @return {ConnectAPIResponse<ErmisChatGenerics>} Returns a promise that resolves when the connection is setup
-   */
   setUser = this.connectUser;
 
   _setToken = (user: UserResponse<ErmisChatGenerics>, userTokenOrProvider: TokenOrProvider) =>
@@ -362,19 +283,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     this.userID = user.id;
   }
 
-  /**
-   * Disconnects the websocket connection, without removing the user set on client.
-   * client.closeConnection will not trigger default auto-retry mechanism for reconnection. You need
-   * to call client.openConnection to reconnect to websocket.
-   *
-   * This is mainly useful on mobile side. You can only receive push notifications
-   * if you don't have active websocket connection.
-   * So when your app goes to background, you can call `client.closeConnection`.
-   * And when app comes back to foreground, call `client.openConnection`.
-   *
-   * @param timeout Max number of ms, to wait for close event of websocket, before forcefully assuming succesful disconnection.
-   *                https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
-   */
   closeConnection = async (timeout?: number) => {
     if (this.cleaningIntervalRef != null) {
       clearInterval(this.cleaningIntervalRef);
@@ -385,9 +293,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     return Promise.resolve();
   };
 
-  /**
-   * Creates a new WebSocket connection with the current user. Returns empty promise, if there is an active connection
-   */
   openConnection = async () => {
     if (!this.userID) {
       throw Error('User is not set on client, use client.connectUser instead');
@@ -400,7 +305,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
       return this.wsPromise;
     }
 
-    if (this.wsConnection?.isHealthy && this._hasConnectionID()) {
+    if (this.wsConnection?.isHealthy) {
       this.logger('info', 'client:openConnection() - openConnection called twice, healthy connection already exists', {
         tags: ['connection', 'client'],
       });
@@ -414,20 +319,8 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     return this.wsPromise;
   };
 
-  /**
-   * @deprecated Please use client.openConnction instead.
-   * @private
-   *
-   * Creates a new websocket connection with current user.
-   */
   _setupConnection = this.openConnection;
 
-  /**
-   * Disconnects the websocket and removes the user from client.
-   *
-   * @param timeout Max number of ms, to wait for close event of websocket, before forcefully assuming successful disconnection.
-   *                https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
-   */
   disconnectUser = async (timeout?: number) => {
     this.logger('info', 'client:disconnect() - Disconnecting the client', {
       tags: ['connection', 'client'],
@@ -453,26 +346,8 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     return closePromise;
   };
 
-  /**
-   *
-   * @deprecated Please use client.disconnectUser instead.
-   *
-   * Disconnects the websocket and removes the user from client.
-   */
   disconnect = this.disconnectUser;
 
-  /**
-   * on - Listen to events on all channels and users your watching
-   *
-   * client.on('message.new', event => {console.log("my new message", event, channel.state.messages)})
-   * or
-   * client.on(event => {console.log(event.type)})
-   *
-   * @param {EventHandler<ErmisChatGenerics> | string} callbackOrString  The event type to listen for (optional)
-   * @param {EventHandler<ErmisChatGenerics>} [callbackOrNothing] The callback to call
-   *
-   * @return {{ unsubscribe: () => void }} Description
-   */
   on(callback: EventHandler<ErmisChatGenerics>): { unsubscribe: () => void };
   on(eventType: string, callback: EventHandler<ErmisChatGenerics>): { unsubscribe: () => void };
   on(
@@ -498,10 +373,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     };
   }
 
-  /**
-   * off - Remove the event handler
-   *
-   */
   off(callback: EventHandler<ErmisChatGenerics>): void;
   off(eventType: string, callback: EventHandler<ErmisChatGenerics>): void;
   off(callbackOrString: EventHandler<ErmisChatGenerics> | string, callbackOrNothing?: EventHandler<ErmisChatGenerics>) {
@@ -751,7 +622,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
       messages: [],
       pinned_messages: [],
     };
-    const c = this.channel(event.channel_type || '', event.channel_id);
+    const c = this.channel(event.channel_type || '', event.channel_id || '');
     c.data = channel;
     c._initializeState(channelState, 'latest');
   }
@@ -763,11 +634,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     this.dispatchEvent(event);
   };
 
-  /**
-   * Updates the members, watchers and read references of the currently active channels that contain this user
-   *
-   * @param {UserResponse<ErmisChatGenerics>} user
-   */
   _updateMemberWatcherReferences = (user: UserResponse<ErmisChatGenerics>) => {
     const refMap = this.state.userChannelReferences[user.id] || {};
     for (const channelID in refMap) {
@@ -786,20 +652,8 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     }
   };
 
-  /**
-   * @deprecated Please _updateMemberWatcherReferences instead.
-   * @private
-   */
   _updateUserReferences = this._updateMemberWatcherReferences;
 
-  /**
-   * @private
-   *
-   * Updates the messages from the currently active channels that contain this user,
-   * with updated user object.
-   *
-   * @param {UserResponse<ErmisChatGenerics>} user
-   */
   _updateUserMessageReferences = (user: UserResponse<ErmisChatGenerics>) => {
     const refMap = this.state.userChannelReferences[user.id] || {};
 
@@ -815,17 +669,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     }
   };
 
-  /**
-   * @private
-   *
-   * Deletes the messages from the currently active channels that contain this user
-   *
-   * If hardDelete is true, all the content of message will be stripped down.
-   * Otherwise, only 'message.type' will be set as 'deleted'.
-   *
-   * @param {UserResponse<ErmisChatGenerics>} user
-   * @param {boolean} hardDelete
-   */
   _deleteUserMessageReference = (user: UserResponse<ErmisChatGenerics>, hardDelete = false) => {
     const refMap = this.state.userChannelReferences[user.id] || {};
 
@@ -892,7 +735,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
 
     if (event.type === 'member.added') {
       if (event.member?.user_id === this.userID) {
-        const c = this.channel(event.channel_type || '', event.channel_id);
+        const c = this.channel(event.channel_type || '', event.channel_id || '');
         // Gọi watch để lấy đầy đủ thông tin channel từ server
         c.watch().catch((err) => {
           this.logger('error', 'Failed to watch channel after member.added', { err, event });
@@ -921,7 +764,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
   };
 
   recoverState = async () => {
-    this.logger('info', `client:recoverState() - Start of recoverState with connectionID ${this._getConnectionID()}`, {
+    this.logger('info', 'client:recoverState() - Start of recoverState', {
       tags: ['connection'],
     });
 
@@ -931,11 +774,15 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
         tags: ['connection', 'client'],
       });
 
-      await this.queryChannels(
-        { cid: { $in: cids } } as ChannelFilters<ErmisChatGenerics>,
-        { last_message_at: -1 },
-        { limit: 30 },
-      );
+      const filter = {
+        type: ['messaging', 'team'],
+      };
+      const sort: [] = [];
+      const options = {
+        message_limit: 25,
+      };
+
+      await this.queryChannels(filter as ChannelFilters<ErmisChatGenerics>, sort, options);
 
       this.logger('info', 'client:recoverState() - Querying channels finished', { tags: ['connection', 'client'] });
       this.dispatchEvent({
@@ -951,9 +798,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     this.setUserPromise = Promise.resolve();
   };
 
-  /**
-   * @private
-   */
   async connect() {
     if (!this.userID || !this.user) {
       throw Error('Call connectUser before starting the connection');
@@ -999,7 +843,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
       method: 'GET',
       Authorization: token,
     };
-    this.eventSource = new EventSourcePolyfill(this.baseURL + '/uss/v1/sse/subscribe', {
+    this.eventSource = new EventSourcePolyfill(this.userBaseURL + '/sse/subscribe', {
       headers,
       heartbeatTimeout: 60000,
     });
@@ -1078,18 +922,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     }
   }
 
-  /**
-   * queryUsers - Query users and watch user presence
-   *
-   *
-   * @return {Promise<{
-   *data: Array<UserResponse<ErmisChatGenerics>>,
-   *count: number,
-   *total: number,
-   *page: number,
-   *page_count: number,
-   * }>} User Query Response
-   */
   async queryUsers(page_size?: string, page?: number): Promise<UsersResponse> {
     const defaultOptions = {
       presence: false,
@@ -1098,12 +930,9 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     // Make sure we wait for the connect promise if there is a pending one
     await this.wsPromise;
 
-    if (!this._hasConnectionID()) {
-      defaultOptions.presence = false;
-    }
     let project_id = this.projectId;
     // Return a list of users
-    const data = await this.get<UsersResponse>(this.baseURL + '/uss/v1/users', {
+    const data = await this.get<UsersResponse>(this.userBaseURL + '/users', {
       project_id,
       page,
       page_size,
@@ -1117,7 +946,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
   async queryUser(user_id: string): Promise<UserResponse<ErmisChatGenerics>> {
     const project_id = this.projectId;
 
-    const userResponse = await this.get<UserResponse<ErmisChatGenerics>>(this.baseURL + '/uss/v1/users/' + user_id, {
+    const userResponse = await this.get<UserResponse<ErmisChatGenerics>>(this.userBaseURL + '/users/' + user_id, {
       project_id,
     });
 
@@ -1129,7 +958,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     let project_id = this.projectId;
 
     const usersRepsonse = await this.post<UsersResponse>(
-      this.baseURL + '/uss/v1/users/batch?page=1&page_size=10000',
+      this.userBaseURL + '/users/batch?page=1&page_size=10000',
       { users, project_id },
       { page, page_size },
     );
@@ -1138,10 +967,11 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
 
     return usersRepsonse.data || [];
   }
+
   async searchUsers(page: number, page_size: number, name?: string): Promise<UsersResponse> {
     let project_id = this.projectId;
 
-    const usersResponse = await this.post<UsersResponse>(this.baseURL + '/uss/v1/users/search', undefined, {
+    const usersResponse = await this.post<UsersResponse>(this.userBaseURL + '/users/search', undefined, {
       page,
       page_size,
       name,
@@ -1152,6 +982,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
 
     return usersResponse;
   }
+
   async queryContacts(): Promise<ContactResult> {
     let project_id = this.projectId;
     const contactResponse = await this.post<ContactResponse>(this.baseURL + '/contacts/list', { project_id });
@@ -1187,7 +1018,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
   async uploadFile(file: any) {
     const formData = new FormData();
     formData.append('avatar', file);
-    let response = await this.post<{ avatar: string }>(this.baseURL + '/uss/v1/users/upload', formData, {
+    let response = await this.post<{ avatar: string }>(this.userBaseURL + '/users/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -1205,24 +1036,12 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
       name,
       about_me,
     };
-    let response = await this.patch<UserResponse<ErmisChatGenerics>>(this.baseURL + '/uss/v1/users/update', body);
+    let response = await this.patch<UserResponse<ErmisChatGenerics>>(this.userBaseURL + '/users/update', body);
     this.user = response;
     this.state.updateUser(response);
     return response;
   }
 
-  /**
-   * queryChannels - Query channels
-   *
-   * @param {ChannelFilters<ErmisChatGenerics>} filterConditions object MongoDB style filters
-   * @param {ChannelSort<ErmisChatGenerics>} [sort] Sort options, for instance {created_at: -1}.
-   * When using multiple fields, make sure you use array of objects to guarantee field order, for instance [{last_updated: -1}, {created_at: 1}]
-   * @param {ChannelOptions} [options] Options object
-   * @param {ChannelStateOptions} [stateOptions] State options object. These options will only be used for state management and won't be sent in the request.
-   * - stateOptions.skipInitialization - Skips the initialization of the state for the channels matching the ids in the list.
-   *
-   * @return {Promise<{ channels: Array<ChannelAPIResponse<AErmisChatGenerics>>}> } search channels response
-   */
   async queryChannels(
     filterConditions: ChannelFilters<ErmisChatGenerics>,
     sort: ChannelSort<ErmisChatGenerics> = [],
@@ -1317,13 +1136,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
   }
 
   async startCall(payload: any) {
-    const connection_id = this.wsConnection?.connectionID;
-    const data = {
-      ...payload,
-      connection_id,
-    };
-
-    return this.post(this.baseURL + '/signal', data);
+    return this.post(this.baseURL + '/signal', payload);
   }
 
   hydrateChannels(
@@ -1405,29 +1218,9 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     this.configs[cid] = config;
   }
 
-  /**
-   * channel - Returns a new channel with the given type, id and custom data
-   *
-   * If you want to create a unique conversation between 2 or more users; you can leave out the ID parameter and provide the list of members.
-   * Make sure to await channel.create() or channel.watch() before accessing channel functions:
-   * ie. channel = client.channel("messaging", {members: ["tommaso", "thierry"]})
-   * await channel.create() to assign an ID to channel
-   *
-   * @param {string} channelType The channel type
-   * @param {string | ChannelData<ErmisChatGenerics> | null} [channelIDOrCustom]   The channel ID, you can leave this out if you want to create a conversation channel
-   * @param {object} [custom]    Custom data to attach to the channel
-   *
-   * @return {channel} The channel object, initialize it using channel.watch()
-   */
   channel(
     channelType: string,
-    channelID?: string | null,
-    custom?: ChannelData<ErmisChatGenerics>,
-  ): Channel<ErmisChatGenerics>;
-  channel(channelType: string, custom?: ChannelData<ErmisChatGenerics>): Channel<ErmisChatGenerics>;
-  channel(
-    channelType: string,
-    channelIDOrCustom?: string | ChannelData<ErmisChatGenerics> | null,
+    channelID: string,
     custom: ChannelData<ErmisChatGenerics> = {} as ChannelData<ErmisChatGenerics>,
   ) {
     if (!this.userID) {
@@ -1438,46 +1231,10 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
       throw Error(`Invalid channel group ${channelType}, can't contain the : character`);
     }
 
-    // support channel("messaging", {options})
-    if (channelIDOrCustom && typeof channelIDOrCustom === 'object') {
-      return this.getChannel(channelType, channelIDOrCustom);
-    }
-
-    // support channel("messaging", null, {options})
-    // support channel("messaging", undefined, {options})
-    // support channel("messaging", "", {options})
-    if (!channelIDOrCustom) {
-      return new Channel<ErmisChatGenerics>(this, channelType, undefined, custom);
-    }
-
-    return this.getChannelById(channelType, channelIDOrCustom, custom);
+    return this.getChannelById(channelType, channelID, custom);
   }
 
-  /**
-   * Its a helper method for `client.channel()` method, used to channel given the id of channel.
-   *
-   * If the channel already exists in `activeChannels` list, then we simply return it, since that
-   * means the same channel was already requested or created.
-   *
-   * Otherwise we create a new instance of Channel class and return it.
-   *
-   * @private
-   *
-   * @param {string} channelType The channel type
-   * @param {string} [channelID] The channel ID
-   * @param {object} [custom]    Custom data to attach to the channel
-   *
-   * @return {channel} The channel object, initialize it using channel.watch()
-   */
   getChannelById = (channelType: string, channelID: string, custom: ChannelData<ErmisChatGenerics>) => {
-    /**
-     * don't handle channelID without : character anymore
-     */
-    // if (typeof channelID === 'string' && ~channelID.indexOf(':')) {
-    //   throw Error(`Invalid channel id ${channelID}, can't contain the : character`);
-    // }
-
-    // only allow 1 channel object per cid
     const cid = `${channelType}:${channelID}`;
     if (cid in this.activeChannels && !this.activeChannels[cid].disconnected) {
       const channel = this.activeChannels[cid];
@@ -1492,10 +1249,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
 
     return channel;
   };
-  /**
-   *  getChannel - Returns a new channel with the given type, id and custom data
-   * team channel id will be automatically generated from sdk.
-   * */
+
   getChannel = (channelType: string, custom: ChannelData<ErmisChatGenerics>) => {
     const uuid = randomId();
     const id = `${this.projectId}:${uuid}`;
@@ -1515,10 +1269,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     return channel;
   };
 
-  /**
-   * _normalizeExpiration - transforms expiration value into ISO string
-   * @param {undefined|null|number|string|Date} timeoutOrExpirationDate expiration date or timeout. Use number type to set timeout in seconds, string or Date to set exact expiration date
-   */
   _normalizeExpiration(timeoutOrExpirationDate?: null | number | string | Date) {
     let pinExpires: null | string = null;
     if (typeof timeoutOrExpirationDate === 'number') {
@@ -1531,24 +1281,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
       pinExpires = timeoutOrExpirationDate.toISOString();
     }
     return pinExpires;
-  }
-
-  /**
-   * _messageId - extracts string message id from either message object or message id
-   * @param {string | { id: string }} messageOrMessageId message object or message id
-   * @param {string} errorText error message to report in case of message id absence
-   */
-  _validateAndGetMessageId(messageOrMessageId: string | { id: string }, errorText: string) {
-    let messageId: string;
-    if (typeof messageOrMessageId === 'string') {
-      messageId = messageOrMessageId;
-    } else {
-      if (!messageOrMessageId.id) {
-        throw Error(errorText);
-      }
-      messageId = messageOrMessageId.id;
-    }
-    return messageId;
   }
 
   getUserAgent() {
@@ -1627,11 +1359,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     }, 500);
   }
 
-  /**
-   * encode ws url payload
-   * @private
-   * @returns json string
-   */
   _buildWSPayload = (client_request_id?: string) => {
     return JSON.stringify({
       user_id: this.userID,
@@ -1640,29 +1367,4 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
       client_request_id,
     });
   };
-
-  /** sync - returns all events that happened for a list of channels since last sync
-   * @param {string[]} channel_cids list of channel CIDs
-   * @param {string} last_sync_at last time the user was online and in sync. RFC3339 ie. "2020-05-06T15:05:01.207Z"
-   * @param {SyncOptions} options See JSDoc in the type fields for more info
-   *
-   * @returns {Promise<SyncResponse>}
-   */
-  sync(channel_cids: string[], last_sync_at: string, options: SyncOptions = {}) {
-    return this.post<SyncResponse>(`${this.baseURL}/sync`, {
-      channel_cids,
-      last_sync_at,
-      ...options,
-    });
-  }
-
-  /**
-   * enrichURL - Get OpenGraph data of the given link
-   *
-   * @param {string} url link
-   * @return {OGAttachment} OG Attachment
-   */
-  async enrichURL(url: string) {
-    return this.get<APIResponse & OGAttachment>(this.baseURL + `/og`, { url });
-  }
 }

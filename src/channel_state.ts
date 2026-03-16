@@ -649,7 +649,7 @@ export class ChannelState<ErmisChatGenerics extends ExtendableGenerics = Default
           messages[i] = {
             cid: m.cid,
             created_at: m.created_at,
-            deleted_at: user.deleted_at,
+            deleted_at: new Date().toISOString(),
             id: m.id,
             latest_reactions: [],
             mentioned_users: [],
@@ -666,7 +666,7 @@ export class ChannelState<ErmisChatGenerics extends ExtendableGenerics = Default
           messages[i] = {
             ...m,
             type: 'deleted',
-            deleted_at: user.deleted_at,
+            deleted_at: new Date().toISOString(),
           };
         }
       }

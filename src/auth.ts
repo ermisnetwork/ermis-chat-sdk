@@ -25,10 +25,10 @@ export class ErmisAuthProvider {
   /** Wallet address used for wallet authentication */
   address?: string;
 
-  constructor(apiKey: string, options?: ErmisChatOptions) {
+  constructor(apiKey: string, baseURL: string, options?: ErmisChatOptions) {
     const inputOptions = options || {};
     this.apiKey = apiKey;
-    this.baseURL = options?.baseURL ? options.baseURL + '/uss/v1' : 'https://api.ermis.network/uss/v1';
+    this.baseURL = options?.userBaseURL || baseURL + '/uss/v1';
 
     this.browser = typeof inputOptions.browser !== 'undefined' ? inputOptions.browser : typeof window !== 'undefined';
     this.node = !this.browser;

@@ -41,7 +41,7 @@ export class StableWSConnection<ErmisChatGenerics extends ExtendableGenerics = D
   client: ErmisChat<ErmisChatGenerics>;
 
   // local vars
-  connectionID?: string;
+
   connectionOpen?: ConnectAPIResponse<ErmisChatGenerics>;
   consecutiveFailures: number;
   pingInterval: number;
@@ -290,7 +290,6 @@ export class StableWSConnection<ErmisChatGenerics extends ExtendableGenerics = D
       this.isConnecting = false;
 
       if (response) {
-        this.connectionID = response.connection_id;
         return response;
       }
     } catch (err: any) {

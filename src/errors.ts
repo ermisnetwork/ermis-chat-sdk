@@ -23,7 +23,6 @@ export const APIErrorCodes: Record<string, { name: string; retryable: boolean }>
   '43': { name: 'AuthErrorTokenSignatureInvalid', retryable: false },
   '44': { name: 'CustomCommandEndpointMissingError', retryable: false },
   '45': { name: 'CustomCommandEndpointCallError', retryable: true },
-  '46': { name: 'ConnectionIDNotFoundError', retryable: false },
   '60': { name: 'CoolDownError', retryable: true },
   '69': { name: 'ErrWrongRegion', retryable: false },
   '70': { name: 'ErrQueryChannelPermissions', retryable: false },
@@ -42,10 +41,6 @@ export function isErrorRetryable(error: APIError) {
   const err = APIErrorCodes[`${error.code}`];
   if (!err) return false;
   return err.retryable;
-}
-
-export function isConnectionIDError(error: APIError) {
-  return error.code === 46; // ConnectionIDNotFoundError
 }
 
 export function isWSFailure(err: APIError): boolean {

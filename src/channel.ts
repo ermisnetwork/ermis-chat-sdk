@@ -294,7 +294,7 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
    * search - Query messages
    *
    * @param {MessageFilters<ErmisChatGenerics> | string}  query search query or object MongoDB style filters
-   * @param {{client_id?: string; connection_id?: string; query?: string; message_filter_conditions?: MessageFilters<ErmisChatGenerics>}} options Option object, {user_id: 'tommaso'}
+   * @param {{client_id?: string; query?: string; message_filter_conditions?: MessageFilters<ErmisChatGenerics>}} options Option object, {user_id: 'tommaso'}
    *
    * @return {Promise<SearchAPIResponse<ErmisChatGenerics>>} search messages response
    */
@@ -302,7 +302,7 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     query: MessageFilters<ErmisChatGenerics> | string,
     options: SearchOptions<ErmisChatGenerics> & {
       client_id?: string;
-      connection_id?: string;
+
       message_filter_conditions?: MessageFilters<ErmisChatGenerics>;
       query?: string;
     } = {},
@@ -545,7 +545,7 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     // const url = this.getClient().baseURL + `/invites/${this.type}/${this.id}/accept`;
     const channel_id = this.id;
 
-    const url = this.getClient().baseURL + `/uss/v1/token_gate/join_channel/${this.type}`;
+    const url = this.getClient().userBaseURL + `/token_gate/join_channel/${this.type}`;
     return this.getClient().post<APIResponse>(url, {}, { channel_id, action });
   }
 
@@ -873,7 +873,7 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     if (!this.getConfig()?.typing_events) {
       return false;
     }
-    return this.getClient().user?.privacy_settings?.typing_indicators?.enabled ?? true;
+    return true;
   }
 
   /**
@@ -964,10 +964,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
 
     // Make sure we wait for the connect promise if there is a pending one
     await this.getClient().wsPromise;
-
-    if (!this.getClient()._hasConnectionID()) {
-      defaultOptions.watch = false;
-    }
 
     const combined = { ...defaultOptions, ...options };
     const state = await this.query(combined, 'latest');
@@ -2226,7 +2222,7 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
           messages: [],
           pinned_messages: [],
         };
-        const topic = this.getClient().channel(event.channel_type || '', event.channel_id);
+        const topic = this.getClient().channel(event.channel_type || '', event.channel_id || '');
         topic.data = event.channel;
         topic._initializeState(topicState, 'latest');
         channelState.topics?.unshift(topic);
