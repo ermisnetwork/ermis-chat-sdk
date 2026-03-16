@@ -259,23 +259,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     return this.getClient().sendFile(`${this._channelURL()}/file`, uri, name, contentType, user);
   }
 
-  sendImage(
-    uri: string | NodeJS.ReadableStream | File,
-    name?: string,
-    contentType?: string,
-    user?: UserResponse<ErmisChatGenerics>,
-  ) {
-    return this.getClient().sendFile(`${this._channelURL()}/image`, uri, name, contentType, user);
-  }
-
-  deleteFile(url: string) {
-    return this.getClient().delete<APIResponse>(`${this._channelURL()}/file`, { url });
-  }
-
-  deleteImage(url: string) {
-    return this.getClient().delete<APIResponse>(`${this._channelURL()}/image`, { url });
-  }
-
   /**
    * sendEvent - Send an event on this channel
    *
@@ -288,86 +271,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     return await this.getClient().post<EventAPIResponse<ErmisChatGenerics>>(this._channelURL() + '/event', {
       event,
     });
-  }
-
-  /**
-   * search - Query messages
-   *
-   * @param {MessageFilters<ErmisChatGenerics> | string}  query search query or object MongoDB style filters
-   * @param {{client_id?: string; query?: string; message_filter_conditions?: MessageFilters<ErmisChatGenerics>}} options Option object, {user_id: 'tommaso'}
-   *
-   * @return {Promise<SearchAPIResponse<ErmisChatGenerics>>} search messages response
-   */
-  async search(
-    query: MessageFilters<ErmisChatGenerics> | string,
-    options: SearchOptions<ErmisChatGenerics> & {
-      client_id?: string;
-
-      message_filter_conditions?: MessageFilters<ErmisChatGenerics>;
-      query?: string;
-    } = {},
-  ) {
-    if (options.offset && options.next) {
-      throw Error(`Cannot specify offset with next`);
-    }
-    // Return a list of channels
-    const payload: SearchPayload<ErmisChatGenerics> = {
-      filter_conditions: { cid: this.cid } as ChannelFilters<ErmisChatGenerics>,
-      ...options,
-      sort: options.sort ? normalizeQuerySort<SearchMessageSortBase<ErmisChatGenerics>>(options.sort) : undefined,
-    };
-    if (typeof query === 'string') {
-      payload.query = query;
-    } else if (typeof query === 'object') {
-      payload.message_filter_conditions = query;
-    } else {
-      throw Error(`Invalid type ${typeof query} for query parameter`);
-    }
-    // Make sure we wait for the connect promise if there is a pending one
-    await this.getClient().wsPromise;
-
-    return await this.getClient().get<SearchAPIResponse<ErmisChatGenerics>>(this.getClient().baseURL + '/search', {
-      payload,
-    });
-  }
-
-  /**
-   * queryMembers - Query Members
-   *
-   * @param {UserFilters<ErmisChatGenerics>}  filterConditions object MongoDB style filters
-   * @param {MemberSort<ErmisChatGenerics>} [sort] Sort options, for instance [{created_at: -1}].
-   * When using multiple fields, make sure you use array of objects to guarantee field order, for instance [{name: -1}, {created_at: 1}]
-   * @param {{ limit?: number; offset?: number }} [options] Option object, {limit: 10, offset:10}
-   *
-   * @return {Promise<ChannelMemberAPIResponse<ErmisChatGenerics>>} Query Members response
-   */
-  async queryMembers(
-    filterConditions: UserFilters<ErmisChatGenerics>,
-    sort: MemberSort<ErmisChatGenerics> = [],
-    options: QueryMembersOptions = {},
-  ) {
-    let id: string | undefined;
-    const type = this.type;
-    let members: string[] | ChannelMemberResponse<ErmisChatGenerics>[] | undefined;
-    if (this.id) {
-      id = this.id;
-    } else if (this.data?.members && Array.isArray(this.data.members)) {
-      members = this.data.members;
-    }
-    // Return a list of members
-    return await this.getClient().get<ChannelMemberAPIResponse<ErmisChatGenerics>>(
-      this.getClient().baseURL + '/members',
-      {
-        payload: {
-          type,
-          id,
-          members,
-          sort: normalizeQuerySort(sort),
-          filter_conditions: filterConditions,
-          ...options,
-        },
-      },
-    );
   }
 
   /**
@@ -447,61 +350,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
       data: channelData,
       ...options,
     });
-  }
-
-  /**
-   * updatePartial - partial update channel properties
-   *
-   * @param {PartialUpdateChannel<ErmisChatGenerics>} partial update request
-   *
-   * @return {Promise<PartialUpdateChannelAPIResponse<ErmisChatGenerics>>}
-   */
-  async updatePartial(update: PartialUpdateChannel<ErmisChatGenerics>) {
-    const data = await this.getClient().patch<PartialUpdateChannelAPIResponse<ErmisChatGenerics>>(
-      this._channelURL(),
-      update,
-    );
-
-    const areCapabilitiesChanged =
-      [...(data.channel.own_capabilities || [])].sort().join() !==
-      [...(Array.isArray(this.data?.own_capabilities) ? (this.data?.own_capabilities as string[]) : [])].sort().join();
-    this.data = data.channel;
-    // If the capabiltities are changed, we trigger the `capabilities.changed` event.
-    if (areCapabilitiesChanged) {
-      this.getClient().dispatchEvent({
-        type: 'capabilities.changed',
-        cid: this.cid,
-        own_capabilities: data.channel.own_capabilities,
-      });
-    }
-    return data;
-  }
-
-  /**
-   * enableSlowMode - enable slow mode
-   *
-   * @param {number} coolDownInterval the cooldown interval in seconds
-   * @return {Promise<UpdateChannelAPIResponse<ErmisChatGenerics>>} The server response
-   */
-  async enableSlowMode(coolDownInterval: number) {
-    const data = await this.getClient().post<UpdateChannelAPIResponse<ErmisChatGenerics>>(this._channelURL(), {
-      cooldown: coolDownInterval,
-    });
-    this.data = data.channel;
-    return data;
-  }
-
-  /**
-   * disableSlowMode - disable slow mode
-   *
-   * @return {Promise<UpdateChannelAPIResponse<ErmisChatGenerics>>} The server response
-   */
-  async disableSlowMode() {
-    const data = await this.getClient().post<UpdateChannelAPIResponse<ErmisChatGenerics>>(this._channelURL(), {
-      cooldown: 0,
-    });
-    this.data = data.channel;
-    return data;
   }
 
   /**
@@ -646,38 +494,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
   }
 
   /**
-   * assignRoles - sets member roles in a channel
-   *
-   * @param {{channel_role: Role, user_id: string}[]} roles List of role assignments
-   * @param {Message<ErmisChatGenerics>} [message] Optional message object for channel members notification
-   * @param {ChannelUpdateOptions} [options] Option object, configuration to control the behavior while updating
-   * @return {Promise<UpdateChannelAPIResponse<ErmisChatGenerics>>} The server response
-   */
-  async assignRoles(
-    roles: { channel_role: Role; user_id: string }[],
-    message?: Message<ErmisChatGenerics>,
-    options: ChannelUpdateOptions = {},
-  ) {
-    return await this._update({ assign_roles: roles, message, ...options });
-  }
-
-  /**
-   * inviteMembers - invite members to the channel
-   *
-   * @param {{user_id: string, channel_role?: Role}[]} members An array of members to invite to the channel
-   * @param {Message<ErmisChatGenerics>} [message] Optional message object for channel members notification
-   * @param {ChannelUpdateOptions} [options] Option object, configuration to control the behavior while updating
-   * @return {Promise<UpdateChannelAPIResponse<ErmisChatGenerics>>} The server response
-   */
-  async inviteMembers(
-    members: { user_id: string; channel_role?: Role }[] | string[],
-    message?: Message<ErmisChatGenerics>,
-    options: ChannelUpdateOptions = {},
-  ) {
-    return await this._update({ invites: members, message, ...options });
-  }
-
-  /**
    * removeMembers - remove members from channel
    *
    * @param {string[]} members An array of member identifiers
@@ -798,37 +614,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
   }
 
   /**
-   * muteStatus - returns the mute status for the current channel
-   * @return {{ muted: boolean; createdAt: Date | null; expiresAt: Date | null }} { muted: true | false, createdAt: Date | null, expiresAt: Date | null}
-   */
-  muteStatus(): {
-    createdAt: Date | null;
-    expiresAt: Date | null;
-    muted: boolean;
-  } {
-    return {
-      muted: false,
-      createdAt: null,
-      expiresAt: null,
-    };
-  }
-  sendAction(messageID: string, formData: Record<string, string>) {
-    // this._checkInitialized();
-    if (!messageID) {
-      throw Error(`Message id is missing`);
-    }
-    return this.getClient().post<SendMessageAPIResponse<ErmisChatGenerics>>(
-      this.getClient().baseURL + `/messages/${messageID}/action`,
-      {
-        message_id: messageID,
-        form_data: formData,
-        id: this.id,
-        type: this.type,
-      },
-    );
-  }
-
-  /**
    * keystroke - First of the typing.start and typing.stop events based on the users keystrokes.
    * Call this on every keystroke
    * @param {string} [parent_id] set this field to `message.id` to indicate that typing event is happening in a thread
@@ -916,24 +701,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
   }
 
   /**
-   * markUnread - Mark the channel as unread from messageID, only works if the `read_events` setting is enabled
-   *
-   * @param {MarkUnreadOptions<ErmisChatGenerics>} data
-   * @return {APIResponse} An API response
-   */
-  async markUnread(data: MarkUnreadOptions<ErmisChatGenerics>) {
-    // this._checkInitialized();
-
-    if (!this.getConfig()?.read_events) {
-      return Promise.resolve(null);
-    }
-
-    return await this.getClient().post<APIResponse>(this._channelURL() + '/unread', {
-      ...data,
-    });
-  }
-
-  /**
    * clean - Cleans the channel state and fires stop typing if needed
    */
   clean() {
@@ -1011,105 +778,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
   }
 
   /**
-   * stopWatching - Stops watching the channel
-   *
-   * @return {Promise<APIResponse>} The server response
-   */
-  async stopWatching() {
-    const response = await this.getClient().post<APIResponse>(this._channelURL() + '/stop-watching', {});
-
-    this._client.logger('info', `channel:watch() - stopped watching channel ${this.cid}`, {
-      tags: ['channel'],
-      channel: this,
-    });
-
-    return response;
-  }
-
-  /**
-   * getReplies - List the message replies for a parent message
-   *
-   * @param {string} parent_id The message parent id, ie the top of the thread
-   * @param {MessagePaginationOptions & { user?: UserResponse<ErmisChatGenerics>; user_id?: string }} options Pagination params, ie {limit:10, id_lte: 10}
-   *
-   * @return {Promise<GetRepliesAPIResponse<ErmisChatGenerics>>} A response with a list of messages
-   */
-  async getReplies(
-    parent_id: string,
-    options: MessagePaginationOptions & { user?: UserResponse<ErmisChatGenerics>; user_id?: string },
-    sort?: { created_at: AscDesc }[],
-  ) {
-    const normalizedSort = sort ? normalizeQuerySort(sort) : undefined;
-    const data = await this.getClient().get<GetRepliesAPIResponse<ErmisChatGenerics>>(
-      this.getClient().baseURL + `/messages/${parent_id}/replies`,
-      {
-        sort: normalizedSort,
-        ...options,
-      },
-    );
-
-    // add any messages to our thread state
-    if (data.messages) {
-      this.state.addMessagesSorted(data.messages);
-    }
-
-    return data;
-  }
-
-  /**
-   * getPinnedMessages - List list pinned messages of the channel
-   *
-   * @param {PinnedMessagePaginationOptions & { user?: UserResponse<ErmisChatGenerics>; user_id?: string }} options Pagination params, ie {limit:10, id_lte: 10}
-   * @param {PinnedMessagesSort} sort defines sorting direction of pinned messages
-   *
-   * @return {Promise<GetRepliesAPIResponse<ErmisChatGenerics>>} A response with a list of messages
-   */
-  async getPinnedMessages(
-    options: PinnedMessagePaginationOptions & { user?: UserResponse<ErmisChatGenerics>; user_id?: string },
-    sort: PinnedMessagesSort = [],
-  ) {
-    return await this.getClient().get<GetRepliesAPIResponse<ErmisChatGenerics>>(
-      this.getClient().baseURL + `/channels/${this.type}/${this.id}/pinned_messages`,
-      {
-        payload: {
-          ...options,
-          sort: normalizeQuerySort(sort),
-        },
-      },
-    );
-  }
-
-  /**
-   * getReactions - List the reactions, supports pagination
-   *
-   * @param {string} message_id The message id
-   * @param {{ limit?: number; offset?: number }} options The pagination options
-   *
-   * @return {Promise<GetReactionsAPIResponse<ErmisChatGenerics>>} Server response
-   */
-  getReactions(message_id: string, options: { limit?: number; offset?: number }) {
-    return this.getClient().get<GetReactionsAPIResponse<ErmisChatGenerics>>(
-      this.getClient().baseURL + `/messages/${message_id}/reactions`,
-      {
-        ...options,
-      },
-    );
-  }
-
-  /**
-   * getMessagesById - Retrieves a list of messages by ID
-   *
-   * @param {string[]} messageIds The ids of the messages to retrieve from this channel
-   *
-   * @return {Promise<GetMultipleMessagesAPIResponse<ErmisChatGenerics>>} Server response
-   */
-  getMessagesById(messageIds: string[]) {
-    return this.getClient().get<GetMultipleMessagesAPIResponse<ErmisChatGenerics>>(this._channelURL() + '/messages', {
-      ids: messageIds.join(','),
-    });
-  }
-
-  /**
    * lastRead - returns the last time the user marked the channel as read if the user never marked the channel as read, this will return null
    * @return {Date | null | undefined}
    */
@@ -1131,9 +799,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     // Return false if channel doesn't allow read events.
     if (Array.isArray(this.data?.own_capabilities) && !this.data?.own_capabilities.includes('read-events'))
       return false;
-
-    // FIXME: see #1265, adjust and count new messages even when the channel is muted
-    if (this.muteStatus().muted) return false;
 
     return true;
   }
@@ -1168,29 +833,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     if (!this.data) return [];
 
     return this.data.member_capabilities;
-  }
-
-  /**
-   * countUnreadMentions - Count the number of unread messages mentioning the current user
-   *
-   * @return {number} Unread mentions count
-   */
-  countUnreadMentions() {
-    const lastRead = this.lastRead();
-    const userID = this.getClient().userID;
-
-    let count = 0;
-    for (let i = 0; i < this.state.latestMessages.length; i += 1) {
-      const message = this.state.latestMessages[i];
-      if (
-        this._countMessageAsUnread(message) &&
-        (!lastRead || message.created_at > lastRead) &&
-        message.mentioned_users?.some((user) => user.id === userID)
-      ) {
-        count++;
-      }
-    }
-    return count;
   }
 
   /**
@@ -1461,66 +1103,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     const users = Object.values(this.getClient().state.users);
     state.messages = enrichWithUserInfo(state.messages, users);
     return state.messages;
-  }
-
-  /**
-   * banUser - Bans a user from a channel
-   *
-   * @param {string} targetUserID
-   * @param {BanUserOptions<ErmisChatGenerics>} options
-   * @returns {Promise<APIResponse>}
-   */
-  async banUser(targetUserID: string, options: BanUserOptions<ErmisChatGenerics>) {
-    return await this.getClient().post<APIResponse>(this.getClient().baseURL + '/moderation/ban', {
-      target_user_id: targetUserID,
-      ...options,
-      type: this.type,
-      id: this.id,
-    });
-  }
-
-  /**
-   * hides the channel from queryChannels for the user until a message is added
-   * If clearHistory is set to true - all messages will be removed for the user
-   *
-   * @param {string | null} userId
-   * @param {boolean} clearHistory
-   * @returns {Promise<APIResponse>}
-   */
-  async hide(userId: string | null = null, clearHistory = false) {
-    // this._checkInitialized();
-
-    return await this.getClient().post<APIResponse>(`${this._channelURL()}/hide`, {
-      user_id: userId,
-      clear_history: clearHistory,
-    });
-  }
-
-  /**
-   * removes the hidden status for a channel
-   *
-   * @param {string | null} userId
-   * @returns {Promise<APIResponse>}
-   */
-  async show(userId: string | null = null) {
-    // this._checkInitialized();
-    return await this.getClient().post<APIResponse>(`${this._channelURL()}/show`, {
-      user_id: userId,
-    });
-  }
-
-  /**
-   * unbanUser - Removes the bans for a user on a channel
-   *
-   * @param {string} targetUserID
-   * @returns {Promise<APIResponse>}
-   */
-  async unbanUser(targetUserID: string) {
-    return await this.getClient().delete<APIResponse>(this.getClient().baseURL + '/moderation/ban', {
-      target_user_id: targetUserID,
-      type: this.type,
-      id: this.id,
-    });
   }
 
   /**

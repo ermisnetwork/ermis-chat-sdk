@@ -752,9 +752,7 @@ export class ChannelState<ErmisChatGenerics extends ExtendableGenerics = Default
     if (!switchedToMessageSet) {
       await this._channel.query({ messages: { id_around: messageIdToFind, limit } }, 'new');
     }
-    if (!loadedMessageThread && parentMessageId) {
-      await this._channel.getReplies(parentMessageId, { id_around: messageId, limit });
-    }
+
     messageSetIndex = this.findMessageSetIndex({ id: messageIdToFind });
     if (messageSetIndex !== -1) {
       this.switchToMessageSet(messageSetIndex);

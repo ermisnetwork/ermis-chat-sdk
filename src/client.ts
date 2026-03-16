@@ -774,7 +774,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
         tags: ['connection', 'client'],
       });
 
-      const filter = {
+      const filter: ChannelFilters = {
         type: ['messaging', 'team'],
       };
       const sort: [] = [];
@@ -782,7 +782,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
         message_limit: 25,
       };
 
-      await this.queryChannels(filter as ChannelFilters<ErmisChatGenerics>, sort, options);
+      await this.queryChannels(filter, sort, options);
 
       this.logger('info', 'client:recoverState() - Querying channels finished', { tags: ['connection', 'client'] });
       this.dispatchEvent({
@@ -1043,9 +1043,9 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
   }
 
   async queryChannels(
-    filterConditions: ChannelFilters<ErmisChatGenerics>,
-    sort: ChannelSort<ErmisChatGenerics> = [],
-    options: ChannelOptions = {},
+    filterConditions: ChannelFilters,
+    sort: ChannelSort = [],
+    options: { message_limit?: number } = {},
     stateOptions: ChannelStateOptions = {},
   ) {
     // Make sure we wait for the connect promise if there is a pending one
@@ -1056,7 +1056,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     // Return a list of channels
     const payload = {
       filter_conditions: { ...filterConditions, project_id },
-      sort: normalizeQuerySort(sort),
+      sort,
       ...options,
     };
 

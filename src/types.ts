@@ -17,12 +17,6 @@ export type ArrayTwoOrMore<T> = {
   1: T;
 } & Array<T>;
 
-export type KnownKeys<T> = {
-  [K in keyof T]: string extends K ? never : number extends K ? never : K;
-} extends { [_ in keyof T]: infer U }
-  ? U
-  : never;
-
 export type RequireAtLeastOne<T> = {
   [K in keyof T]-?: Required<Pick<T, K>> & Partial<Pick<T, Exclude<keyof T, K>>>;
 }[keyof T];
@@ -34,8 +28,6 @@ export type RequireOnlyOne<T, Keys extends keyof T = keyof T> = Pick<T, Exclude<
 
 /* Unknown Record */
 export type UR = Record<string, unknown>;
-export type UnknownType = UR; //alias to avoid breaking change
-
 export type DefaultGenerics = {
   attachmentType: UR;
   channelType: UR;
@@ -60,119 +52,12 @@ export type ExtendableGenerics = {
   userType: UR;
 };
 
-export type Unpacked<T> = T extends (infer U)[]
-  ? U // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  : T extends (...args: any[]) => infer U
-  ? U
-  : T extends Promise<infer U>
-  ? U
-  : T;
-/**
- * Server Types
- * filter for api request config
- */
-export type ServerType = 'chat' | 'user';
-
 /**
  * Response Types
  */
 
 export type APIResponse = {
   duration?: string;
-};
-
-export type AppSettingsAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
-  app?: {
-    // TODO
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    call_types: any;
-    channel_configs: Record<
-      string,
-      {
-        reminders: boolean;
-        automod?: ChannelConfigAutomod;
-        automod_behavior?: ChannelConfigAutomodBehavior;
-        automod_thresholds?: ChannelConfigAutomodThresholds;
-        blocklist_behavior?: ChannelConfigAutomodBehavior;
-        commands?: CommandVariants<ErmisChatGenerics>[];
-        connect_events?: boolean;
-        created_at?: string;
-        custom_events?: boolean;
-        mark_messages_pending?: boolean;
-        max_message_length?: number;
-        message_retention?: string;
-        mutes?: boolean;
-        name?: string;
-        polls?: boolean;
-        push_notifications?: boolean;
-        quotes?: boolean;
-        reactions?: boolean;
-        read_events?: boolean;
-        replies?: boolean;
-        search?: boolean;
-        typing_events?: boolean;
-        updated_at?: string;
-        uploads?: boolean;
-        url_enrichment?: boolean;
-      }
-    >;
-    reminders_interval: number;
-    agora_options?: AgoraOptions | null;
-    async_moderation_config?: AsyncModerationOptions;
-    async_url_enrich_enabled?: boolean;
-    auto_translation_enabled?: boolean;
-    before_message_send_hook_url?: string;
-    campaign_enabled?: boolean;
-    cdn_expiration_seconds?: number;
-    custom_action_handler_url?: string;
-    datadog_info?: {
-      api_key: string;
-      site: string;
-      enabled?: boolean;
-    };
-    disable_auth_checks?: boolean;
-    disable_permissions_checks?: boolean;
-    enforce_unique_usernames?: 'no' | 'app' | 'team';
-    file_upload_config?: FileUploadConfig;
-    geofences?: Array<{
-      country_codes: Array<string>;
-      description: string;
-      name: string;
-      type: string;
-    }>;
-    grants?: Record<string, string[]>;
-    hms_options?: HMSOptions | null;
-    image_moderation_enabled?: boolean;
-    image_upload_config?: FileUploadConfig;
-    multi_tenant_enabled?: boolean;
-    name?: string;
-    organization?: string;
-    permission_version?: string;
-    policies?: Record<string, Policy[]>;
-    push_notifications?: {
-      offline_only: boolean;
-      version: string;
-      apn?: APNConfig;
-      firebase?: FirebaseConfig;
-      huawei?: HuaweiConfig;
-      providers?: PushProviderConfig[];
-      xiaomi?: XiaomiConfig;
-    };
-    revoke_tokens_issued_before?: string | null;
-    search_backend?: 'disabled' | 'elasticsearch' | 'postgres';
-    sns_key?: string;
-    sns_secret?: string;
-    sns_topic_arn?: string;
-    sqs_key?: string;
-    sqs_secret?: string;
-    sqs_url?: string;
-    suspended?: boolean;
-    suspended_explanation?: string;
-    user_search_disallowed_roles?: string[] | null;
-    video_provider?: string;
-    webhook_events?: Array<string>;
-    webhook_url?: string;
-  };
 };
 
 export type ModerationResult = {
@@ -212,21 +97,6 @@ export type FlagsResponse<ErmisChatGenerics extends ExtendableGenerics = Default
   flags?: Array<Flag<ErmisChatGenerics>>;
 };
 
-export type MessageFlagsResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
-  flags?: Array<{
-    message: MessageResponse<ErmisChatGenerics>;
-    user: UserResponse<ErmisChatGenerics>;
-    approved_at?: string;
-    created_at?: string;
-    created_by_automod?: boolean;
-    moderation_result?: ModerationResult;
-    rejected_at?: string;
-    reviewed_at?: string;
-    reviewed_by?: UserResponse<ErmisChatGenerics>;
-    updated_at?: string;
-  }>;
-};
-
 export type FlagReport<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
   flags_count: number;
   id: string;
@@ -238,32 +108,6 @@ export type FlagReport<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
   review_result?: string;
   reviewed_at?: string;
   reviewed_by?: UserResponse<ErmisChatGenerics>;
-  updated_at?: string;
-};
-
-export type FlagReportsResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
-  flag_reports: Array<FlagReport<ErmisChatGenerics>>;
-};
-
-export type ReviewFlagReportResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
-  flag_report: FlagReport<ErmisChatGenerics>;
-};
-
-export type BannedUsersResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
-  bans?: Array<{
-    user: UserResponse<ErmisChatGenerics>;
-    banned_by?: UserResponse<ErmisChatGenerics>;
-    channel?: ChannelResponse<ErmisChatGenerics>;
-    expires?: string;
-    ip_ban?: boolean;
-    reason?: string;
-    timeout?: number;
-  }>;
-};
-
-export type BlockListResponse = BlockList & {
-  created_at?: string;
-  type?: string;
   updated_at?: string;
 };
 
@@ -304,13 +148,6 @@ export type ChannelResponse<ErmisChatGenerics extends ExtendableGenerics = Defau
     topics_enabled?: boolean;
     is_closed_topic?: boolean;
   };
-
-export type QueryReactionsOptions = Pager;
-
-export type QueryReactionsAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
-  reactions: ReactionResponse<ErmisChatGenerics>[];
-  next?: string;
-};
 
 export type QueryChannelsAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
   channels: Omit<ChannelAPIResponse<ErmisChatGenerics>, keyof APIResponse>[];
@@ -361,33 +198,6 @@ export type ChannelMemberResponse<ErmisChatGenerics extends ExtendableGenerics =
   user_id?: string;
 };
 
-export type CheckPushResponse = APIResponse & {
-  device_errors?: {
-    [deviceID: string]: {
-      error_message?: string;
-      provider?: PushProvider;
-      provider_name?: string;
-    };
-  };
-  general_errors?: string[];
-  rendered_apn_template?: string;
-  rendered_firebase_template?: string;
-  rendered_message?: {};
-  skip_devices?: boolean;
-};
-
-export type CheckSQSResponse = APIResponse & {
-  status: string;
-  data?: {};
-  error?: string;
-};
-
-export type CheckSNSResponse = APIResponse & {
-  status: string;
-  data?: {};
-  error?: string;
-};
-
 export type CommandResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> =
   Partial<CreatedAtUpdatedAt> & {
     args?: string;
@@ -399,74 +209,12 @@ export type CommandResponse<ErmisChatGenerics extends ExtendableGenerics = Defau
 export type ConnectAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> =
   Promise<void | ConnectionOpen<ErmisChatGenerics>>;
 
-export type CreateChannelResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse &
-  Omit<CreateChannelOptions<ErmisChatGenerics>, 'client_id' | 'connection_id'> & {
-    created_at: string;
-    updated_at: string;
-    grants?: Record<string, string[]>;
-  };
-
-export type CreateCommandResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
-  command: CreateCommandOptions<ErmisChatGenerics> & CreatedAtUpdatedAt;
-};
-
 export type DeleteChannelAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
   channel: ChannelResponse<ErmisChatGenerics>;
 };
 
-export type DeleteCommandResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
-  name?: CommandVariants<ErmisChatGenerics>;
-};
-
 export type EventAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
   event: Event<ErmisChatGenerics>;
-};
-
-export type ExportChannelResponse = {
-  task_id: string;
-};
-
-export type ExportUsersResponse = {
-  task_id: string;
-};
-
-export type ExportChannelStatusResponse = {
-  created_at?: string;
-  error?: {};
-  result?: {};
-  updated_at?: string;
-};
-
-export type FlagMessageResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
-  flag: {
-    created_at: string;
-    created_by_automod: boolean;
-    target_message_id: string;
-    updated_at: string;
-    user: UserResponse<ErmisChatGenerics>;
-    approved_at?: string;
-    channel_cid?: string;
-    details?: Object; // Any JSON
-    message_user_id?: string;
-    rejected_at?: string;
-    reviewed_at?: string;
-    reviewed_by?: string;
-  };
-};
-
-export type FlagUserResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
-  flag: {
-    created_at: string;
-    created_by_automod: boolean;
-    target_user: UserResponse<ErmisChatGenerics>;
-    updated_at: string;
-    user: UserResponse<ErmisChatGenerics>;
-    approved_at?: string;
-    details?: Object; // Any JSON
-    rejected_at?: string;
-    reviewed_at?: string;
-    reviewed_by?: string;
-  };
 };
 
 export type FormatMessageResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = Omit<
@@ -489,21 +237,6 @@ export type FormatMessageResponse<ErmisChatGenerics extends ExtendableGenerics =
     status: string;
     updated_at: Date;
   };
-
-export type GetChannelTypeResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse &
-  Omit<CreateChannelOptions<ErmisChatGenerics>, 'client_id' | 'connection_id' | 'commands'> & {
-    created_at: string;
-    updated_at: string;
-    commands?: CommandResponse<ErmisChatGenerics>[];
-    grants?: Record<string, string[]>;
-  };
-
-export type GetCommandResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse &
-  CreateCommandOptions<ErmisChatGenerics> &
-  CreatedAtUpdatedAt;
-
-export type GetMessageAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> =
-  SendMessageAPIResponse<ErmisChatGenerics>;
 
 export type ThreadResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
   channel: ChannelResponse<ErmisChatGenerics>;
@@ -528,48 +261,10 @@ export type ThreadResponse<ErmisChatGenerics extends ExtendableGenerics = Defaul
   updated_at: string;
 };
 
-// TODO: Figure out a way to strongly type set and unset.
-export type PartialThreadUpdate = {
-  set?: Partial<Record<string, unknown>>;
-  unset?: Array<string>;
-};
-
-export type QueryThreadsOptions = {
-  limit?: number;
-  member_limit?: number;
-  next?: string;
-  participant_limit?: number;
-  reply_limit?: number;
-  watch?: boolean;
-};
-
-export type QueryThreadsAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
-  threads: ThreadResponse<ErmisChatGenerics>[];
-  next?: string;
-};
-
-export type GetThreadOptions = {
-  member_limit?: number;
-  participant_limit?: number;
-  reply_limit?: number;
-  watch?: boolean;
-};
-
-export type GetThreadAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
-  thread: ThreadResponse<ErmisChatGenerics>;
-};
-
 export type GetMultipleMessagesAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> =
   APIResponse & {
     messages: MessageResponse<ErmisChatGenerics>[];
   };
-
-export type GetRateLimitsResponse = APIResponse & {
-  android?: RateLimitsMap;
-  ios?: RateLimitsMap;
-  server_side?: RateLimitsMap;
-  web?: RateLimitsMap;
-};
 
 export type GetReactionsAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
   reactions: ReactionResponse<ErmisChatGenerics>[];
@@ -600,10 +295,6 @@ export type GetUnreadCountAPIResponse = APIResponse & {
   total_unread_threads_count: number;
 };
 
-export type GetUnreadCountBatchAPIResponse = APIResponse & {
-  counts_by_user: { [userId: string]: GetUnreadCountAPIResponse };
-};
-
 export type ListChannelResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
   channel_types: Record<
     string,
@@ -614,13 +305,6 @@ export type ListChannelResponse<ErmisChatGenerics extends ExtendableGenerics = D
       grants?: Record<string, string[]>;
     }
   >;
-};
-
-export type ListChannelTypesAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> =
-  ListChannelResponse<ErmisChatGenerics>;
-
-export type ListCommandsResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
-  commands: Array<CreateCommandOptions<ErmisChatGenerics> & Partial<CreatedAtUpdatedAt>>;
 };
 
 export type MuteChannelAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
@@ -696,12 +380,6 @@ export type MuteResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultG
   updated_at?: string;
 };
 
-export type MuteUserResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
-  mute?: MuteResponse<ErmisChatGenerics>;
-  mutes?: Array<Mute<ErmisChatGenerics>>;
-  own_user?: OwnUserResponse<ErmisChatGenerics>;
-};
-
 export type OwnUserBase<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
   channel_mutes: ChannelMute<ErmisChatGenerics>[];
   devices: Device<ErmisChatGenerics>[];
@@ -723,14 +401,6 @@ export type PartialUpdateChannelAPIResponse<ErmisChatGenerics extends Extendable
     channel: ChannelResponse<ErmisChatGenerics>;
     members: ChannelMemberResponse<ErmisChatGenerics>[];
   };
-
-export type PermissionAPIResponse = APIResponse & {
-  permission?: PermissionAPIObject;
-};
-
-export type PermissionsAPIResponse = APIResponse & {
-  permissions?: PermissionAPIObject[];
-};
 
 export type ReactionAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
   message: MessageResponse<ErmisChatGenerics>;
@@ -776,11 +446,6 @@ export type SendMessageAPIResponse<ErmisChatGenerics extends ExtendableGenerics 
   pending_message_metadata?: Record<string, string> | null;
 };
 
-export type SyncResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
-  events: Event<ErmisChatGenerics>[];
-  inaccessible_cids?: string[];
-};
-
 export type TruncateChannelAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
   channel: ChannelResponse<ErmisChatGenerics>;
   message?: MessageResponse<ErmisChatGenerics>;
@@ -792,29 +457,8 @@ export type UpdateChannelAPIResponse<ErmisChatGenerics extends ExtendableGeneric
   message?: MessageResponse<ErmisChatGenerics>;
 };
 
-export type UpdateChannelResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse &
-  Omit<CreateChannelOptions<ErmisChatGenerics>, 'client_id' | 'connection_id'> & {
-    created_at: string;
-    updated_at: string;
-  };
-
-export type UpdateCommandResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
-  command: UpdateCommandOptions<ErmisChatGenerics> &
-    CreatedAtUpdatedAt & {
-      name: CommandVariants<ErmisChatGenerics>;
-    };
-};
-
-export type UpdateMessageAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
-  message: MessageResponse<ErmisChatGenerics>;
-};
-
 export type UsersAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
   users: Array<UserResponse<ErmisChatGenerics>>;
-};
-
-export type UpdateUsersAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
-  users: { [key: string]: UserResponse<ErmisChatGenerics> };
 };
 
 export type UserResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = User<ErmisChatGenerics> & {
@@ -851,37 +495,13 @@ export type PrivacySettings = {
   };
 };
 
-export type PushNotificationSettings = {
-  disabled?: boolean;
-  disabled_until?: string | null;
-};
-
 /**
  * Option Types
  */
 
-export type MessageFlagsPaginationOptions = {
-  limit?: number;
-  offset?: number;
-};
-
 export type FlagsPaginationOptions = {
   limit?: number;
   offset?: number;
-};
-
-export type FlagReportsPaginationOptions = {
-  limit?: number;
-  offset?: number;
-};
-
-export type ReviewFlagReportOptions = {
-  review_details?: Object;
-  user_id?: string;
-};
-
-export type BannedUsersPaginationOptions = Omit<PaginationOptions, 'id_gt' | 'id_gte' | 'id_lt' | 'id_lte'> & {
-  exclude_expired_bans?: boolean;
 };
 
 export type BanUserOptions<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = UnBanUserOptions & {
@@ -959,21 +579,6 @@ export type CreateCommandOptions<ErmisChatGenerics extends ExtendableGenerics = 
   set?: CommandVariants<ErmisChatGenerics>;
 };
 
-export type CustomPermissionOptions = {
-  action: string;
-  condition: object;
-  id: string;
-  name: string;
-  description?: string;
-  owner?: boolean;
-  same_team?: boolean;
-};
-
-export type DeactivateUsersOptions = {
-  created_by_id?: string;
-  mark_messages_deleted?: boolean;
-};
-
 // TODO: rename to UpdateChannelOptions in the next major update and use it in channel._update and/or channel.update
 export type InviteOptions<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
   accept_invite?: boolean;
@@ -990,10 +595,6 @@ export type InviteOptions<ErmisChatGenerics extends ExtendableGenerics = Default
   user?: UserResponse<ErmisChatGenerics>;
   user_id?: string;
 };
-
-/** @deprecated use MarkChannelsReadOptions instead */
-export type MarkAllReadOptions<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> =
-  MarkChannelsReadOptions<ErmisChatGenerics>;
 
 export type MarkChannelsReadOptions<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
   client_id?: string;
@@ -1016,18 +617,6 @@ export type MarkUnreadOptions<ErmisChatGenerics extends ExtendableGenerics = Def
   connection_id?: string;
   message_id?: string;
   thread_id?: string;
-  user?: UserResponse<ErmisChatGenerics>;
-  user_id?: string;
-};
-
-export type MuteUserOptions<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
-  client_id?: string;
-  connection_id?: string;
-  id?: string;
-  reason?: string;
-  target_user_id?: string;
-  timeout?: number;
-  type?: string;
   user?: UserResponse<ErmisChatGenerics>;
   user_id?: string;
 };
@@ -1074,17 +663,6 @@ export type QueryMembersOptions = {
   user_id_lte?: string;
 };
 
-export type ReactivateUserOptions = {
-  created_by_id?: string;
-  name?: string;
-  restore_messages?: boolean;
-};
-
-export type ReactivateUsersOptions = {
-  created_by_id?: string;
-  restore_messages?: boolean;
-};
-
 export type SearchOptions<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
   limit?: number;
   next?: string;
@@ -1123,19 +701,6 @@ export type ErmisChatOptions = AxiosRequestConfig & {
   wsConnection?: StableWSConnection;
 };
 
-export type SyncOptions = {
-  /**
-   * This will behave as queryChannels option.
-   */
-  watch?: boolean;
-  /**
-   * Return channels from request that user does not have access to in a separate
-   * field in the response called 'inaccessible_cids' instead of
-   * adding them as 'notification.removed_from_channel' events.
-   */
-  with_inaccessible_cids?: boolean;
-};
-
 export type UnBanUserOptions = {
   client_id?: string;
   connection_id?: string;
@@ -1170,11 +735,6 @@ export type UserOptions = {
 /**
  * Event Types
  */
-
-export type ConnectionChangeEvent = {
-  type: EventTypes;
-  online?: boolean;
-};
 
 export type Event<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = ErmisChatGenerics['eventType'] & {
   type: EventTypes;
@@ -1364,201 +924,26 @@ export type BannedUsersFilterOptions = {
   user_id?: string;
 };
 
-export type BannedUsersFilters = QueryFilters<
-  {
-    channel_cid?:
-      | RequireOnlyOne<Pick<QueryFilter<BannedUsersFilterOptions['channel_cid']>, '$eq' | '$in'>>
-      | PrimitiveFilter<BannedUsersFilterOptions['channel_cid']>;
-  } & {
-    reason?:
-      | RequireOnlyOne<
-          {
-            $autocomplete?: BannedUsersFilterOptions['reason'];
-          } & QueryFilter<BannedUsersFilterOptions['reason']>
-        >
-      | PrimitiveFilter<BannedUsersFilterOptions['reason']>;
-  } & {
-    [Key in keyof Omit<BannedUsersFilterOptions, 'channel_cid' | 'reason'>]:
-      | RequireOnlyOne<QueryFilter<BannedUsersFilterOptions[Key]>>
-      | PrimitiveFilter<BannedUsersFilterOptions[Key]>;
-  }
->;
-
-export type ReactionFilters<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = QueryFilters<
-  {
-    user_id?:
-      | RequireOnlyOne<Pick<QueryFilter<ReactionResponse<ErmisChatGenerics>['user_id']>, '$eq' | '$in'>>
-      | PrimitiveFilter<ReactionResponse<ErmisChatGenerics>['user_id']>;
-  } & {
-    type?:
-      | RequireOnlyOne<Pick<QueryFilter<ReactionResponse<ErmisChatGenerics>['type']>, '$eq'>>
-      | PrimitiveFilter<ReactionResponse<ErmisChatGenerics>['type']>;
-  } & {
-    created_at?:
-      | RequireOnlyOne<Pick<QueryFilter<PollResponse['created_at']>, '$eq' | '$gt' | '$lt' | '$gte' | '$lte'>>
-      | PrimitiveFilter<PollResponse['created_at']>;
-  }
->;
-
-export type ChannelFilters<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = QueryFilters<
-  ContainsOperator<ErmisChatGenerics['channelType']> & {
-    members?:
-      | RequireOnlyOne<Pick<QueryFilter<string>, '$in' | '$nin'>>
-      | RequireOnlyOne<Pick<QueryFilter<string[]>, '$eq'>>
-      | PrimitiveFilter<string[]>;
-  } & {
-    name?:
-      | RequireOnlyOne<
-          {
-            $autocomplete?: ChannelResponse<ErmisChatGenerics>['name'];
-          } & QueryFilter<ChannelResponse<ErmisChatGenerics>['name']>
-        >
-      | PrimitiveFilter<ChannelResponse<ErmisChatGenerics>['name']>;
-  } & {
-    [Key in keyof Omit<
-      ChannelResponse<{
-        attachmentType: ErmisChatGenerics['attachmentType'];
-        channelType: {};
-        commandType: ErmisChatGenerics['commandType'];
-        eventType: ErmisChatGenerics['eventType'];
-        messageType: ErmisChatGenerics['messageType'];
-        pollOptionType: ErmisChatGenerics['pollOptionType'];
-        pollType: ErmisChatGenerics['pollType'];
-        reactionType: ErmisChatGenerics['reactionType'];
-        userType: ErmisChatGenerics['userType'];
-      }>,
-      'name' | 'members'
-    >]:
-      | RequireOnlyOne<
-          QueryFilter<
-            ChannelResponse<{
-              attachmentType: ErmisChatGenerics['attachmentType'];
-              channelType: {};
-              commandType: ErmisChatGenerics['commandType'];
-              eventType: ErmisChatGenerics['eventType'];
-              messageType: ErmisChatGenerics['messageType'];
-              pollOptionType: ErmisChatGenerics['pollOptionType'];
-              pollType: ErmisChatGenerics['pollType'];
-              reactionType: ErmisChatGenerics['reactionType'];
-              userType: ErmisChatGenerics['userType'];
-            }>[Key]
-          >
-        >
-      | PrimitiveFilter<
-          ChannelResponse<{
-            attachmentType: ErmisChatGenerics['attachmentType'];
-            channelType: {};
-            commandType: ErmisChatGenerics['commandType'];
-            eventType: ErmisChatGenerics['eventType'];
-            messageType: ErmisChatGenerics['messageType'];
-            pollOptionType: ErmisChatGenerics['pollOptionType'];
-            pollType: ErmisChatGenerics['pollType'];
-            reactionType: ErmisChatGenerics['reactionType'];
-            userType: ErmisChatGenerics['userType'];
-          }>[Key]
-        >;
-  } & {
-    roles?: string[];
-  } & {
-    other_roles?: string[];
-  } & {
-    project_id?: string;
-  } & {
-    blocked?: boolean;
-  } & {
-    parent_id?: string;
-  } & {
-    include_parent?: boolean;
-  }
->;
-
-export type QueryPollsOptions = Pager;
+export type ChannelFilters = {
+  project_id?: string;
+  type: ('messaging' | 'team' | 'topic')[];
+  limit?: number;
+  offset?: number;
+  roles?: string[];
+  other_roles?: string[];
+  banned?: boolean;
+  blocked?: boolean;
+  include_pinned_messages?: boolean;
+  parent_cid?: string;
+  parent_id?: string;
+  include_parent?: boolean;
+};
 
 export type VotesFiltersOptions = {
   is_answer?: boolean;
   option_id?: string;
   user_id?: string;
 };
-
-export type QueryVotesOptions = Pager;
-
-export type QueryPollsFilters = QueryFilters<
-  {
-    id?: RequireOnlyOne<Pick<QueryFilter<PollResponse['id']>, '$eq' | '$in'>> | PrimitiveFilter<PollResponse['id']>;
-  } & {
-    user_id?:
-      | RequireOnlyOne<Pick<QueryFilter<VotesFiltersOptions['user_id']>, '$eq' | '$in'>>
-      | PrimitiveFilter<VotesFiltersOptions['user_id']>;
-  } & {
-    is_closed?:
-      | RequireOnlyOne<Pick<QueryFilter<PollResponse['is_closed']>, '$eq'>>
-      | PrimitiveFilter<PollResponse['is_closed']>;
-  } & {
-    max_votes_allowed?:
-      | RequireOnlyOne<
-          Pick<QueryFilter<PollResponse['max_votes_allowed']>, '$eq' | '$ne' | '$gt' | '$lt' | '$gte' | '$lte'>
-        >
-      | PrimitiveFilter<PollResponse['max_votes_allowed']>;
-  } & {
-    allow_answers?:
-      | RequireOnlyOne<Pick<QueryFilter<PollResponse['allow_answers']>, '$eq'>>
-      | PrimitiveFilter<PollResponse['allow_answers']>;
-  } & {
-    allow_user_suggested_options?:
-      | RequireOnlyOne<Pick<QueryFilter<PollResponse['allow_user_suggested_options']>, '$eq'>>
-      | PrimitiveFilter<PollResponse['allow_user_suggested_options']>;
-  } & {
-    voting_visibility?:
-      | RequireOnlyOne<Pick<QueryFilter<PollResponse['voting_visibility']>, '$eq'>>
-      | PrimitiveFilter<PollResponse['voting_visibility']>;
-  } & {
-    created_at?:
-      | RequireOnlyOne<Pick<QueryFilter<PollResponse['created_at']>, '$eq' | '$gt' | '$lt' | '$gte' | '$lte'>>
-      | PrimitiveFilter<PollResponse['created_at']>;
-  } & {
-    created_by_id?:
-      | RequireOnlyOne<Pick<QueryFilter<PollResponse['created_by_id']>, '$eq' | '$in'>>
-      | PrimitiveFilter<PollResponse['created_by_id']>;
-  } & {
-    updated_at?:
-      | RequireOnlyOne<Pick<QueryFilter<PollResponse['updated_at']>, '$eq' | '$gt' | '$lt' | '$gte' | '$lte'>>
-      | PrimitiveFilter<PollResponse['updated_at']>;
-  } & {
-    name?:
-      | RequireOnlyOne<Pick<QueryFilter<PollResponse['name']>, '$eq' | '$in'>>
-      | PrimitiveFilter<PollResponse['name']>;
-  }
->;
-
-export type QueryVotesFilters = QueryFilters<
-  {
-    id?: RequireOnlyOne<Pick<QueryFilter<PollResponse['id']>, '$eq' | '$in'>> | PrimitiveFilter<PollResponse['id']>;
-  } & {
-    option_id?:
-      | RequireOnlyOne<Pick<QueryFilter<VotesFiltersOptions['option_id']>, '$eq' | '$in'>>
-      | PrimitiveFilter<VotesFiltersOptions['option_id']>;
-  } & {
-    is_answer?:
-      | RequireOnlyOne<Pick<QueryFilter<VotesFiltersOptions['is_answer']>, '$eq'>>
-      | PrimitiveFilter<VotesFiltersOptions['is_answer']>;
-  } & {
-    user_id?:
-      | RequireOnlyOne<Pick<QueryFilter<VotesFiltersOptions['user_id']>, '$eq' | '$in'>>
-      | PrimitiveFilter<VotesFiltersOptions['user_id']>;
-  } & {
-    created_at?:
-      | RequireOnlyOne<Pick<QueryFilter<PollResponse['created_at']>, '$eq' | '$gt' | '$lt' | '$gte' | '$lte'>>
-      | PrimitiveFilter<PollResponse['created_at']>;
-  } & {
-    created_by_id?:
-      | RequireOnlyOne<Pick<QueryFilter<PollResponse['created_by_id']>, '$eq' | '$in'>>
-      | PrimitiveFilter<PollResponse['created_by_id']>;
-  } & {
-    updated_at?:
-      | RequireOnlyOne<Pick<QueryFilter<PollResponse['updated_at']>, '$eq' | '$gt' | '$lt' | '$gte' | '$lte'>>
-      | PrimitiveFilter<PollResponse['updated_at']>;
-  }
->;
 
 export type ContainsOperator<CustomType = {}> = {
   [Key in keyof CustomType]?: CustomType[Key] extends (infer ContainType)[]
@@ -1754,21 +1139,10 @@ export type ReactionSortBase<ErmisChatGenerics extends ExtendableGenerics = Defa
   created_at?: AscDesc;
 };
 
-export type ChannelSort<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> =
-  | ChannelSortBase<ErmisChatGenerics>
-  | Array<ChannelSortBase<ErmisChatGenerics>>;
-
-export type ChannelSortBase<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = Sort<
-  ErmisChatGenerics['channelType']
-> & {
-  created_at?: AscDesc;
-  has_unread?: AscDesc;
-  last_message_at?: AscDesc;
-  last_updated?: AscDesc;
-  member_count?: AscDesc;
-  unread_count?: AscDesc;
-  updated_at?: AscDesc;
-};
+export type ChannelSort = {
+  field: string;
+  direction: -1 | 1;
+}[];
 
 export type PinnedMessagesSort = PinnedMessagesSortBase | Array<PinnedMessagesSortBase>;
 export type PinnedMessagesSortBase = { pinned_at?: AscDesc };
@@ -1809,7 +1183,7 @@ export type SearchMessageSort<ErmisChatGenerics extends ExtendableGenerics = Def
 
 export type QuerySort<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> =
   | BannedUsersSort
-  | ChannelSort<ErmisChatGenerics>
+  | ChannelSort
   | SearchMessageSort<ErmisChatGenerics>
   | UserSort<ErmisChatGenerics>;
 
@@ -1844,8 +1218,6 @@ export type Action = {
   type?: string;
   value?: string;
 };
-
-export type AnonUserType = {};
 
 export type APNConfig = {
   auth_key?: string;
@@ -1989,19 +1361,6 @@ export type Attachment<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     waveform_data?: Array<number>;
   };
 
-export type OGAttachment = {
-  og_scrape_url: string;
-  asset_url?: string; // og:video | og:audio
-  author_link?: string; // og:site
-  author_name?: string; // og:site_name
-  image_url?: string; // og:image
-  text?: string; // og:description
-  thumb_url?: string; // og:image
-  title?: string; // og:title
-  title_link?: string; // og:url
-  type?: string | 'video' | 'audio' | 'image';
-};
-
 export type BlockList = {
   name: string;
   words: string[];
@@ -2079,25 +1438,6 @@ export type ChannelMute<ErmisChatGenerics extends ExtendableGenerics = DefaultGe
   created_at?: string;
   expires?: string;
   updated_at?: string;
-};
-
-export type ChannelRole = {
-  custom?: boolean;
-  name?: string;
-  owner?: boolean;
-  resource?: string;
-  same_team?: boolean;
-};
-
-export type CheckPushInput<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
-  apn_template?: string;
-  client_id?: string;
-  connection_id?: string;
-  firebase_data_template?: string;
-  firebase_template?: string;
-  message_id?: string;
-  user?: UserResponse<ErmisChatGenerics>;
-  user_id?: string;
 };
 
 export type PushProvider = 'apn' | 'firebase' | 'huawei' | 'xiaomi';
@@ -2321,26 +1661,6 @@ export type EndpointName =
   | 'ListPushProviders'
   | 'CreatePoll';
 
-export type ExportChannelRequest = {
-  id: string;
-  type: string;
-  cid?: string;
-  messages_since?: Date;
-  messages_until?: Date;
-};
-
-export type ExportChannelOptions = {
-  clear_deleted_message_text?: boolean;
-  export_users?: boolean;
-  include_soft_deleted_channels?: boolean;
-  include_truncated_messages?: boolean;
-  version?: string;
-};
-
-export type ExportUsersRequest = {
-  user_ids: string[];
-};
-
 export type Field = {
   short?: boolean;
   title?: string;
@@ -2461,14 +1781,6 @@ export type SendMessageOptions = {
   skip_push?: boolean;
 };
 
-export type UpdateMessageOptions = {
-  skip_enrich_url?: boolean;
-};
-
-export type GetMessageOptions = {
-  show_deleted_message?: boolean;
-};
-
 export type Mute<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
   created_at: string;
   target: UserResponse<ErmisChatGenerics>;
@@ -2481,21 +1793,10 @@ export type PartialUpdateChannel<ErmisChatGenerics extends ExtendableGenerics = 
   unset?: Array<keyof ChannelResponse<ErmisChatGenerics>>;
 };
 
-export type PartialUserUpdate<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
-  id: string;
-  set?: Partial<UserResponse<ErmisChatGenerics>>;
-  unset?: Array<keyof UserResponse<ErmisChatGenerics>>;
-};
-
 export type MessageUpdatableFields<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = Omit<
   MessageResponse<ErmisChatGenerics>,
   'cid' | 'created_at' | 'updated_at' | 'deleted_at' | 'user' | 'user_id'
 >;
-
-export type PartialMessageUpdate<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
-  set?: Partial<MessageUpdatableFields<ErmisChatGenerics>>;
-  unset?: Array<keyof MessageUpdatableFields<ErmisChatGenerics>>;
-};
 
 export type PendingMessageResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
   message: MessageResponse<ErmisChatGenerics>;
@@ -2552,61 +1853,19 @@ export type Reaction<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     user_id?: string;
   };
 
-export type Resource =
-  | 'AddLinks'
-  | 'BanUser'
-  | 'CreateChannel'
-  | 'CreateMessage'
-  | 'CreateReaction'
-  | 'DeleteAttachment'
-  | 'DeleteChannel'
-  | 'DeleteMessage'
-  | 'DeleteReaction'
-  | 'EditUser'
-  | 'MuteUser'
-  | 'ReadChannel'
-  | 'RunMessageAction'
-  | 'UpdateChannel'
-  | 'UpdateChannelMembers'
-  | 'UpdateMessage'
-  | 'UpdateUser'
-  | 'UploadAttachment';
-
 export type SearchPayload<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = Omit<
   SearchOptions<ErmisChatGenerics>,
   'sort'
 > & {
   client_id?: string;
   connection_id?: string;
-  filter_conditions?: ChannelFilters<ErmisChatGenerics>;
+  filter_conditions?: ChannelFilters;
   message_filter_conditions?: MessageFilters<ErmisChatGenerics>;
   query?: string;
   sort?: Array<{
     direction: AscDesc;
     field: keyof SearchMessageSortBase<ErmisChatGenerics>;
   }>;
-};
-
-export type TestPushDataInput = {
-  apnTemplate?: string;
-  firebaseDataTemplate?: string;
-  firebaseTemplate?: string;
-  messageID?: string;
-  pushProviderName?: string;
-  pushProviderType?: PushProvider;
-  skipDevices?: boolean;
-};
-
-export type TestSQSDataInput = {
-  sqs_key?: string;
-  sqs_secret?: string;
-  sqs_url?: string;
-};
-
-export type TestSNSDataInput = {
-  sns_key?: string;
-  sns_secret?: string;
-  sns_topic_arn?: string;
 };
 
 export type TokenOrProvider = null | string | TokenProvider | undefined;
@@ -2672,27 +1931,6 @@ export type TranslationLanguages =
   | 'zh'
   | 'zh-TW';
 
-export type TypingStartEvent = Event;
-
-export type ReservedMessageFields =
-  | 'command'
-  | 'created_at'
-  | 'html'
-  | 'latest_reactions'
-  | 'own_reactions'
-  | 'quoted_message'
-  | 'reaction_counts'
-  | 'reply_count'
-  | 'type'
-  | 'updated_at'
-  | 'user'
-  | '__html';
-
-export type UpdatedMessage<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = Omit<
-  MessageResponse<ErmisChatGenerics>,
-  'mentioned_users'
-> & { mentioned_users?: string[] };
-
 export type User<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = ErmisChatGenerics['userType'] & {
   id: string;
   name?: string;
@@ -2705,10 +1943,6 @@ export type User<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics>
 export type TaskResponse = {
   task_id: string;
 };
-
-export type DeleteChannelsResponse = {
-  result: Record<string, string>;
-} & Partial<TaskResponse>;
 
 export type DeleteType = 'soft' | 'hard' | 'pruning';
 
@@ -2756,38 +1990,11 @@ export type SegmentResponse = {
   updated_at: string;
 } & SegmentData;
 
-export type UpdateSegmentData = {
-  name: string;
-} & SegmentData;
-
-export type SegmentTargetsResponse = {
-  created_at: string;
-  segment_id: string;
-  target_id: string;
-};
-
-export type SortParam = {
-  field: string;
-  direction?: AscDesc;
-};
-
 export type Pager = {
   limit?: number;
   next?: string;
   prev?: string;
 };
-
-export type QuerySegmentsOptions = Pager;
-
-export type QuerySegmentTargetsFilter = {
-  target_id?: {
-    $eq?: string;
-    $gte?: string;
-    $in?: string[];
-    $lte?: string;
-  };
-};
-export type QuerySegmentTargetsOptions = Pick<Pager, 'next' | 'limit'>;
 
 export type CampaignSort = {
   field: string;
@@ -2800,11 +2007,6 @@ export type CampaignQueryOptions = {
   prev?: string;
   sort?: CampaignSort;
 };
-
-export type SegmentQueryOptions = CampaignQueryOptions;
-
-// TODO: add better typing
-export type CampaignFilters = {};
 
 export type CampaignData = {
   channel_template?: {
@@ -2838,32 +2040,6 @@ export type CampaignStats = {
   stats_messages_sent?: number;
   stats_started_at?: string;
 };
-export type CampaignResponse = {
-  created_at: string;
-  id: string;
-  segments: SegmentResponse[];
-  sender: UserResponse;
-  stats: CampaignStats;
-  status: 'draft' | 'scheduled' | 'in_progress' | 'completed' | 'stopped';
-  updated_at: string;
-  users: UserResponse[];
-  scheduled_for?: string;
-} & CampaignData;
-
-export type DeleteCampaignOptions = {};
-
-export type TaskStatus = {
-  created_at: string;
-  status: string;
-  task_id: string;
-  updated_at: string;
-  error?: {
-    description: string;
-    type: string;
-  };
-  result?: UR;
-};
-
 export type TruncateOptions<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
   hard_delete?: boolean;
   message?: Message<ErmisChatGenerics>;
@@ -2871,32 +2047,6 @@ export type TruncateOptions<ErmisChatGenerics extends ExtendableGenerics = Defau
   truncated_at?: Date;
   user?: UserResponse<ErmisChatGenerics>;
   user_id?: string;
-};
-
-export type CreateImportURLResponse = {
-  path: string;
-  upload_url: string;
-};
-
-export type CreateImportResponse = {
-  import_task: ImportTask;
-};
-
-export type GetImportResponse = {
-  import_task: ImportTask;
-};
-
-export type CreateImportOptions = {
-  mode: 'insert' | 'upsert';
-};
-
-export type ListImportsPaginationOptions = {
-  limit?: number;
-  offset?: number;
-};
-
-export type ListImportsResponse = {
-  import_tasks: ImportTask[];
 };
 
 export type ImportTaskHistory = {
@@ -2917,14 +2067,6 @@ export type ImportTask = {
 };
 
 export type MessageSetType = 'latest' | 'current' | 'new';
-
-export type PushProviderUpsertResponse = {
-  push_provider: PushProvider;
-};
-
-export type PushProviderListResponse = {
-  push_providers: PushProvider[];
-};
 
 export type CreateCallOptions<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
   id: string;
@@ -2956,12 +2098,6 @@ export type CreateCallResponse = APIResponse & {
   agora_uid?: number;
 };
 
-export type GetCallTokenResponse = APIResponse & {
-  token: string;
-  agora_app_id?: string;
-  agora_uid?: number;
-};
-
 type ErrorResponseDetails = {
   code: number;
   messages: string[];
@@ -2981,23 +2117,6 @@ export class ErrorFromResponse<T> extends Error {
   response?: AxiosResponse<T>;
   status?: number;
 }
-
-export type QueryPollsResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
-  polls: PollResponse<ErmisChatGenerics>[];
-  next?: string;
-};
-
-export type CreatePollAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
-  poll: PollResponse<ErmisChatGenerics>;
-};
-
-export type GetPollAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
-  poll: PollResponse<ErmisChatGenerics>;
-};
-
-export type UpdatePollAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
-  poll: PollResponse<ErmisChatGenerics>;
-};
 
 export type PollResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> =
   ErmisChatGenerics['pollType'] & {
@@ -3040,26 +2159,6 @@ export enum VotingVisibility {
   public = 'public',
 }
 
-export type PollData<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = ErmisChatGenerics['pollType'] & {
-  name: string;
-  allow_answers?: boolean;
-  allow_user_suggested_options?: boolean;
-  description?: string;
-  enforce_unique_vote?: boolean;
-  id?: string;
-  is_closed?: boolean;
-  max_votes_allowed?: number;
-  options?: PollOptionData<ErmisChatGenerics>[];
-  user_id?: string;
-  voting_visibility?: VotingVisibility;
-};
-
-export type PartialPollUpdate<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
-  // id: string;
-  set?: Partial<PollResponse<ErmisChatGenerics>>;
-  unset?: Array<keyof PollResponse<ErmisChatGenerics>>;
-};
-
 export type PollOptionData<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> =
   ErmisChatGenerics['pollType'] & {
     text: string;
@@ -3067,30 +2166,9 @@ export type PollOptionData<ErmisChatGenerics extends ExtendableGenerics = Defaul
     position?: number;
   };
 
-export type PartialPollOptionUpdate<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
-  set?: Partial<PollOptionResponse<ErmisChatGenerics>>;
-  unset?: Array<keyof PollOptionResponse<ErmisChatGenerics>>;
-};
-
-export type PollVoteData = {
-  answer_text?: string;
-  is_answer?: boolean;
-  option_id?: string;
-};
-
-export type PollPaginationOptions = {
-  limit?: number;
-  next?: string;
-};
-
 export type CreatePollOptionAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
   poll_option: PollOptionResponse<ErmisChatGenerics>;
 };
-
-export type GetPollOptionAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> =
-  CreatePollOptionAPIResponse<ErmisChatGenerics>;
-export type UpdatePollOptionAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> =
-  CreatePollOptionAPIResponse<ErmisChatGenerics>;
 
 export type PollOptionResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> =
   ErmisChatGenerics['pollType'] & {
@@ -3115,26 +2193,16 @@ export type PollVote<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
   user?: UserResponse<ErmisChatGenerics>;
 };
 
-export type PollVotesAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
-  votes: PollVote<ErmisChatGenerics>[];
-  next?: string;
-};
-
-export type CastVoteAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
-  vote: PollVote<ErmisChatGenerics>;
-};
 /*
- ** This types are used for the wallet feature
- */
-export type StartAuthResponse = {
-  challenge: string;
+export type UsersResponse_OLD = {
+  data: Array<UserResponse>;
+  count: number;
+  total: number;
+  page: number;
+  page_count: number;
 };
-export type GetTokenResponse = {
-  token: string;
-  refresh_token: string;
-  user_id: string;
-  project_id: string;
-};
+*/
+
 export type UsersResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
   data: Array<UserResponse<ErmisChatGenerics>>;
   count: number;
@@ -3142,6 +2210,7 @@ export type UsersResponse<ErmisChatGenerics extends ExtendableGenerics = Default
   page: number;
   page_count: number;
 };
+
 /*
  ** Chain Project Response
  */
@@ -3161,12 +2230,6 @@ export type UserWithProjectsResponse<ErmisChatGenerics extends ExtendableGeneric
 export type ChainProjectResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
   chain_id: number;
   clients: UserWithProjectsResponse<ErmisChatGenerics>[];
-};
-
-export type ChainsResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
-  chains: number[];
-  joined: ChainProjectResponse<ErmisChatGenerics>[];
-  not_joined: ChainProjectResponse<ErmisChatGenerics>[];
 };
 
 export type AttachmentResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
