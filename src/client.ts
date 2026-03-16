@@ -1135,10 +1135,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     return channels;
   }
 
-  async startCall(payload: any) {
-    return this.post(this.baseURL + '/signal', payload);
-  }
-
   hydrateChannels(
     channelsFromApi: ChannelAPIResponse<ErmisChatGenerics>[] = [],
     stateOptions: ChannelStateOptions = {},
