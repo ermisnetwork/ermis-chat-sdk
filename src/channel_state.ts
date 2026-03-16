@@ -11,8 +11,6 @@ import {
   ReactionResponse,
   UserResponse,
   PendingMessageResponse,
-  PollVote,
-  PollResponse,
 } from './types';
 import { addToMessageList } from './utils';
 
