@@ -55,7 +55,6 @@ export type ChannelResponse<ErmisChatGenerics extends ExtendableGenerics = Defau
     members: ChannelMemberResponse<ErmisChatGenerics>[];
     name?: string;
     own_capabilities?: string[];
-    team?: string;
     updated_at?: string;
     image?: string;
     description?: string;
@@ -432,14 +431,13 @@ export type MessageBase<ErmisChatGenerics extends ExtendableGenerics = DefaultGe
     parent_id?: string;
     pinned?: boolean;
     pinned_at?: string | null;
-    poll_id?: string;
     quoted_message_id?: string;
     text?: string;
     user?: UserResponse | null;
     user_id?: string;
   };
 
-export type MessageLabel = 'deleted' | 'ephemeral' | 'error' | 'regular' | 'reply' | 'system';
+export type MessageLabel = 'regular' | 'reply' | 'system' | 'signal' | 'poll' | 'sticker' | 'deleted' | 'error';
 
 export type Reaction<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> =
   ErmisChatGenerics['reactionType'] & {

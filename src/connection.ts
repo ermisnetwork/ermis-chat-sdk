@@ -1,7 +1,6 @@
 import WebSocket from 'isomorphic-ws';
 import {
   chatCodes,
-  convertErrorToJson,
   sleep,
   retryInterval,
   randomId,

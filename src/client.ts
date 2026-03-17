@@ -16,7 +16,6 @@ import { EventSourcePolyfill } from 'event-source-polyfill';
 import {
   addFileToFormData,
   axiosParamsSerializer,
-  chatCodes,
   enrichWithUserInfo,
   ensureMembersUserInfoLoaded,
   getDirectChannelImage,
@@ -24,8 +23,6 @@ import {
   getLatestCreatedAt,
   isFunction,
   randomId,
-  retryInterval,
-  sleep,
 } from './utils';
 
 import {
@@ -43,11 +40,9 @@ import {
   EventHandler,
   ExtendableGenerics,
   Logger,
-
   QueryChannelsAPIResponse,
   SendFileAPIResponse,
   ErmisChatOptions,
-
   UserResponse,
   ContactResponse,
   UsersResponse,
@@ -70,7 +65,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
   browser: boolean;
   cleaningIntervalRef?: NodeJS.Timeout;
   clientID?: string;
-
   apiKey: string;
   projectId: string;
   listeners: Record<string, Array<(event: Event<ErmisChatGenerics>) => void>>;
@@ -165,10 +159,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     this.wsBaseURL = this.baseURL.replace('http', 'ws').replace(':3030', ':8800');
   }
 
-  async getExternalAuthToken(
-    user: UserResponse<ErmisChatGenerics>,
-    token: string | null,
-  ) {
+  async getExternalAuthToken(user: UserResponse<ErmisChatGenerics>, token: string | null) {
     const params: any = { apikey: this.apiKey, name: user.name };
     if (user.avatar) {
       params.avatar = user.avatar;

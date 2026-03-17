@@ -1,5 +1,5 @@
 import FormData from 'form-data';
-import { AscDesc, ExtendableGenerics, DefaultGenerics, MessageResponse, FormatMessageResponse } from './types';
+import { ExtendableGenerics, DefaultGenerics, MessageResponse, FormatMessageResponse } from './types';
 import { AxiosRequestConfig } from 'axios';
 import { ErmisChat } from './client';
 
@@ -81,22 +81,7 @@ export function addFileToFormData(
 
   return data;
 }
-export function normalizeQuerySort<T extends Record<string, AscDesc | undefined>>(sort: T | T[]) {
-  const sortFields: Array<{ direction: AscDesc; field: keyof T }> = [];
-  const sortArr = Array.isArray(sort) ? sort : [sort];
-  for (const item of sortArr) {
-    const entries = Object.entries(item) as [keyof T, AscDesc][];
-    if (entries.length > 1) {
-      console.warn(
-        "client._buildSort() - multiple fields in a single sort object detected. Object's field order is not guaranteed",
-      );
-    }
-    for (const [field, direction] of entries) {
-      sortFields.push({ field, direction });
-    }
-  }
-  return sortFields;
-}
+
 
 /**
  * retryInterval - A retry interval which increases acc to number of failures
@@ -165,48 +150,9 @@ function getRandomBytes(length: number): Uint8Array {
   return bytes;
 }
 
-export function convertErrorToJson(err: Error) {
-  const jsonObj = {} as Record<string, unknown>;
 
-  if (!err) return jsonObj;
 
-  try {
-    Object.getOwnPropertyNames(err).forEach((key) => {
-      jsonObj[key] = Object.getOwnPropertyDescriptor(err, key);
-    });
-  } catch (_) {
-    return {
-      error: 'failed to serialize the error',
-    };
-  }
 
-  return jsonObj;
-}
-
-/**
- * isOnline safely return the navigator.online value for browser env
- * if navigator is not in global object, it always return true
- */
-export function isOnline() {
-  const nav =
-    typeof navigator !== 'undefined'
-      ? navigator
-      : typeof window !== 'undefined' && window.navigator
-      ? window.navigator
-      : undefined;
-
-  if (!nav) {
-    console.warn('isOnline failed to access window.navigator and assume browser is online');
-    return true;
-  }
-
-  // RN navigator has undefined for onLine
-  if (typeof nav.onLine !== 'boolean') {
-    return true;
-  }
-
-  return nav.onLine;
-}
 
 /**
  * listenForConnectionChanges - Adds an event listener fired on browser going online or offline
