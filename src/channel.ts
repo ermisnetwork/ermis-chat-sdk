@@ -1512,31 +1512,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
           };
         }
         break;
-      // case 'poll.updated':
-      //   if (event.poll) {
-      //     channelState.updatePoll(event.poll, event.message?.id || '');
-      //   }
-      //   break;
-      // case 'poll.vote_casted':
-      //   if (event.poll_vote && event.poll) {
-      //     channelState.addPollVote(event.poll_vote, event.poll, event.message?.id || '');
-      //   }
-      //   break;
-      // case 'poll.vote_changed':
-      //   if (event.poll_vote && event.poll) {
-      //     channelState.updatePollVote(event.poll_vote, event.poll, event.message?.id || '');
-      //   }
-      //   break;
-      // case 'poll.vote_removed':
-      //   if (event.poll_vote && event.poll) {
-      //     channelState.removePollVote(event.poll_vote, event.poll, event.message?.id || '');
-      //   }
-      //   break;
-      // case 'poll.closed':
-      //   if (event.message) {
-      //     channelState.addMessageSorted(event.message, false, false);
-      //   }
-      //   break;
       case 'pollchoice.new':
         if (event.message) {
           const user = getUserInfo(event.message.user?.id || '', users);

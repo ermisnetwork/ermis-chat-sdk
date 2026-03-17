@@ -1,4 +1,4 @@
-import { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
+import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { StableWSConnection } from './connection';
 import { EVENT_MAP } from './events';
 
@@ -184,7 +184,6 @@ export type MessageResponseBase<ErmisChatGenerics extends ExtendableGenerics = D
     pin_expires?: string | null;
     pinned_at?: string | null;
     pinned_by?: UserResponse<ErmisChatGenerics> | null;
-    poll?: PollResponse<ErmisChatGenerics>;
     reaction_counts?: { [key: string]: number } | null;
     reaction_scores?: { [key: string]: number } | null;
     reply_count?: number;
@@ -384,8 +383,6 @@ export type Event<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics
   mode?: string;
   online?: boolean;
   parent_id?: string;
-  poll?: PollResponse<ErmisChatGenerics>;
-  poll_vote?: PollVote<ErmisChatGenerics>;
   queriedChannels?: {
     channels: ChannelAPIResponse<ErmisChatGenerics>[];
     isLatestMessageSet?: boolean;
@@ -627,13 +624,6 @@ export type SendMessageOptions = {
   skip_push?: boolean;
 };
 
-export type Mute<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
-  created_at: string;
-  target: UserResponse<ErmisChatGenerics>;
-  updated_at: string;
-  user: UserResponse<ErmisChatGenerics>;
-};
-
 export type Reaction<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> =
   ErmisChatGenerics['reactionType'] & {
     type: string;
@@ -671,52 +661,6 @@ export class ErrorFromResponse<T> extends Error {
   response?: AxiosResponse<T>;
   status?: number;
 }
-
-export type PollResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> =
-  ErmisChatGenerics['pollType'] & {
-    answers_count: number;
-    created_at: string;
-    created_by: UserResponse<ErmisChatGenerics> | null;
-    created_by_id: string;
-    enforce_unique_vote: boolean;
-    id: string;
-    latest_answers: PollVote<ErmisChatGenerics>[];
-    latest_votes_by_option: Record<string, PollVote<ErmisChatGenerics>[]>;
-    max_votes_allowed: number;
-    name: string;
-    options: PollOption<ErmisChatGenerics>[];
-    updated_at: string;
-    vote_count: number;
-    vote_counts_by_option: Record<string, number>;
-    allow_answers?: boolean;
-    allow_user_suggested_options?: boolean;
-    channel?: ChannelAPIResponse<ErmisChatGenerics> | null;
-    cid?: string;
-    description?: string;
-    is_closed?: boolean;
-    own_votes?: PollVote<ErmisChatGenerics>[];
-  };
-
-export type PollOption<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
-  created_at: string;
-  id: string;
-  poll_id: string;
-  text: string;
-  updated_at: string;
-  vote_count: number;
-  votes?: PollVote<ErmisChatGenerics>[];
-};
-
-export type PollVote<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
-  created_at: string;
-  id: string;
-  is_answer: boolean;
-  poll_id: string;
-  user_id: string;
-  answer_text?: string;
-  option_id?: string;
-  user?: UserResponse<ErmisChatGenerics>;
-};
 
 export type UsersResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
   data: Array<UserResponse<ErmisChatGenerics>>;
