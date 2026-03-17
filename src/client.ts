@@ -1086,13 +1086,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
       }
     });
 
-    this.dispatchEvent({
-      type: 'channels.queried',
-      queriedChannels: {
-        channels: data.channels,
-        isLatestMessageSet: true,
-      },
-    });
 
     const { channels, userIds } = this.hydrateChannels(data.channels, stateOptions);
 

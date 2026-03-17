@@ -265,10 +265,6 @@ export type Event<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics
   message?: MessageResponse<ErmisChatGenerics>;
   online?: boolean;
   parent_id?: string;
-  queriedChannels?: {
-    channels: ChannelAPIResponse<ErmisChatGenerics>[];
-    isLatestMessageSet?: boolean;
-  };
   reaction?: ReactionResponse<ErmisChatGenerics>;
   received_at?: string | Date;
   unread_messages?: number;

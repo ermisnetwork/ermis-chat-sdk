@@ -618,14 +618,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
       });
     }
 
-    this.getClient().dispatchEvent({
-      type: 'channels.queried',
-      queriedChannels: {
-        channels: [state],
-        isLatestMessageSet: messageSet.isLatest,
-      },
-    });
-
     return state;
   }
 
@@ -673,14 +665,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
         own_capabilities: state.channel.own_capabilities,
       });
     }
-
-    this.getClient().dispatchEvent({
-      type: 'channels.queried',
-      queriedChannels: {
-        channels: [state],
-        isLatestMessageSet: messageSet.isLatest,
-      },
-    });
 
     return state;
   }
@@ -948,7 +932,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
         }
         break;
       case 'user.watching.start':
-      case 'user.updated':
         if (event.user?.id) {
           channelState.watchers[event.user.id] = event.user;
         }
@@ -1040,7 +1023,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
         }
         break;
       case 'message.updated':
-        // case 'message.undeleted':
         if (event.message) {
           const userEvent = getUserInfo(event.user?.id || '', users);
           const userMsg = getUserInfo(event.message.user?.id || '', users);
