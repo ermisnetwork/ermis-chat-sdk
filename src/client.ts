@@ -35,7 +35,6 @@ import {
   ChannelAPIResponse,
   ChannelData,
   ChannelFilters,
-  ChannelOptions,
   ChannelResponse,
   ChannelSort,
   ChannelStateOptions,
