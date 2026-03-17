@@ -23,7 +23,6 @@ import {
   getDirectChannelName,
   getLatestCreatedAt,
   isFunction,
-  normalizeQuerySort,
   randomId,
   retryInterval,
   sleep,
@@ -35,10 +34,8 @@ import {
   ChannelAPIResponse,
   ChannelData,
   ChannelFilters,
-  ChannelResponse,
   ChannelSort,
   ChannelStateOptions,
-
   ConnectAPIResponse,
   DefaultGenerics,
   ErrorFromResponse,
@@ -46,11 +43,11 @@ import {
   EventHandler,
   ExtendableGenerics,
   Logger,
-  OwnUserResponse,
+
   QueryChannelsAPIResponse,
   SendFileAPIResponse,
   ErmisChatOptions,
-  TokenOrProvider,
+
   UserResponse,
   ContactResponse,
   UsersResponse,
@@ -84,7 +81,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
   setUserPromise: ConnectAPIResponse<ErmisChatGenerics> | null;
   state: ClientState<ErmisChatGenerics>;
   tokenManager: TokenManager<ErmisChatGenerics>;
-  user?: OwnUserResponse<ErmisChatGenerics> | UserResponse<ErmisChatGenerics>;
+  user?: UserResponse<ErmisChatGenerics>;
   userAgent?: string;
   userID?: string;
   wsBaseURL?: string;
@@ -131,8 +128,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     // keeps a reference to all the channels that are in use
     this.activeChannels = {};
 
-
-
     this.tokenManager = new TokenManager();
     this.consecutiveFailures = 0;
     this.defaultWSTimeout = 15000;
@@ -171,8 +166,8 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
   }
 
   async getExternalAuthToken(
-    user: OwnUserResponse<ErmisChatGenerics> | UserResponse<ErmisChatGenerics>,
-    token: TokenOrProvider,
+    user: UserResponse<ErmisChatGenerics>,
+    token: string | null,
   ) {
     const params: any = { apikey: this.apiKey, name: user.name };
     if (user.avatar) {
@@ -205,8 +200,8 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
   }
 
   connectUser = async (
-    user: OwnUserResponse<ErmisChatGenerics> | UserResponse<ErmisChatGenerics>,
-    userTokenOrProvider: TokenOrProvider,
+    user: UserResponse<ErmisChatGenerics>,
+    userTokenOrProvider: string | null,
     extenal_auth?: boolean, // pass true if you are using external auth
   ) => {
     this.logger('info', 'client:connectUser() - started', {
@@ -273,10 +268,10 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
 
   setUser = this.connectUser;
 
-  _setToken = (user: UserResponse<ErmisChatGenerics>, userTokenOrProvider: TokenOrProvider) =>
+  _setToken = (user: UserResponse<ErmisChatGenerics>, userTokenOrProvider: string | null) =>
     this.tokenManager.setTokenOrProvider(userTokenOrProvider, user);
 
-  _setUser(user: OwnUserResponse<ErmisChatGenerics> | UserResponse<ErmisChatGenerics>) {
+  _setUser(user: UserResponse<ErmisChatGenerics>) {
     this.user = { ...user };
     this.userID = user.id;
   }
@@ -475,14 +470,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
       this._logApiError(type, url, e, options);
       this.consecutiveFailures += 1;
       if (e.response) {
-        /** connection_fallback depends on this token expiration logic */
-        if (e.response.data.code === chatCodes.TOKEN_EXPIRED && !this.tokenManager.isStatic()) {
-          if (this.consecutiveFailures > 1) {
-            await sleep(retryInterval(this.consecutiveFailures));
-          }
-          this.tokenManager.loadToken();
-          return await this.doAxiosRequest<T>(type, url, data, requestConfig);
-        }
         return this.handleResponse(e.response);
       } else {
         throw e as AxiosError<APIErrorResponse>;
@@ -689,8 +676,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
 
     if (event.type === 'health.check' && event.me) {
     }
-
-
 
     if ((event.type === 'channel.deleted' || event.type === 'notification.channel_deleted') && event.cid) {
       client.state.deleteAllChannelReference(event.cid);
@@ -1196,8 +1181,6 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
   async unpinChannel(channelType: string, channelId: string) {
     return await this.post<APIResponse>(this.baseURL + `/channels/${channelType}/${channelId}/unpin`);
   }
-
-
 
   channel(
     channelType: string,

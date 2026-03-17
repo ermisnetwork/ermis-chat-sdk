@@ -47,7 +47,6 @@ export type ChannelResponse<ErmisChatGenerics extends ExtendableGenerics = Defau
     cid: string;
     id: string;
     type: string;
-    cooldown?: number;
     created_at?: string;
     created_by?: UserResponse<ErmisChatGenerics> | null;
     created_by_id?: string;
@@ -161,17 +160,6 @@ export type MessageResponseBase<ErmisChatGenerics extends ExtendableGenerics = D
     updated_at?: string;
   };
 
-export type OwnUserBase<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
-  total_unread_count: number;
-  unread_channels: number;
-  unread_count: number;
-  invisible?: boolean;
-  roles?: string[];
-};
-
-export type OwnUserResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> =
-  UserResponse<ErmisChatGenerics> & OwnUserBase<ErmisChatGenerics>;
-
 export type ReactionAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
   message: MessageResponse<ErmisChatGenerics>;
   reaction: ReactionResponse<ErmisChatGenerics>;
@@ -197,11 +185,6 @@ export type SendFileAPIResponse = APIResponse & { file: string; thumb_url?: stri
 
 export type SendMessageAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
   message: MessageResponse<ErmisChatGenerics>;
-};
-
-export type TruncateChannelAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
-  channel: ChannelResponse<ErmisChatGenerics>;
-  message?: MessageResponse<ErmisChatGenerics>;
 };
 
 export type UpdateChannelAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
@@ -295,13 +278,11 @@ export type Event<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics
   channel_id?: string;
   channel_type?: string;
   cid?: string;
-  // event creation timestamp, format Date ISO string
   created_at?: string;
   hard_delete?: boolean;
-  // creation date of a message with last_read_message_id, formatted as Date ISO string
   last_read_at?: string;
   last_read_message_id?: string;
-  me?: OwnUserResponse<ErmisChatGenerics>;
+  me?: UserResponse<ErmisChatGenerics>;
   member?: ChannelMemberResponse<ErmisChatGenerics>;
   message?: MessageResponse<ErmisChatGenerics>;
   online?: boolean;
@@ -312,13 +293,6 @@ export type Event<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics
   };
   reaction?: ReactionResponse<ErmisChatGenerics>;
   received_at?: string | Date;
-  // @deprecated number of all unread messages across all current user's unread channels, equals unread_count
-  total_unread_count?: number;
-  // number of all current user's channels with at least one unread message including the channel in this event
-  unread_channels?: number;
-  // number of all unread messages across all current user's unread channels
-  unread_count?: number;
-  // number of unread messages in the channel from this event (notification.mark_unread)
   unread_messages?: number;
   user?: UserResponse<ErmisChatGenerics>;
   user_id?: string;
@@ -413,13 +387,8 @@ export type ChannelMembership<ErmisChatGenerics extends ExtendableGenerics = Def
 export type ConnectionOpen<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
   cid?: string;
   created_at?: string;
-  me?: OwnUserResponse<ErmisChatGenerics>;
+  me?: UserResponse<ErmisChatGenerics>;
   type?: string;
-};
-
-export type CreatedAtUpdatedAt = {
-  created_at: string;
-  updated_at: string;
 };
 
 export type LiteralStringForUnion = string & {};
@@ -458,7 +427,7 @@ export type PollMessage = {
 export type MessageBase<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> =
   ErmisChatGenerics['messageType'] & {
     id: string;
-    attachments?: Attachment<ErmisChatGenerics>[];
+    attachments?: Attachment[];
     html?: string;
     mml?: string;
     parent_id?: string;
@@ -467,7 +436,7 @@ export type MessageBase<ErmisChatGenerics extends ExtendableGenerics = DefaultGe
     poll_id?: string;
     quoted_message_id?: string;
     text?: string;
-    user?: UserResponse<ErmisChatGenerics> | null;
+    user?: UserResponse | null;
     user_id?: string;
   };
 
@@ -478,13 +447,9 @@ export type Reaction<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     type: string;
     message_id?: string;
     score?: number;
-    user?: UserResponse<ErmisChatGenerics> | null;
+    user?: UserResponse | null;
     user_id?: string;
   };
-
-export type TokenOrProvider = null | string | TokenProvider | undefined;
-
-export type TokenProvider = () => Promise<string>;
 
 export type User<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = ErmisChatGenerics['userType'] & {
   id: string;

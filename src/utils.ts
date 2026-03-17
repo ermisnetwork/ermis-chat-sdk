@@ -1,14 +1,5 @@
 import FormData from 'form-data';
-import {
-  AscDesc,
-  ExtendableGenerics,
-  DefaultGenerics,
-  OwnUserBase,
-  OwnUserResponse,
-  UserResponse,
-  MessageResponse,
-  FormatMessageResponse,
-} from './types';
+import { AscDesc, ExtendableGenerics, DefaultGenerics, MessageResponse, FormatMessageResponse } from './types';
 import { AxiosRequestConfig } from 'axios';
 import { ErmisChat } from './client';
 
@@ -65,28 +56,8 @@ function isFileWebAPI(uri: unknown): uri is File {
   return typeof window !== 'undefined' && 'File' in window && uri instanceof File;
 }
 
-export function isOwnUser<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics>(
-  user?: OwnUserResponse<ErmisChatGenerics> | UserResponse<ErmisChatGenerics>,
-): user is OwnUserResponse<ErmisChatGenerics> {
-  return (user as OwnUserResponse<ErmisChatGenerics>)?.total_unread_count !== undefined;
-}
-
 function isBlobWebAPI(uri: unknown): uri is Blob {
   return typeof window !== 'undefined' && 'Blob' in window && uri instanceof Blob;
-}
-
-export function isOwnUserBaseProperty(property: string) {
-  const ownUserBaseProperties: {
-    [Property in keyof Required<OwnUserBase>]: boolean;
-  } = {
-    total_unread_count: true,
-    unread_channels: true,
-    unread_count: true,
-    invisible: true,
-    roles: true,
-  };
-
-  return ownUserBaseProperties[property as keyof OwnUserBase];
 }
 
 export function addFileToFormData(

@@ -29,7 +29,6 @@ import {
   MessageSetType,
   ReactionAPIResponse,
   SendMessageAPIResponse,
-  TruncateChannelAPIResponse,
   UpdateChannelAPIResponse,
   UserResponse,
   QueryChannelAPIResponse,
@@ -308,9 +307,7 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
    * truncate - Removes all messages from the channel
    */
   async truncate() {
-    return await this.getClient().delete<TruncateChannelAPIResponse<ErmisChatGenerics>>(
-      this._channelURL() + '/truncate',
-    );
+    return await this.getClient().delete(this._channelURL() + '/truncate');
   }
 
   async blockUser() {

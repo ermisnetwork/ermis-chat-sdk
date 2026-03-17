@@ -8,4 +8,4 @@ export * from './token_manager';
 export * from './types';
 export * from './ermis_call_node';
 export * from './auth';
-export { isOwnUser, chatCodes, logChatPromiseExecution, formatMessage } from './utils';
+export { chatCodes, logChatPromiseExecution, formatMessage } from './utils';

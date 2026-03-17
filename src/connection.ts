@@ -117,9 +117,8 @@ export class StableWSConnection<ErmisChatGenerics extends ExtendableGenerics = D
       this.isHealthy = false;
       this.consecutiveFailures += 1;
 
-      if (error.code === chatCodes.TOKEN_EXPIRED && !this.client.tokenManager.isStatic()) {
-        this._log('connect() - WS failure due to expired token, so going to try to reload token and reconnect');
-        this._reconnect({ refreshToken: true });
+      if (error.code === chatCodes.TOKEN_EXPIRED) {
+        this._log('connect() - WS failure due to expired token');
       } else if (!error.isWSFailure) {
         // API rejected the connection and we should not retry
         throw new Error(
@@ -273,11 +272,6 @@ export class StableWSConnection<ErmisChatGenerics extends ExtendableGenerics = D
     }
 
     try {
-      if (!isTokenReady) {
-        this._log(`_connect() - tokenProvider failed before, so going to retry`);
-        await this.client.tokenManager.loadToken();
-      }
-
       this._setupConnectionPromise();
       const wsURL = this._buildUrl();
       this._log(`_connect() - Connecting to ${wsURL}`, { wsURL, requestID: this.requestID });
@@ -343,9 +337,7 @@ export class StableWSConnection<ErmisChatGenerics extends ExtendableGenerics = D
     // cleanup the old connection
     this._destroyCurrentWSConnection();
 
-    if (options.refreshToken) {
-      await this.client.tokenManager.loadToken();
-    }
+
 
     try {
       await this._connect();
@@ -357,11 +349,7 @@ export class StableWSConnection<ErmisChatGenerics extends ExtendableGenerics = D
     } catch (error: any) {
       this.isHealthy = false;
       this.consecutiveFailures += 1;
-      if (error.code === chatCodes.TOKEN_EXPIRED && !this.client.tokenManager.isStatic()) {
-        this._log('_reconnect() - WS failure due to expired token, so going to try to reload token and reconnect');
 
-        return this._reconnect({ refreshToken: true });
-      }
 
       // reconnect on WS failures, don't reconnect if there is a code bug
       if (error.isWSFailure) {
