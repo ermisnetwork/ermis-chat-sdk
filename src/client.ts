@@ -1014,7 +1014,7 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
     this.projectId = project_id;
   }
 
-  async uploadFile(file: any) {
+  async uploadFile(file: File) {
     const formData = new FormData();
     formData.append('avatar', file);
     let response = await this.post<{ avatar: string }>(this.userBaseURL + '/users/upload', formData, {
