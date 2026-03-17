@@ -73,7 +73,6 @@ export type ChannelAPIResponse<ErmisChatGenerics extends ExtendableGenerics = De
   members: ChannelMemberResponse<ErmisChatGenerics>[];
   messages: MessageResponse<ErmisChatGenerics>[];
   pinned_messages: MessageResponse<ErmisChatGenerics>[];
-  hidden?: boolean;
   membership?: ChannelMembership<ErmisChatGenerics> | null;
   read?: ReadResponse<ErmisChatGenerics>[];
   topics?: QueryChannelAPIResponse<ErmisChatGenerics>[];
@@ -94,14 +93,6 @@ export type ChannelMemberResponse<ErmisChatGenerics extends ExtendableGenerics =
 
 export type ConnectAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> =
   Promise<void | ConnectionOpen<ErmisChatGenerics>>;
-
-export type DeleteChannelAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
-  channel: ChannelResponse<ErmisChatGenerics>;
-};
-
-export type EventAPIResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = APIResponse & {
-  event: Event<ErmisChatGenerics>;
-};
 
 export type FormatMessageResponse<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = Omit<
   MessageResponse<{
@@ -223,12 +214,6 @@ export type ChannelQueryOptions = {
 export type ChannelStateOptions = {
   offlineMode?: boolean;
   skipInitialization?: string[];
-};
-
-export type MarkReadOptions<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> = {
-  client_id?: string;
-  user?: UserResponse<ErmisChatGenerics>;
-  user_id?: string;
 };
 
 export type ErmisChatOptions = AxiosRequestConfig & {

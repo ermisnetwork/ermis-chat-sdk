@@ -33,25 +33,12 @@ export class ChannelState<ErmisChatGenerics extends ExtendableGenerics = Default
   typing: Record<string, Event<ErmisChatGenerics>>;
   read: ChannelReadStatus<ErmisChatGenerics>;
   pinnedMessages: Array<ReturnType<ChannelState<ErmisChatGenerics>['formatMessage']>>;
-  mutedUsers: Array<UserResponse<ErmisChatGenerics>>;
   watchers: Record<string, UserResponse<ErmisChatGenerics>>;
   members: Record<string, ChannelMemberResponse<ErmisChatGenerics>>;
   unreadCount: number;
   membership: ChannelMembership<ErmisChatGenerics>;
   last_message_at: Date | null;
-  /**
-   * Flag which indicates if channel state contain latest/recent messages or no.
-   * This flag should be managed by UI sdks using a setter - setIsUpToDate.
-   * When false, any new message (received by websocket event - message.new) will not
-   * be pushed on to message list.
-   */
   isUpToDate: boolean;
-  /**
-   * Disjoint lists of messages
-   * Users can jump in the message list (with searching) and this can result in disjoint lists of messages
-   * The state manages these lists and merges them when lists overlap
-   * The messages array contains the currently active set
-   */
   messageSets: {
     isCurrent: boolean;
     isLatest: boolean;
@@ -65,18 +52,10 @@ export class ChannelState<ErmisChatGenerics extends ExtendableGenerics = Default
     this.read = {};
     this.initMessages();
     this.pinnedMessages = [];
-    // a list of users to hide messages from
-    this.mutedUsers = [];
     this.watchers = {};
     this.members = {};
     this.membership = {};
     this.unreadCount = 0;
-    /**
-     * Flag which indicates if channel state contain latest/recent messages or no.
-     * This flag should be managed by UI sdks using a setter - setIsUpToDate.
-     * When false, any new message (received by websocket event - message.new) will not
-     * be pushed on to message list.
-     */
     this.isUpToDate = true;
     this.last_message_at = channel?.state?.last_message_at != null ? new Date(channel.state.last_message_at) : null;
   }
@@ -90,10 +69,6 @@ export class ChannelState<ErmisChatGenerics extends ExtendableGenerics = Default
     this.messageSets[index].messages = messages;
   }
 
-  /**
-   * The list of latest messages
-   * The messages array not always contains the latest messages (for example if a user searched for an earlier message, that is in a different message set)
-   */
   get latestMessages() {
     return this.messageSets.find((s) => s.isLatest)?.messages || [];
   }
@@ -103,14 +78,6 @@ export class ChannelState<ErmisChatGenerics extends ExtendableGenerics = Default
     this.messageSets[index].messages = messages;
   }
 
-  /**
-   * addMessageSorted - Add a message to the state
-   *
-   * @param {MessageResponse<ErmisChatGenerics>} newMessage A new message
-   * @param {boolean} timestampChanged Whether updating a message with changed created_at value.
-   * @param {boolean} addIfDoesNotExist Add message if it is not in the list, used to prevent out of order updated messages from being added.
-   * @param {MessageSetType} messageSetToAddToIfDoesNotExist Which message set to add to if message is not in the list (only used if addIfDoesNotExist is true)
-   */
   addMessageSorted(
     newMessage: MessageResponse<ErmisChatGenerics>,
     timestampChanged = false,
@@ -126,13 +93,6 @@ export class ChannelState<ErmisChatGenerics extends ExtendableGenerics = Default
     );
   }
 
-  /**
-   * formatMessage - Takes the message object. Parses the dates, sets __html
-   * and sets the status to received if missing. Returns a message object
-   *
-   * @param {MessageResponse<ErmisChatGenerics>} message a message object
-   *
-   */
   formatMessage(message: MessageResponse<ErmisChatGenerics>): FormatMessageResponse<ErmisChatGenerics> {
     return {
       ...message,
@@ -148,16 +108,6 @@ export class ChannelState<ErmisChatGenerics extends ExtendableGenerics = Default
     };
   }
 
-  /**
-   * addMessagesSorted - Add the list of messages to state and resorts the messages
-   *
-   * @param {Array<MessageResponse<ErmisChatGenerics>>} newMessages A list of messages
-   * @param {boolean} timestampChanged Whether updating messages with changed created_at value.
-   * @param {boolean} initializing Whether channel is being initialized.
-   * @param {boolean} addIfDoesNotExist Add message if it is not in the list, used to prevent out of order updated messages from being added.
-   * @param {MessageSetType} messageSetToAddToIfDoesNotExist Which message set to add to if messages are not in the list (only used if addIfDoesNotExist is true)
-   *
-   */
   addMessagesSorted(
     newMessages: MessageResponse<ErmisChatGenerics>[],
     timestampChanged = false,
@@ -220,12 +170,6 @@ export class ChannelState<ErmisChatGenerics extends ExtendableGenerics = Default
     };
   }
 
-  /**
-   * addPinnedMessages - adds messages in pinnedMessages property
-   *
-   * @param {Array<MessageResponse<ErmisChatGenerics>>} pinnedMessages A list of pinned messages
-   *
-   */
   addPinnedMessages(pinnedMessages: MessageResponse<ErmisChatGenerics>[]) {
     for (let i = 0; i < pinnedMessages.length; i += 1) {
       this.addPinnedMessage(pinnedMessages[i]);
@@ -238,12 +182,6 @@ export class ChannelState<ErmisChatGenerics extends ExtendableGenerics = Default
     });
   }
 
-  /**
-   * addPinnedMessage - adds message in pinnedMessages
-   *
-   * @param {MessageResponse<ErmisChatGenerics>} pinnedMessage message to update
-   *
-   */
   addPinnedMessage(pinnedMessage: MessageResponse<ErmisChatGenerics>) {
     const formatted = this.formatMessage(pinnedMessage);
     // Remove existing entry if present (to avoid duplicates)
@@ -252,12 +190,6 @@ export class ChannelState<ErmisChatGenerics extends ExtendableGenerics = Default
     this.pinnedMessages = [formatted, ...this.pinnedMessages];
   }
 
-  /**
-   * removePinnedMessage - removes pinned message from pinnedMessages
-   *
-   * @param {MessageResponse<ErmisChatGenerics>} message message to remove
-   *
-   */
   removePinnedMessage(message: MessageResponse<ErmisChatGenerics>) {
     const { result } = this.removeMessageFromArray(this.pinnedMessages, message);
     this.pinnedMessages = result;
@@ -335,11 +267,6 @@ export class ChannelState<ErmisChatGenerics extends ExtendableGenerics = Default
     });
   }
 
-  /**
-   * Updates all instances of given message in channel state
-   * @param message
-   * @param updateFunc
-   */
   _updateMessage(
     message: {
       id?: string;
@@ -372,27 +299,10 @@ export class ChannelState<ErmisChatGenerics extends ExtendableGenerics = Default
     }
   }
 
-  /**
-   * Setter for isUpToDate.
-   *
-   * @param isUpToDate  Flag which indicates if channel state contain latest/recent messages or no.
-   *                    This flag should be managed by UI sdks using a setter - setIsUpToDate.
-   *                    When false, any new message (received by websocket event - message.new) will not
-   *                    be pushed on to message list.
-   */
   setIsUpToDate = (isUpToDate: boolean) => {
     this.isUpToDate = isUpToDate;
   };
 
-  /**
-   * _addToMessageList - Adds a message to a list of messages, tries to update first, appends if message isn't found
-   *
-   * @param {Array<ReturnType<ChannelState<ErmisChatGenerics>['formatMessage']>>} messages A list of messages
-   * @param message
-   * @param {boolean} timestampChanged Whether updating a message with changed created_at value.
-   * @param {string} sortBy field name to use to sort the messages by
-   * @param {boolean} addIfDoesNotExist Add message if it is not in the list, used to prevent out of order updated messages from being added.
-   */
   _addToMessageList(
     messages: Array<ReturnType<ChannelState<ErmisChatGenerics>['formatMessage']>>,
     message: ReturnType<ChannelState<ErmisChatGenerics>['formatMessage']>,
@@ -403,13 +313,6 @@ export class ChannelState<ErmisChatGenerics extends ExtendableGenerics = Default
     return addToMessageList(messages, message, timestampChanged, sortBy, addIfDoesNotExist);
   }
 
-  /**
-   * removeMessage - Description
-   *
-   * @param {{ id: string; parent_id?: string }} messageToRemove Object of the message to remove. Needs to have at id specified.
-   *
-   * @return {boolean} Returns if the message was removed
-   */
   removeMessage(messageToRemove: { id: string; messageSetIndex?: number; parent_id?: string }) {
     let isRemoved = false;
     const messageSetIndex = messageToRemove.messageSetIndex ?? this.findMessageSetIndex(messageToRemove);
@@ -434,11 +337,6 @@ export class ChannelState<ErmisChatGenerics extends ExtendableGenerics = Default
     return { removed: result.length < msgArray.length, result };
   };
 
-  /**
-   * Updates the message.user property with updated user object, for messages.
-   *
-   * @param {UserResponse<ErmisChatGenerics>} user
-   */
   updateUserMessages = (user: UserResponse<ErmisChatGenerics>) => {
     const _updateUserMessages = (
       messages: Array<ReturnType<ChannelState<ErmisChatGenerics>['formatMessage']>>,
@@ -468,12 +366,6 @@ export class ChannelState<ErmisChatGenerics extends ExtendableGenerics = Default
     _updateUserMessages(this.pinnedMessages, user);
   };
 
-  /**
-   * Marks the messages as deleted, from deleted user.
-   *
-   * @param {UserResponse<ErmisChatGenerics>} user
-   * @param {boolean} hardDelete
-   */
   deleteUserMessages = (user: UserResponse<ErmisChatGenerics>, hardDelete = false) => {
     const _deleteUserMessages = (
       messages: Array<ReturnType<ChannelState<ErmisChatGenerics>['formatMessage']>>,
@@ -521,19 +413,12 @@ export class ChannelState<ErmisChatGenerics extends ExtendableGenerics = Default
     _deleteUserMessages(this.pinnedMessages, user, hardDelete);
   };
 
-  /**
-   * filterErrorMessages - Removes error messages from the channel state.
-   *
-   */
   filterErrorMessages() {
     const filteredMessages = this.latestMessages.filter((message) => message.type !== 'error');
 
     this.latestMessages = filteredMessages;
   }
 
-  /**
-   * clean - Remove stale data such as users that stayed in typing state for more than 5 seconds
-   */
   clean() {
     const now = new Date();
     // prevent old users from showing up as typing
@@ -562,12 +447,6 @@ export class ChannelState<ErmisChatGenerics extends ExtendableGenerics = Default
     this.messageSets = [{ messages: [], isLatest: true, isCurrent: true }];
   }
 
-  /**
-   * loadMessageIntoState - Loads a given message (and messages around it) into the state
-   *
-   * @param {string} messageId The id of the message, or 'latest' to indicate switching to the latest messages
-   * @param {string} parentMessageId The id of the parent message, if we want load a thread reply
-   */
   async loadMessageIntoState(messageId: string | 'latest', parentMessageId?: string, limit = 25) {
     let messageSetIndex: number;
     let switchedToMessageSet = false;
@@ -594,14 +473,6 @@ export class ChannelState<ErmisChatGenerics extends ExtendableGenerics = Default
     }
   }
 
-  /**
-   * findMessage - Finds a message inside the state
-   *
-   * @param {string} messageId The id of the message
-   * @param {string} parentMessageId The id of the parent message, if we want load a thread reply
-   *
-   * @return {ReturnType<ChannelState<ErmisChatGenerics>['formatMessage']>} Returns the message, or undefined if the message wasn't found
-   */
   findMessage(messageId: string, parentMessageId?: string) {
     const messageSetIndex = this.findMessageSetIndex({ id: messageId });
     if (messageSetIndex === -1) {

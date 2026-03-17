@@ -16,14 +16,11 @@ import {
   ChannelQueryOptions,
   ChannelResponse,
   DefaultGenerics,
-  DeleteChannelAPIResponse,
   Event,
-  EventAPIResponse,
   EventHandler,
   EventTypes,
   ExtendableGenerics,
   FormatMessageResponse,
-  MarkReadOptions,
   Message,
   MessageResponse,
   MessageSetType,
@@ -157,7 +154,7 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
 
   async sendEvent(event: Event<ErmisChatGenerics>) {
     // this._checkInitialized();
-    return await this.getClient().post<EventAPIResponse<ErmisChatGenerics>>(this._channelURL() + '/event', {
+    return await this.getClient().post(this._channelURL() + '/event', {
       event,
     });
   }
@@ -213,10 +210,8 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     });
   }
 
-  async delete(options: { hard_delete?: boolean } = {}) {
-    return await this.getClient().delete<DeleteChannelAPIResponse<ErmisChatGenerics>>(this._channelURL(), {
-      ...options,
-    });
+  async delete() {
+    return await this.getClient().delete(this._channelURL());
   }
 
   async truncate() {
@@ -398,10 +393,8 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     return messageSlice[0];
   }
 
-  async markRead(data: MarkReadOptions<ErmisChatGenerics> = {}) {
-    return await this.getClient().post<EventAPIResponse<ErmisChatGenerics>>(this._channelURL() + '/read', {
-      ...data,
-    });
+  async markRead() {
+    return await this.getClient().post(this._channelURL() + '/read');
   }
 
   clean() {
