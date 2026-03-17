@@ -5,8 +5,14 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  define: {
+    'process.env.PKG_VERSION': JSON.stringify('dev'),
+  },
   resolve: {
     alias: {
+      // Deduplicate React – ensures one copy across all packages
+      'react': path.resolve(__dirname, '../../node_modules/react'),
+      'react-dom': path.resolve(__dirname, '../../node_modules/react-dom'),
       // Point directly to source files for instant HMR during development
       '@ermis-network/ermis-chat-react': path.resolve(
         __dirname,

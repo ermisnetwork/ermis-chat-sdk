@@ -1086,12 +1086,13 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
       }
     });
 
-
     const { channels, userIds } = this.hydrateChannels(data.channels, stateOptions);
 
     // if (userIds.length > 0) {
     //   await this.getBatchUsers(userIds);
     // }
+
+    console.log('---channels---', channels);
 
     return channels;
   }

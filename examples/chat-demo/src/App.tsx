@@ -4,16 +4,17 @@ import {
   ChatProvider,
   ChannelList,
   Channel,
+  ChannelHeader,
   MessageList,
   MessageInput,
 } from '@ermis-network/ermis-chat-react';
 
 // TODO: Replace with your actual credentials
-const API_KEY = 'YOUR_API_KEY';
-const PROJECT_ID = 'YOUR_PROJECT_ID';
-const BASE_URL = 'https://api.ermis.network';
-const USER_ID = 'YOUR_USER_ID';
-const USER_TOKEN = 'YOUR_USER_TOKEN';
+const API_KEY = 'sXhcPu0JneUbQ6TG2tXePK8MC2tBAHn9';
+const PROJECT_ID = 'ec964975-ae84-4a8e-91a1-222ca3aeeef8';
+const BASE_URL = 'https://api-trieve.ermis.network';
+const USER_ID = '0xc95dfd46d70aba666b96428271d05257a6fc88d8';
+const USER_TOKEN = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiMHhjOTVkZmQ0NmQ3MGFiYTY2NmI5NjQyODI3MWQwNTI1N2E2ZmM4OGQ4IiwiY2xpZW50X2lkIjoiMzNhZTc0NzMtNjMxNS00NDMzLTgyYjAtMmFmYzNhMzk5OWUyIiwiY2hhaW5faWQiOjEsInByb2plY3RfaWQiOiJlYzk2NDk3NS1hZTg0LTRhOGUtOTFhMS0yMjJjYTNhZWVlZjgiLCJhcGlrZXkiOiJzWGhjUHUwSm5lVWJRNlRHMnRYZVBLOE1DMnRCQUhuOSIsImVybWlzIjpmYWxzZSwiZXhwIjoxODczNzU0MDQ0NDE0LCJhZG1pbiI6ZmFsc2UsImdhdGUiOmZhbHNlfQ.23NSivi8JVJQ0GHlwgMx0o5XDBWTMnIK-6XsPJqdxlI';
 
 function App() {
   const [client, setClient] = useState<ErmisChat | null>(null);
@@ -50,66 +51,21 @@ function App() {
   }
 
   return (
-    <ChatProvider client={client}>
-      <div className="flex h-screen bg-gray-950 text-white">
+    <ChatProvider client={client} initialTheme='light'>
+      <div className="flex h-screen">
         {/* Sidebar - Channel List */}
         <div className="w-80 border-r border-gray-800 flex flex-col">
-          <div className="p-4 border-b border-gray-800">
-            <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-              Ermis Chat
-            </h1>
-            <p className="text-xs text-gray-500 mt-1">Connected as {USER_ID}</p>
-          </div>
           <div className="flex-1 overflow-y-auto">
-            <ChannelList
-              renderChannel={(channel, isActive) => (
-                <div
-                  className={`px-4 py-3 cursor-pointer transition-colors ${
-                    isActive
-                      ? 'bg-indigo-500/20 border-l-2 border-indigo-500'
-                      : 'hover:bg-gray-800/50 border-l-2 border-transparent'
-                  }`}
-                >
-                  <div className="font-medium text-sm truncate">
-                    {channel.data?.name || channel.cid}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-0.5 truncate">
-                    {channel.data?.type === 'messaging' ? 'Direct Message' : 'Team Channel'}
-                  </div>
-                </div>
-              )}
-            />
+            <ChannelList />
           </div>
         </div>
 
         {/* Main - Chat Area */}
         <div className="flex-1 flex flex-col">
           <Channel>
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4">
-              <MessageList
-                renderMessage={(message) => (
-                  <div className="mb-3 group">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-sm font-semibold text-indigo-400">
-                        {message.user?.name || message.user_id}
-                      </span>
-                      <span className="text-xs text-gray-600">
-                        {message.created_at
-                          ? new Date(message.created_at).toLocaleTimeString()
-                          : ''}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-300 mt-0.5">{message.text}</p>
-                  </div>
-                )}
-              />
-            </div>
-
-            {/* Input */}
-            <div className="border-t border-gray-800 p-4">
-              <MessageInput placeholder="Type a message..." />
-            </div>
+            <ChannelHeader />
+            <MessageList />
+            <MessageInput placeholder="Type a message..." />
           </Channel>
         </div>
       </div>

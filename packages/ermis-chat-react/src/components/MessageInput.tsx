@@ -2,15 +2,31 @@ import React, { useState, useCallback } from 'react';
 import { useChatClient } from '../hooks/useChatClient';
 
 export type MessageInputProps = {
-  /** Placeholder text */
   placeholder?: string;
-  /** Called after message is sent successfully */
   onSend?: (text: string) => void;
+  className?: string;
+  SendButton?: React.ComponentType<{ disabled: boolean; onClick: () => void }>;
 };
 
-export const MessageInput: React.FC<MessageInputProps> = ({
+const DefaultSendButton: React.FC<{ disabled: boolean; onClick: () => void }> = React.memo(({
+  disabled,
+  onClick,
+}) => (
+  <button
+    className="ermis-message-input__send-btn"
+    onClick={onClick}
+    disabled={disabled}
+  >
+    Send
+  </button>
+));
+DefaultSendButton.displayName = 'DefaultSendButton';
+
+export const MessageInput: React.FC<MessageInputProps> = React.memo(({
   placeholder = 'Type a message...',
   onSend,
+  className,
+  SendButton = DefaultSendButton,
 }) => {
   const { activeChannel } = useChatClient();
   const [text, setText] = useState('');
@@ -22,8 +38,9 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     try {
       setSending(true);
       await activeChannel.sendMessage({ text: text.trim() });
+      const sentText = text.trim();
       setText('');
-      onSend?.(text.trim());
+      onSend?.(sentText);
     } catch (err) {
       console.error('Failed to send message:', err);
     } finally {
@@ -31,33 +48,42 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     }
   }, [activeChannel, text, sending, onSend]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend],
+  );
+
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setText(e.target.value);
+    },
+    [],
+  );
 
   if (!activeChannel) return null;
 
   return (
-    <div className="ermis-message-input">
+    <div className={`ermis-message-input${className ? ` ${className}` : ''}`}>
       <textarea
         className="ermis-message-input__textarea"
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={handleChange}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         disabled={sending}
         rows={1}
       />
-      <button
-        className="ermis-message-input__send-btn"
-        onClick={handleSend}
+      <SendButton
         disabled={!text.trim() || sending}
-      >
-        Send
-      </button>
+        onClick={handleSend}
+      />
     </div>
   );
-};
+});
+
+MessageInput.displayName = 'MessageInput';

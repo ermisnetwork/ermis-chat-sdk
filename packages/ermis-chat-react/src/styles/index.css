@@ -1,0 +1,500 @@
+/* ============================================================
+   Ermis Chat React – Default Styles
+   BEM naming: .ermis-{block}__{element}--{modifier}
+   ============================================================ */
+
+/* ----------------------------------------------------------
+   Design Tokens – Dark (default)
+   ---------------------------------------------------------- */
+.ermis-chat,
+.ermis-chat--dark {
+  --ermis-bg-primary: #0a0a0f;
+  --ermis-bg-secondary: #111118;
+  --ermis-bg-hover: rgba(255, 255, 255, 0.04);
+  --ermis-bg-active: rgba(99, 102, 241, 0.12);
+  --ermis-border: rgba(255, 255, 255, 0.08);
+  --ermis-accent: #6366f1;
+  --ermis-accent-hover: #818cf8;
+  --ermis-text-primary: #e5e7eb;
+  --ermis-text-secondary: #9ca3af;
+  --ermis-text-muted: #6b7280;
+
+  /* Message bubbles */
+  --ermis-bubble-own-bg: var(--ermis-accent);
+  --ermis-bubble-own-text: #ffffff;
+  --ermis-bubble-other-bg: #1e1e2a;
+  --ermis-bubble-other-text: var(--ermis-text-primary);
+
+  /* Typography */
+  --ermis-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+  --ermis-font-size-xs: 0.75rem;
+  --ermis-font-size-sm: 0.875rem;
+  --ermis-font-size-base: 1rem;
+
+  /* Spacing */
+  --ermis-spacing-xs: 0.25rem;
+  --ermis-spacing-sm: 0.5rem;
+  --ermis-spacing-md: 0.75rem;
+  --ermis-spacing-lg: 1rem;
+
+  /* Radius */
+  --ermis-radius-sm: 0.375rem;
+  --ermis-radius-md: 0.5rem;
+  --ermis-radius-lg: 0.75rem;
+  --ermis-radius-full: 9999px;
+
+  /* Transitions */
+  --ermis-transition: 150ms ease;
+
+  color: var(--ermis-text-primary);
+  font-family: var(--ermis-font-family);
+}
+
+/* ----------------------------------------------------------
+   Design Tokens – Light
+   ---------------------------------------------------------- */
+.ermis-chat--light {
+  --ermis-bg-primary: #ffffff;
+  --ermis-bg-secondary: #f9fafb;
+  --ermis-bg-hover: rgba(0, 0, 0, 0.04);
+  --ermis-bg-active: rgba(99, 102, 241, 0.08);
+  --ermis-border: rgba(0, 0, 0, 0.08);
+  --ermis-accent: #6366f1;
+  --ermis-accent-hover: #4f46e5;
+  --ermis-text-primary: #111827;
+  --ermis-text-secondary: #6b7280;
+  --ermis-text-muted: #9ca3af;
+
+  /* Message bubbles */
+  --ermis-bubble-own-bg: var(--ermis-accent);
+  --ermis-bubble-own-text: #ffffff;
+  --ermis-bubble-other-bg: #f3f4f6;
+  --ermis-bubble-other-text: var(--ermis-text-primary);
+}
+
+/* ----------------------------------------------------------
+   Chat root
+   ---------------------------------------------------------- */
+.ermis-chat {
+  width: 100%;
+  height: 100%;
+  background-color: var(--ermis-bg-primary);
+  color: var(--ermis-text-primary);
+}
+
+/* ----------------------------------------------------------
+   Avatar
+   ---------------------------------------------------------- */
+.ermis-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ermis-radius-full);
+  object-fit: cover;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.ermis-avatar--fallback {
+  background: linear-gradient(135deg, var(--ermis-accent) 0%, var(--ermis-accent-hover) 100%);
+  color: #fff;
+  font-weight: 600;
+  font-family: var(--ermis-font-family);
+  text-transform: uppercase;
+  user-select: none;
+}
+
+/* ----------------------------------------------------------
+   ChannelHeader
+   ---------------------------------------------------------- */
+.ermis-channel-header {
+  display: flex;
+  align-items: center;
+  gap: var(--ermis-spacing-md);
+  padding: var(--ermis-spacing-md) var(--ermis-spacing-lg);
+  border-bottom: 1px solid var(--ermis-border);
+  background-color: var(--ermis-bg-secondary);
+  font-family: var(--ermis-font-family);
+}
+
+.ermis-channel-header__info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ermis-channel-header__name {
+  font-size: var(--ermis-font-size-base);
+  font-weight: 600;
+  color: var(--ermis-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ----------------------------------------------------------
+   ChannelList
+   ---------------------------------------------------------- */
+.ermis-channel-list {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--ermis-font-family);
+}
+
+.ermis-channel-list__loading {
+  padding: var(--ermis-spacing-lg);
+  color: var(--ermis-text-muted);
+  font-size: var(--ermis-font-size-sm);
+  text-align: center;
+}
+
+.ermis-channel-list__empty {
+  padding: var(--ermis-spacing-lg);
+  color: var(--ermis-text-muted);
+  font-size: var(--ermis-font-size-sm);
+  text-align: center;
+}
+
+.ermis-channel-list__item {
+  display: flex;
+  align-items: center;
+  gap: var(--ermis-spacing-md);
+  padding: var(--ermis-spacing-md) var(--ermis-spacing-lg);
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: background-color var(--ermis-transition),
+    border-color var(--ermis-transition);
+}
+
+.ermis-channel-list__item:hover {
+  background-color: var(--ermis-bg-hover);
+}
+
+.ermis-channel-list__item--active {
+  background-color: var(--ermis-bg-active);
+  border-left-color: var(--ermis-accent);
+}
+
+.ermis-channel-list__item-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.ermis-channel-list__item-name {
+  font-size: var(--ermis-font-size-sm);
+  font-weight: 500;
+  color: var(--ermis-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ermis-channel-list__item-last-message {
+  font-size: var(--ermis-font-size-xs);
+  color: var(--ermis-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.ermis-channel-list__item-last-message-user {
+  color: var(--ermis-text-secondary);
+}
+
+/* ----------------------------------------------------------
+   Channel
+   ---------------------------------------------------------- */
+.ermis-channel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  font-family: var(--ermis-font-family);
+}
+
+.ermis-channel__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: var(--ermis-text-muted);
+  font-size: var(--ermis-font-size-sm);
+  font-family: var(--ermis-font-family);
+}
+
+/* ----------------------------------------------------------
+   MessageList
+   ---------------------------------------------------------- */
+.ermis-message-list {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--ermis-spacing-lg);
+  font-family: var(--ermis-font-family);
+  gap: var(--ermis-spacing-xs);
+}
+
+/* Pushes messages to bottom when few messages exist */
+.ermis-message-list__spacer {
+  flex: 1;
+}
+
+.ermis-message-list__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: var(--ermis-text-muted);
+  font-size: var(--ermis-font-size-sm);
+  font-family: var(--ermis-font-family);
+}
+
+/* --- Message item (other = left, own = right) --- */
+.ermis-message-list__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ermis-spacing-sm);
+  margin-bottom: var(--ermis-spacing-xs);
+  max-width: 75%;
+}
+
+.ermis-message-list__item--other {
+  align-self: flex-start;
+  flex-direction: row;
+}
+
+.ermis-message-list__item--own {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.ermis-message-list__item-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.ermis-message-list__item--own .ermis-message-list__item-content {
+  align-items: flex-end;
+}
+
+.ermis-message-list__item-user {
+  font-size: var(--ermis-font-size-xs);
+  font-weight: 600;
+  color: var(--ermis-accent);
+}
+
+.ermis-message-list__item-time {
+  font-size: 0.625rem;
+  color: var(--ermis-text-muted);
+}
+
+.ermis-message-list__item-text {
+  font-size: var(--ermis-font-size-sm);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+/* --- Message Bubble --- */
+.ermis-message-bubble {
+  padding: var(--ermis-spacing-sm) var(--ermis-spacing-md);
+  border-radius: var(--ermis-radius-lg);
+  max-width: 100%;
+  word-break: break-word;
+}
+
+.ermis-message-bubble--own {
+  background-color: var(--ermis-bubble-own-bg);
+  color: var(--ermis-bubble-own-text);
+  border-bottom-right-radius: var(--ermis-radius-sm);
+}
+
+.ermis-message-bubble--other {
+  background-color: var(--ermis-bubble-other-bg);
+  color: var(--ermis-bubble-other-text);
+  border-bottom-left-radius: var(--ermis-radius-sm);
+}
+
+/* --- System messages --- */
+.ermis-message-list__system {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ermis-spacing-sm);
+  padding: var(--ermis-spacing-sm) 0;
+  margin: var(--ermis-spacing-xs) 0;
+  align-self: center;
+}
+
+.ermis-message-list__system-text {
+  font-size: var(--ermis-font-size-xs);
+  color: var(--ermis-text-muted);
+  font-style: italic;
+}
+
+.ermis-message-list__system-time {
+  font-size: 0.625rem;
+  color: var(--ermis-text-muted);
+}
+
+/* --- Attachments --- */
+.ermis-attachment-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ermis-spacing-xs);
+  margin-top: var(--ermis-spacing-xs);
+}
+
+.ermis-attachment--image {
+  max-width: 300px;
+  max-height: 200px;
+  border-radius: var(--ermis-radius-md);
+  object-fit: cover;
+  cursor: pointer;
+}
+
+.ermis-attachment--video {
+  max-width: 300px;
+  max-height: 200px;
+  border-radius: var(--ermis-radius-md);
+}
+
+.ermis-attachment--file {
+  display: flex;
+  align-items: center;
+  gap: var(--ermis-spacing-sm);
+  padding: var(--ermis-spacing-sm) var(--ermis-spacing-md);
+  border-radius: var(--ermis-radius-md);
+  background-color: var(--ermis-bg-hover);
+  text-decoration: none;
+  color: var(--ermis-text-primary);
+  transition: background-color var(--ermis-transition);
+}
+
+.ermis-attachment--file:hover {
+  background-color: var(--ermis-bg-active);
+}
+
+.ermis-attachment__file-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.ermis-attachment__file-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ermis-attachment__file-name {
+  font-size: var(--ermis-font-size-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ermis-attachment__file-size {
+  font-size: var(--ermis-font-size-xs);
+  color: var(--ermis-text-muted);
+}
+
+/* --- Poll message --- */
+.ermis-message-poll {
+  display: flex;
+  align-items: center;
+  gap: var(--ermis-spacing-sm);
+}
+
+.ermis-message-poll__icon {
+  font-size: 1.25rem;
+}
+
+.ermis-message-poll__text {
+  font-size: var(--ermis-font-size-sm);
+}
+
+/* --- Sticker message --- */
+.ermis-message-sticker {
+  max-width: 120px;
+  max-height: 120px;
+}
+
+/* --- Error message --- */
+.ermis-message-error {
+  font-size: var(--ermis-font-size-sm);
+  color: #ef4444;
+  font-style: italic;
+}
+
+/* ----------------------------------------------------------
+   MessageInput
+   ---------------------------------------------------------- */
+.ermis-message-input {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ermis-spacing-sm);
+  padding: var(--ermis-spacing-md);
+  border-top: 1px solid var(--ermis-border);
+  background-color: var(--ermis-bg-secondary);
+  font-family: var(--ermis-font-family);
+}
+
+.ermis-message-input__textarea {
+  flex: 1;
+  resize: none;
+  border: 1px solid var(--ermis-border);
+  border-radius: var(--ermis-radius-md);
+  padding: var(--ermis-spacing-sm) var(--ermis-spacing-md);
+  font-size: var(--ermis-font-size-sm);
+  font-family: var(--ermis-font-family);
+  color: var(--ermis-text-primary);
+  background-color: var(--ermis-bg-primary);
+  outline: none;
+  transition: border-color var(--ermis-transition);
+  line-height: 1.5;
+  min-height: 2.25rem;
+  max-height: 8rem;
+}
+
+.ermis-message-input__textarea::placeholder {
+  color: var(--ermis-text-muted);
+}
+
+.ermis-message-input__textarea:focus {
+  border-color: var(--ermis-accent);
+}
+
+.ermis-message-input__send-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ermis-spacing-sm) var(--ermis-spacing-lg);
+  border: none;
+  border-radius: var(--ermis-radius-md);
+  background-color: var(--ermis-accent);
+  color: #fff;
+  font-size: var(--ermis-font-size-sm);
+  font-weight: 600;
+  font-family: var(--ermis-font-family);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--ermis-transition),
+    opacity var(--ermis-transition);
+}
+
+.ermis-message-input__send-btn:hover:not(:disabled) {
+  background-color: var(--ermis-accent-hover);
+}
+
+.ermis-message-input__send-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
