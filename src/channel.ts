@@ -35,12 +35,7 @@ import {
   AttachmentResponse,
   PollMessage,
   EditMessage,
-  Role,
 } from './types';
-
-/**
- * Channel - The Channel class manages it's own state.
- */
 export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGenerics> {
   _client: ErmisChat<ErmisChatGenerics>;
   type: string;
@@ -48,39 +43,15 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
   data: ChannelData<ErmisChatGenerics> | ChannelResponse<ErmisChatGenerics> | undefined;
   _data: ChannelData<ErmisChatGenerics> | ChannelResponse<ErmisChatGenerics>;
   cid: string;
-  /**  */
   listeners: { [key: string]: (string | EventHandler<ErmisChatGenerics>)[] };
   state: ChannelState<ErmisChatGenerics>;
-  /**
-   * This boolean is a vague indication of weather the channel exists on chat backend.
-   *
-   * If the value is true, then that means the channel has been initialized by either calling
-   * channel.create() or channel.query() or channel.watch().
-   *
-   * If the value is false, then channel may or may not exist on the backend. The only way to ensure
-   * is by calling channel.create() or channel.query() or channel.watch().
-   */
   initialized: boolean;
-  /**
-   * Indicates weather channel has been initialized by manually populating the state with some messages, members etc.
-   * Static state indicates that channel exists on backend, but is not being watched yet.
-   */
   offlineMode: boolean;
   lastKeyStroke?: Date;
   lastTypingEvent: Date | null;
   isTyping: boolean;
   disconnected: boolean;
 
-  /**
-   * constructor - Create a channel
-   *
-   * @param {ErmisChat<ErmisChatGenerics>} client the chat client
-   * @param {string} type  the type of channel
-   * @param {string} [id]  the id of the chat
-   * @param {ChannelData<ErmisChatGenerics>} data any additional custom params
-   *
-   * @return {Channel<ErmisChatGenerics>} Returns a new uninitialized channel
-   */
   constructor(
     client: ErmisChat<ErmisChatGenerics>,
     type: string,
@@ -100,13 +71,10 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     this._client = client;
     this.type = type;
     this.id = id;
-    // used by the frontend, gets updated:
     this.data = data;
-    // this._data is used for the requests...
     this._data = { ...data };
     this.cid = `${type}:${id}`;
     this.listeners = {};
-    // perhaps the state variable should be private
     this.state = new ChannelState<ErmisChatGenerics>(this);
     this.initialized = false;
     this.offlineMode = false;
@@ -115,23 +83,10 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     this.disconnected = false;
   }
 
-  /**
-   * getClient - Get the chat client for this channel. If client.disconnect() was called, this function will error
-   *
-   * @return {ErmisChat<ErmisChatGenerics>}
-   */
   getClient(): ErmisChat<ErmisChatGenerics> {
-    // if (this.disconnected === true) {
-    //   throw Error(`You can't use a channel after client.disconnect() was called`);
-    // }
     return this._client;
   }
 
-  /**
-   * sendMessage - Send a message to this channel
-   *
-   * @param {Message<ErmisChatGenerics>} message The Message object
-   */
   async sendMessage(message: Message<ErmisChatGenerics>) {
     if (!message.hasOwnProperty('id') || !message?.id) {
       const id = randomId();
@@ -151,13 +106,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
       message: { ...pollMessage },
     });
   }
-
-  /**
-   * votePoll - Cast a vote for a poll choice
-   * @param {string} messageId - The message ID containing the poll
-   * @param {string} pollChoice - The poll choice ID to vote for
-   * @returns {Promise<APIResponse>} The server response
-   */
 
   async votePoll(messageID: string, pollChoice: string) {
     if (!messageID) {
@@ -207,13 +155,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     return this.getClient().sendFile(`${this._channelURL()}/file`, uri, name, contentType, user);
   }
 
-  /**
-   * sendEvent - Send an event on this channel
-   *
-   * @param {Event<ErmisChatGenerics>} event for example {type: 'message.read'}
-   *
-   * @return {Promise<EventAPIResponse<ErmisChatGenerics>>} The Server Response
-   */
   async sendEvent(event: Event<ErmisChatGenerics>) {
     // this._checkInitialized();
     return await this.getClient().post<EventAPIResponse<ErmisChatGenerics>>(this._channelURL() + '/event', {
@@ -221,15 +162,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     });
   }
 
-  /**
-   * sendReaction - Send a reaction about a message
-   *
-   * @param {string} messageID the message id
-   * @param {Reaction<ErmisChatGenerics>} reaction the reaction object for instance {type: 'love'}
-   * @param {{ enforce_unique?: boolean, skip_push?: boolean }} [options] Option object, {enforce_unique: true, skip_push: true} to override any existing reaction or skip sending push notifications
-   *
-   * @return {Promise<ReactionAPIResponse<ErmisChatGenerics>>} The Server Response
-   */
   async sendReaction(messageID: string, reactionType: string) {
     if (!messageID) {
       throw Error(`Message id is missing`);
@@ -239,15 +171,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     );
   }
 
-  /**
-   * deleteReaction - Delete a reaction by user and type
-   *
-   * @param {string} messageID the id of the message from which te remove the reaction
-   * @param {string} reactionType the type of reaction that should be removed
-   * @param {string} [user_id] the id of the user (used only for server side request) default nullz
-   *
-   * @return {Promise<ReactionAPIResponse<ErmisChatGenerics>>} The Server Response
-   */
   deleteReaction(messageID: string, reactionType: string) {
     // this._checkInitialized();
     if (!reactionType || !messageID) {
@@ -290,22 +213,12 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     });
   }
 
-  /**
-   * delete - Delete the channel. Messages are permanently removed.
-   *
-   * @param {boolean} [options.hard_delete] Defines if the channel is hard deleted or not
-   *
-   * @return {Promise<DeleteChannelAPIResponse<ErmisChatGenerics>>} The server response
-   */
   async delete(options: { hard_delete?: boolean } = {}) {
     return await this.getClient().delete<DeleteChannelAPIResponse<ErmisChatGenerics>>(this._channelURL(), {
       ...options,
     });
   }
 
-  /**
-   * truncate - Removes all messages from the channel
-   */
   async truncate() {
     return await this.getClient().delete(this._channelURL() + '/truncate');
   }
@@ -318,13 +231,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     return await this.getClient().post(this._channelURL(), { action: 'unblock' });
   }
 
-  /**
-   * acceptInvite - accept invitation to the channel
-   *
-   * @param {InviteOptions<ErmisChatGenerics>} [options] The object to update the custom properties of this channel with
-   *
-   * @return {Promise<UpdateChannelAPIResponse<ErmisChatGenerics>>} The server response
-   */
   async acceptInvite(action: string) {
     // const url = this.getClient().baseURL + `/invites/${this.type}/${this.id}/accept`;
     const channel_id = this.id;
@@ -333,23 +239,11 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     return this.getClient().post<APIResponse>(url, {}, { channel_id, action });
   }
 
-  /**
-   * rejectInvite - reject invitation to the channel
-   *
-   *
-   * @return {Promise<UpdateChannelAPIResponse<ErmisChatGenerics>>} The server response
-   */
   async rejectInvite() {
     const url = this.getClient().baseURL + `/invites/${this.type}/${this.id}/reject`;
     return this.getClient().post<APIResponse>(url);
   }
 
-  /**
-   * skipInvite - skip invitation to the direct channel
-   *
-   *
-   * @return {Promise<UpdateChannelAPIResponse<ErmisChatGenerics>>} The server response
-   */
   async skipInvite() {
     const url = this.getClient().baseURL + `/invites/${this.type}/${this.id}/skip`;
     return this.getClient().post<APIResponse>(url);
@@ -413,23 +307,12 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     return await this._update({ demote_members: members });
   }
 
-  /**
-   * _update - executes channel update request
-   * @param payload Object Update Channel payload
-   * @return {Promise<UpdateChannelAPIResponse<ErmisChatGenerics>>} The server response
-   * TODO: introduce new type instead of Object in the next major update
-   */
   async _update(payload: Object) {
     const data = await this.getClient().post<UpdateChannelAPIResponse<ErmisChatGenerics>>(this._channelURL(), payload);
     this.data = { ...this.data, ...data.channel };
     return data;
   }
 
-  /**
-   * _processTopics - Process and enrich topics with user information
-   * @param state QueryChannelAPIResponse state containing topics
-   * @param users Array of user objects for enrichment
-   */
   _processTopics(topicsFromApi: any, users: any[]) {
     const topics = topicsFromApi.map((topic: any) => {
       // Enrich topic members with user info
@@ -471,15 +354,7 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     );
   }
 
-  /**
-   * keystroke - First of the typing.start and typing.stop events based on the users keystrokes.
-   * Call this on every keystroke
-   * @param {string} [parent_id] set this field to `message.id` to indicate that typing event is happening in a thread
-   */
   async keystroke(parent_id?: string, options?: { user_id: string }) {
-    // if (!this._isTypingIndicatorsEnabled()) {
-    //   return;
-    // }
     const now = new Date();
     const diff = this.lastTypingEvent && now.getTime() - this.lastTypingEvent.getTime();
     this.lastKeyStroke = now;
@@ -495,14 +370,7 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     }
   }
 
-  /**
-   * stopTyping - Sets last typing to null and sends the typing.stop event
-   * @param {string} [parent_id] set this field to `message.id` to indicate that typing event is happening in a thread
-   */
   async stopTyping(parent_id?: string, options?: { user_id: string }) {
-    // if (!this._isTypingIndicatorsEnabled()) {
-    //   return;
-    // }
     this.lastTypingEvent = null;
     this.isTyping = false;
     await this.sendEvent({
@@ -516,14 +384,7 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     return true;
   }
 
-  /**
-   * lastMessage - return the last message, takes into account that last few messages might not be perfectly sorted
-   *
-   * @return {ReturnType<ChannelState<ErmisChatGenerics>['formatMessage']> | undefined} Description
-   */
   lastMessage() {
-    // get last 5 messages, sort, return the latest
-    // get a slice of the last 5
     let min = this.state.latestMessages.length - 5;
     if (min < 0) {
       min = 0;
@@ -543,9 +404,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     });
   }
 
-  /**
-   * clean - Cleans the channel state and fires stop typing if needed
-   */
   clean() {
     if (this.lastKeyStroke) {
       const now = new Date();
@@ -607,10 +465,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     return state;
   }
 
-  /**
-   * lastRead - returns the last time the user marked the channel as read if the user never marked the channel as read, this will return null
-   * @return {Date | null | undefined}
-   */
   lastRead() {
     const { userID } = this.getClient();
     if (userID) {
@@ -630,13 +484,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     return true;
   }
 
-  /**
-   * countUnread - Count of unread messages
-   *
-   * @param {Date | null} [lastRead] lastRead the time that the user read a message, defaults to current user's read state
-   *
-   * @return {number} Unread count
-   */
   countUnread(lastRead?: Date | null) {
     if (!lastRead) return this.state.unreadCount;
 
@@ -662,12 +509,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     return this.data.member_capabilities;
   }
 
-  /**
-   * create - Creates a new channel
-   *
-   * @return {Promise<QueryChannelAPIResponse<ErmisChatGenerics>>} The Server Response
-   *
-   */
   create = async () => {
     if (this.type === 'messaging') {
       return await this.createDirectChannel('latest');
@@ -693,14 +534,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     return state;
   }
 
-  /**
-   * query - Query the API, get messages, members or other channel fields
-   *
-   * @param {ChannelQueryOptions} options The query options
-   * @param {MessageSetType} messageSetToAddToIfDoesNotExist It's possible to load disjunct sets of a channel's messages into state, use `current` to load the initial channel state or if you want to extend the currently displayed messages, use `latest` if you want to load/extend the latest messages, `new` is used for loading a specific message and it's surroundings
-   *
-   * @return {Promise<QueryChannelAPIResponse<ErmisChatGenerics>>} Returns a query response
-   */
   async query(options: ChannelQueryOptions, messageSetToAddToIfDoesNotExist: MessageSetType = 'current') {
     // Make sure we wait for the connect promise if there is a pending one
     await this.getClient().wsPromise;
@@ -1029,16 +862,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     }
   }
 
-  /**
-   * on - Listen to events on this channel.
-   *
-   * channel.on('message.new', event => {console.log("my new message", event, channel.state.messages)})
-   * or
-   * channel.on(event => {console.log(event.type)})
-   *
-   * @param {EventHandler<ErmisChatGenerics> | EventTypes} callbackOrString  The event type to listen for (optional)
-   * @param {EventHandler<ErmisChatGenerics>} [callbackOrNothing] The callback to call
-   */
   on(eventType: EventTypes, callback: EventHandler<ErmisChatGenerics>): { unsubscribe: () => void };
   on(callback: EventHandler<ErmisChatGenerics>): { unsubscribe: () => void };
   on(
@@ -1069,10 +892,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     };
   }
 
-  /**
-   * off - Remove the event handler
-   *
-   */
   off(eventType: EventTypes, callback: EventHandler<ErmisChatGenerics>): void;
   off(callback: EventHandler<ErmisChatGenerics>): void;
   off(
@@ -1437,15 +1256,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
           this.state.membership = event.member;
         }
         break;
-      // case 'member.blocked':
-      // case 'member.unblocked':
-      //   if (event.member?.user_id) {
-      //     const user = getUserInfo(event.member.user_id, users);
-      //     event.member.user = user;
-      //     channelState.membership = event.member;
-      //     this.state.membership = event.member;
-      //   }
-      //   break;
       case 'channel.pinned':
         if (channel.data) {
           channel.data.is_pinned = true;
@@ -1532,11 +1342,6 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     }
   };
 
-  /**
-   * _channelURL - Returns the channel url
-   *
-   * @return {string} The channel url
-   */
   _channelURL = () => {
     if (!this.id) {
       throw new Error('channel id is not defined');
