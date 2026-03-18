@@ -393,6 +393,19 @@
   word-break: break-word;
 }
 
+/* --- Mentions --- */
+.ermis-mention {
+  color: var(--ermis-accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ermis-message-bubble--own .ermis-mention {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* --- Message Bubble --- */
 .ermis-message-bubble {
   display: flex;

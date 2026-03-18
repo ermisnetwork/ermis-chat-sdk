@@ -104,15 +104,89 @@ export type MessageBubbleProps = {
   children: React.ReactNode;
 };
 
-/** Regular message: text + attachments */
-export const RegularMessage: React.FC<MessageRendererProps> = ({ message }) => (
-  <>
-    {message.text && (
-      <span className="ermis-message-list__item-text">{message.text}</span>
-    )}
-    <AttachmentList attachments={message.attachments} />
-  </>
-);
+/**
+ * Parse message text and render @mentions as highlighted spans.
+ * Handles both individual user mentions and @all.
+ */
+function renderTextWithMentions(
+  text: string,
+  message: FormatMessageResponse,
+  userMap: Record<string, string>,
+): React.ReactNode {
+  const mentionedUsers: string[] = (message as any).mentioned_users ?? [];
+  const mentionedAll: boolean = (message as any).mentioned_all ?? false;
+
+  // If no mentions, return plain text
+  if (mentionedUsers.length === 0 && !mentionedAll) {
+    return text;
+  }
+
+  // Build a list of patterns to replace: @userId → @userName
+  const replacements: { pattern: string; label: string }[] = [];
+
+  for (const userId of mentionedUsers) {
+    replacements.push({
+      pattern: `@${userId}`,
+      label: `@${userMap[userId] ?? userId}`,
+    });
+  }
+
+  if (mentionedAll) {
+    replacements.push({ pattern: '@all', label: '@all' });
+  }
+
+  // Build a regex that matches any of the mention patterns
+  const escaped = replacements.map((r) =>
+    r.pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+  );
+  const regex = new RegExp(`(${escaped.join('|')})`, 'g');
+
+  const parts = text.split(regex);
+
+  // Map from pattern → label for quick lookup
+  const patternToLabel = new Map(replacements.map((r) => [r.pattern, r.label]));
+
+  return parts.map((part, i) => {
+    const label = patternToLabel.get(part);
+    if (label) {
+      return (
+        <span key={i} className="ermis-mention">
+          {label}
+        </span>
+      );
+    }
+    return part;
+  });
+}
+
+/** Regular message: text with @mentions + attachments */
+export const RegularMessage: React.FC<MessageRendererProps> = ({ message }) => {
+  const { activeChannel } = useChatClient();
+
+  const userMap = useMemo<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    const members = (activeChannel as any)?.state?.members;
+    if (members) {
+      for (const [id, member] of Object.entries<any>(members)) {
+        map[id] = member?.user?.name || member?.user_id || id;
+      }
+    }
+    return map;
+  }, [activeChannel]);
+
+  const textContent = message.text
+    ? renderTextWithMentions(message.text, message, userMap)
+    : null;
+
+  return (
+    <>
+      {textContent && (
+        <span className="ermis-message-list__item-text">{textContent}</span>
+      )}
+      <AttachmentList attachments={message.attachments} />
+    </>
+  );
+};
 
 /** System message: centered info text, parsed from raw format */
 export const SystemMessage: React.FC<MessageRendererProps> = ({ message }) => {
