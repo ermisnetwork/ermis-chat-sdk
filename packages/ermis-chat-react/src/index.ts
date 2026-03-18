@@ -42,3 +42,9 @@ export type { MessageRendererProps, AttachmentProps } from './components/Message
 
 export { MessageInput } from './components/MessageInput';
 export type { MessageInputProps } from './components/MessageInput';
+
+export { MentionSuggestions } from './components/MentionSuggestions';
+export type { MentionSuggestionsProps } from './components/MentionSuggestions';
+
+export { useMentions } from './hooks/useMentions';
+export type { MentionMember, MentionPayload, UseMentionsOptions, UseMentionsReturn } from './hooks/useMentions';
