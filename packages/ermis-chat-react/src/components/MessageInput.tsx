@@ -1,15 +1,10 @@
 import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { useChatClient } from '../hooks/useChatClient';
 import { useMentions } from '../hooks/useMentions';
-import type { MentionMember } from '../hooks/useMentions';
+import type { MentionMember, MessageInputProps } from '../types';
 import { MentionSuggestions } from './MentionSuggestions';
 
-export type MessageInputProps = {
-  placeholder?: string;
-  onSend?: (text: string) => void;
-  className?: string;
-  SendButton?: React.ComponentType<{ disabled: boolean; onClick: () => void }>;
-};
+export type { MessageInputProps } from '../types';
 
 const DefaultSendButton: React.FC<{ disabled: boolean; onClick: () => void }> = React.memo(({
   disabled,

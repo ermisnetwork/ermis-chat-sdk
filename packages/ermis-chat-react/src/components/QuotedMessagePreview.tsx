@@ -1,17 +1,7 @@
 import React from 'react';
+import type { QuotedMessagePreviewProps } from '../types';
 
-export type QuotedMessagePreviewProps = {
-  /** The quoted (replied-to) message object */
-  quotedMessage: {
-    id: string;
-    text?: string;
-    user?: { id?: string; name?: string };
-  };
-  /** Whether the parent message is from the current user */
-  isOwnMessage: boolean;
-  /** Callback when the quote box is clicked */
-  onClick: (messageId: string) => void;
-};
+export type { QuotedMessagePreviewProps } from '../types';
 
 const MAX_PREVIEW_LENGTH = 100;
 

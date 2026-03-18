@@ -1,25 +1,11 @@
 import React, { createContext, useState } from 'react';
 import { ErmisChat } from '@ermis-network/ermis-chat-sdk';
 import type { Channel } from '@ermis-network/ermis-chat-sdk';
+import type { Theme, ChatContextValue, ChatProviderProps } from '../types';
 
-export type Theme = 'dark' | 'light';
-
-export type ChatContextValue = {
-  client: ErmisChat;
-  activeChannel: Channel | null;
-  setActiveChannel: (channel: Channel | null) => void;
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
-};
+export type { Theme, ChatContextValue, ChatProviderProps } from '../types';
 
 export const ChatContext = createContext<ChatContextValue | null>(null);
-
-export type ChatProviderProps = {
-  client: ErmisChat;
-  children: React.ReactNode;
-  /** Initial theme, defaults to 'dark' */
-  initialTheme?: Theme;
-};
 
 export const ChatProvider: React.FC<ChatProviderProps> = ({
   client,

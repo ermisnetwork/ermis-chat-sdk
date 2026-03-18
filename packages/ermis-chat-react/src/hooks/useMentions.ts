@@ -1,18 +1,12 @@
 import { useState, useCallback, useRef, useDeferredValue, useMemo } from 'react';
+import type {
+  MentionMember,
+  MentionPayload,
+  UseMentionsOptions,
+  UseMentionsReturn,
+} from '../types';
 
-/** Represents a member that can be mentioned */
-export type MentionMember = {
-  id: string;
-  name: string;
-  avatar?: string;
-};
-
-/** The data extracted from contentEditable on submit */
-export type MentionPayload = {
-  text: string;
-  mentioned_all: boolean;
-  mentioned_users: string[];
-};
+export type { MentionMember, MentionPayload, UseMentionsOptions, UseMentionsReturn } from '../types';
 
 const MENTION_SPAN_CLASS = 'ermis-message-input__mention-span';
 
@@ -30,47 +24,38 @@ function insertMentionAtCursor(
 
   const range = sel.getRangeAt(0);
 
-  // Delete the @query text that triggered the suggestion
-  // Walk backwards from cursor to find the '@' trigger
   const { startContainer, startOffset } = range;
   if (startContainer.nodeType === Node.TEXT_NODE) {
     const textBefore = startContainer.textContent?.slice(0, startOffset) ?? '';
     const atIndex = textBefore.lastIndexOf('@');
     if (atIndex !== -1) {
-      // Delete from @ to cursor
       range.setStart(startContainer, atIndex);
       range.deleteContents();
     }
   }
 
-  // Create the atomic mention span
   const span = document.createElement('span');
   span.className = MENTION_SPAN_CLASS;
   span.setAttribute('data-mention-id', userId);
   span.contentEditable = 'false';
   span.textContent = `@${displayName}`;
 
-  // Insert span + trailing space
   range.insertNode(span);
 
-  // Add a trailing space after the span
   const space = document.createTextNode('\u00A0');
   span.after(space);
 
-  // Move cursor after the space
   const newRange = document.createRange();
   newRange.setStartAfter(space);
   newRange.collapse(true);
   sel.removeAllRanges();
   sel.addRange(newRange);
 
-  // Trigger an input event so React picks up the change
   editableEl.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 /**
  * Parse the DOM of a contenteditable div to produce a mention payload.
- * Text nodes → plain text, mention spans → @userId.
  */
 function buildPayloadFromDOM(editableEl: HTMLElement): MentionPayload {
   let text = '';
@@ -84,7 +69,6 @@ function buildPayloadFromDOM(editableEl: HTMLElement): MentionPayload {
     }
 
     if (node instanceof HTMLElement) {
-      // Is it a mention span?
       const mentionId = node.getAttribute('data-mention-id');
       if (mentionId && node.classList.contains(MENTION_SPAN_CLASS)) {
         if (mentionId === '__all__') {
@@ -96,16 +80,14 @@ function buildPayloadFromDOM(editableEl: HTMLElement): MentionPayload {
           }
           text += `@${mentionId}`;
         }
-        return; // Don't walk children of atomic span
+        return;
       }
 
-      // Check for <br> tags in contenteditable
       if (node.tagName === 'BR') {
         text += '\n';
         return;
       }
 
-      // Walk child nodes for divs/other elements
       if (node.tagName === 'DIV' && text.length > 0 && !text.endsWith('\n')) {
         text += '\n';
       }
@@ -115,8 +97,6 @@ function buildPayloadFromDOM(editableEl: HTMLElement): MentionPayload {
   }
 
   walk(editableEl);
-
-  // Clean up: replace non-breaking spaces with regular spaces
   text = text.replace(/\u00A0/g, ' ').trim();
 
   return { text, mentioned_all: mentionedAll, mentioned_users: mentionedUsers };
@@ -134,28 +114,6 @@ function getActiveMentionIds(editableEl: HTMLElement): Set<string> {
   });
   return ids;
 }
-
-export type UseMentionsOptions = {
-  members: MentionMember[];
-  currentUserId?: string;
-  editableRef: React.RefObject<HTMLDivElement | null>;
-};
-
-export type UseMentionsReturn = {
-  showSuggestions: boolean;
-  filteredMembers: MentionMember[];
-  highlightIndex: number;
-  /** Call on each input event of the contenteditable */
-  handleInput: () => void;
-  /** Call on keydown. Returns true if the event was consumed (e.g. Enter for selection). */
-  handleKeyDown: (e: React.KeyboardEvent) => boolean;
-  /** Select a member from the suggestion list */
-  selectMention: (member: MentionMember) => void;
-  /** Build the payload from the contenteditable DOM */
-  buildPayload: () => MentionPayload;
-  /** Reset mention state (call after send) */
-  reset: () => void;
-};
 
 export function useMentions({
   members,

@@ -13,20 +13,11 @@ import {
   type MessageBubbleProps,
 } from './MessageRenderers';
 import { getDateKey, formatDateLabel, getMessageUserId } from '../utils';
+import type { MessageListProps } from '../types';
 
 export type { MessageBubbleProps } from './MessageRenderers';
 export type { MessageItemProps, SystemMessageItemProps } from './MessageItem';
-
-export type MessageListProps = {
-  renderMessage?: (message: FormatMessageResponse, isOwnMessage: boolean) => React.ReactNode;
-  className?: string;
-  EmptyStateIndicator?: React.ComponentType;
-  AvatarComponent?: React.ComponentType<AvatarProps>;
-  MessageBubble?: React.ComponentType<MessageBubbleProps>;
-  messageRenderers?: Partial<Record<MessageLabel, React.ComponentType<MessageRendererProps>>>;
-  /** Number of older messages to load per page (default: 25) */
-  loadMoreLimit?: number;
-};
+export type { MessageListProps } from '../types';
 
 /* ----------------------------------------------------------
    Internal sub-components

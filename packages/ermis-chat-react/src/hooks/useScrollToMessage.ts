@@ -1,28 +1,13 @@
 import { useState, useCallback, useRef } from 'react';
 import type { FormatMessageResponse } from '@ermis-network/ermis-chat-sdk';
 import { formatMessage } from '@ermis-network/ermis-chat-sdk';
+import type {
+  ScrollToMessageFn,
+  UseScrollToMessageOptions,
+  UseScrollToMessageReturn,
+} from '../types';
 
-export type ScrollToMessageFn = (messageId: string) => void;
-
-export type UseScrollToMessageOptions = {
-  /** Reference to the scroll container */
-  listRef: React.RefObject<HTMLDivElement | null>;
-  /** Current active channel from SDK */
-  activeChannel: any;
-  /** Setter to replace message state when fetching around a message */
-  setMessages: React.Dispatch<React.SetStateAction<FormatMessageResponse[]>>;
-  /** Reset hasMore flag when message state is replaced */
-  setHasMore: React.Dispatch<React.SetStateAction<boolean>>;
-  /** Set hasNewer flag when jumping to an older message */
-  setHasNewer: React.Dispatch<React.SetStateAction<boolean>>;
-};
-
-export type UseScrollToMessageReturn = {
-  /** Currently highlighted message ID (null if none) */
-  highlightedId: string | null;
-  /** Scroll to a message by ID, fetching if not in DOM */
-  scrollToMessage: ScrollToMessageFn;
-};
+export type { ScrollToMessageFn, UseScrollToMessageOptions, UseScrollToMessageReturn } from '../types';
 
 /**
  * Hook that encapsulates logic for scrolling to a specific message

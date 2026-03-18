@@ -2,14 +2,13 @@ import React, { useMemo } from 'react';
 import type { FormatMessageResponse, Attachment, MessageLabel } from '@ermis-network/ermis-chat-sdk';
 import { parseSystemMessage, parseSignalMessage } from '@ermis-network/ermis-chat-sdk';
 import { useChatClient } from '../hooks/useChatClient';
+import type { AttachmentProps, MessageRendererProps, MessageBubbleProps } from '../types';
+
+export type { AttachmentProps, MessageRendererProps, MessageBubbleProps } from '../types';
 
 /* ----------------------------------------------------------
    Attachment renderers
    ---------------------------------------------------------- */
-export type AttachmentProps = {
-  attachment: Attachment;
-};
-
 function isImage(attachment: Attachment): boolean {
   return !!(
     attachment.mime_type?.startsWith('image/') ||
@@ -93,16 +92,6 @@ export const AttachmentList: React.FC<{ attachments?: Attachment[] }> = ({ attac
 /* ----------------------------------------------------------
    Message renderers by MessageLabel type
    ---------------------------------------------------------- */
-export type MessageRendererProps = {
-  message: FormatMessageResponse;
-  isOwnMessage: boolean;
-};
-
-export type MessageBubbleProps = {
-  message: FormatMessageResponse;
-  isOwnMessage: boolean;
-  children: React.ReactNode;
-};
 
 /**
  * Parse message text and render @mentions as highlighted spans.

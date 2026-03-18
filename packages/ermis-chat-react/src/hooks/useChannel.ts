@@ -1,12 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Channel, Event } from '@ermis-network/ermis-chat-sdk';
 import { useChatClient } from './useChatClient';
+import type { UseChannelReturn } from '../types';
 
-export type UseChannelReturn = {
-  channel: Channel | null;
-  loading: boolean;
-  error: Error | null;
-};
+export type { UseChannelReturn } from '../types';
 
 export const useChannel = (): UseChannelReturn => {
   const { activeChannel } = useChatClient();

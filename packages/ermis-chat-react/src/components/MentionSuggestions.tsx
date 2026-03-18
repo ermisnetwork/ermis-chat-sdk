@@ -1,12 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { Avatar } from './Avatar';
-import type { MentionMember } from '../hooks/useMentions';
+import type { MentionSuggestionsProps } from '../types';
 
-export type MentionSuggestionsProps = {
-  members: MentionMember[];
-  highlightIndex: number;
-  onSelect: (member: MentionMember) => void;
-};
+export type { MentionSuggestionsProps } from '../types';
 
 export const MentionSuggestions: React.FC<MentionSuggestionsProps> = React.memo(({
   members,

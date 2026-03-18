@@ -3,22 +3,13 @@ import type { Channel, Event } from '@ermis-network/ermis-chat-sdk';
 import { useChatClient } from '../hooks/useChatClient';
 import { useChannelListUpdates } from '../hooks/useChannelListUpdates';
 import { Avatar } from './Avatar';
-import type { AvatarProps } from './Avatar';
+import type { ChannelItemProps, ChannelListProps } from '../types';
+
+export type { ChannelListProps } from '../types';
 
 /* ----------------------------------------------------------
    Memoized channel list item
    ---------------------------------------------------------- */
-type ChannelItemProps = {
-  channel: Channel;
-  isActive: boolean;
-  hasUnread: boolean;
-  unreadCount: number;
-  lastMessageText: string;
-  lastMessageUser: string;
-  onSelect: (channel: Channel) => void;
-  AvatarComponent: React.ComponentType<AvatarProps>;
-};
-
 const ChannelItem: React.FC<ChannelItemProps> = React.memo(({
   channel,
   isActive,
@@ -68,21 +59,6 @@ const ChannelItem: React.FC<ChannelItemProps> = React.memo(({
   );
 });
 ChannelItem.displayName = 'ChannelItem';
-
-/* ----------------------------------------------------------
-   ChannelList
-   ---------------------------------------------------------- */
-export type ChannelListProps = {
-  filters?: any;
-  sort?: any[];
-  options?: { message_limit?: number };
-  renderChannel?: (channel: Channel, isActive: boolean) => React.ReactNode;
-  onChannelSelect?: (channel: Channel) => void;
-  className?: string;
-  LoadingIndicator?: React.ComponentType;
-  EmptyStateIndicator?: React.ComponentType;
-  AvatarComponent?: React.ComponentType<AvatarProps>;
-};
 
 const DefaultLoading = React.memo(() => (
   <div className="ermis-channel-list__loading">Loading channels...</div>

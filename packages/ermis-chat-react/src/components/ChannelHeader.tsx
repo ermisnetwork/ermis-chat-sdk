@@ -1,14 +1,9 @@
 import React, { useMemo } from 'react';
 import { useChatClient } from '../hooks/useChatClient';
 import { Avatar } from './Avatar';
-import type { AvatarProps } from './Avatar';
+import type { ChannelHeaderProps } from '../types';
 
-export type ChannelHeaderProps = {
-  /** Additional CSS class name */
-  className?: string;
-  /** Custom avatar component */
-  AvatarComponent?: React.ComponentType<AvatarProps>;
-};
+export type { ChannelHeaderProps } from '../types';
 
 /**
  * ChannelHeader displays the active channel's avatar and name.

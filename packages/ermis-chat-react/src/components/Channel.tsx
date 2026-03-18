@@ -1,13 +1,8 @@
 import React from 'react';
 import { useChatClient } from '../hooks/useChatClient';
+import type { ChannelProps } from '../types';
 
-export type ChannelProps = {
-  children: React.ReactNode;
-  /** Additional CSS class name */
-  className?: string;
-  /** Custom component shown when no channel is selected */
-  EmptyStateIndicator?: React.ComponentType;
-};
+export type { ChannelProps } from '../types';
 
 const DefaultEmpty = React.memo(() => (
   <div className="ermis-channel__empty">Select a channel to start chatting</div>

@@ -2,23 +2,15 @@ import React from 'react';
 import type { FormatMessageResponse } from '@ermis-network/ermis-chat-sdk';
 import type { AvatarProps } from './Avatar';
 import type { MessageRendererProps, MessageBubbleProps } from './MessageRenderers';
+import type { MessageItemProps, SystemMessageItemProps } from '../types';
 import { QuotedMessagePreview } from './QuotedMessagePreview';
 import { formatTime } from '../utils';
+
+export type { MessageItemProps, SystemMessageItemProps } from '../types';
 
 /* ----------------------------------------------------------
    MessageItem — single regular/signal message row
    ---------------------------------------------------------- */
-export type MessageItemProps = {
-  message: FormatMessageResponse;
-  isOwnMessage: boolean;
-  isFirstInGroup: boolean;
-  isHighlighted: boolean;
-  AvatarComponent: React.ComponentType<AvatarProps>;
-  MessageBubble: React.ComponentType<MessageBubbleProps>;
-  MessageRenderer: React.ComponentType<MessageRendererProps>;
-  onClickQuote?: (messageId: string) => void;
-};
-
 export const MessageItem: React.FC<MessageItemProps> = React.memo(({
   message,
   isOwnMessage,
@@ -79,12 +71,6 @@ MessageItem.displayName = 'MessageItem';
 /* ----------------------------------------------------------
    SystemMessageItem — system/notification message row
    ---------------------------------------------------------- */
-export type SystemMessageItemProps = {
-  message: FormatMessageResponse;
-  isOwnMessage: boolean;
-  SystemRenderer: React.ComponentType<MessageRendererProps>;
-};
-
 export const SystemMessageItem: React.FC<SystemMessageItemProps> = React.memo(({
   message,
   isOwnMessage,

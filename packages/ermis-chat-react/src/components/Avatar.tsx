@@ -1,15 +1,7 @@
 import React, { useMemo } from 'react';
+import type { AvatarProps } from '../types';
 
-export type AvatarProps = {
-  /** Image URL */
-  image?: string | null;
-  /** Name used for fallback initials */
-  name?: string;
-  /** Size in pixels (default: 36) */
-  size?: number;
-  /** Additional CSS class name */
-  className?: string;
-};
+export type { AvatarProps } from '../types';
 
 /**
  * Extracts 1–2 initials from a name.
