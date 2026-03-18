@@ -270,6 +270,45 @@
   flex: 1;
 }
 
+/* --- Load more (pagination) --- */
+.ermis-message-list__loading-more {
+  text-align: center;
+  padding: var(--ermis-spacing-sm);
+  color: var(--ermis-text-muted);
+  font-size: var(--ermis-font-size-xs);
+}
+
+.ermis-message-list__no-more {
+  text-align: center;
+  padding: var(--ermis-spacing-sm);
+  color: var(--ermis-text-muted);
+  font-size: var(--ermis-font-size-xs);
+  font-style: italic;
+}
+
+/* --- Date separator --- */
+.ermis-message-list__date-separator {
+  display: flex;
+  align-items: center;
+  gap: var(--ermis-spacing-md);
+  padding: var(--ermis-spacing-md) 0;
+  margin: var(--ermis-spacing-xs) 0;
+  align-self: stretch;
+}
+
+.ermis-message-list__date-separator-line {
+  flex: 1;
+  height: 1px;
+  background-color: var(--ermis-border);
+}
+
+.ermis-message-list__date-separator-label {
+  font-size: var(--ermis-font-size-xs);
+  color: var(--ermis-text-muted);
+  white-space: nowrap;
+  font-weight: 500;
+}
+
 .ermis-message-list__empty {
   display: flex;
   align-items: center;
@@ -285,8 +324,17 @@
   display: flex;
   align-items: flex-start;
   gap: var(--ermis-spacing-sm);
-  margin-bottom: var(--ermis-spacing-xs);
   max-width: 75%;
+}
+
+/* First message in a group: normal top margin */
+.ermis-message-list__item--group-start {
+  margin-top: var(--ermis-spacing-md);
+}
+
+/* Continuation messages in a group: tight spacing */
+.ermis-message-list__item--group-cont {
+  margin-top: 2px;
 }
 
 .ermis-message-list__item--other {
@@ -297,6 +345,12 @@
 .ermis-message-list__item--own {
   align-self: flex-end;
   flex-direction: row-reverse;
+}
+
+/* Avatar column: fixed width for consistent alignment */
+.ermis-message-list__item-avatar {
+  flex-shrink: 0;
+  align-self: flex-end;
 }
 
 .ermis-message-list__item-content {
@@ -314,11 +368,23 @@
   font-size: var(--ermis-font-size-xs);
   font-weight: 600;
   color: var(--ermis-accent);
+  margin-bottom: 1px;
 }
 
+/* Timestamp inside bubble — bottom right */
 .ermis-message-list__item-time {
   font-size: 0.625rem;
   color: var(--ermis-text-muted);
+  margin-left: auto;
+  padding-left: var(--ermis-spacing-md);
+  white-space: nowrap;
+  line-height: 1;
+  align-self: flex-end;
+  padding-top: 4px;
+}
+
+.ermis-message-bubble--own .ermis-message-list__item-time {
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .ermis-message-list__item-text {
@@ -329,6 +395,9 @@
 
 /* --- Message Bubble --- */
 .ermis-message-bubble {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
   padding: var(--ermis-spacing-sm) var(--ermis-spacing-md);
   border-radius: var(--ermis-radius-lg);
   max-width: 100%;
@@ -370,6 +439,7 @@
   flex-direction: column;
   gap: var(--ermis-spacing-xs);
   margin-top: var(--ermis-spacing-xs);
+  width: 100%;
 }
 
 .ermis-attachment--image {
