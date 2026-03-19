@@ -88,14 +88,37 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
   }
 
   async sendMessage(message: Message<ErmisChatGenerics>) {
-    if (!message.hasOwnProperty('id') || !message?.id) {
-      const id = randomId();
-      message = { ...message, id };
+    // 1. Generate ID upfront
+    if (!message.id) {
+      message = { ...message, id: randomId() };
     }
+    const messageId = message.id!;
 
-    return await this.getClient().post<SendMessageAPIResponse<ErmisChatGenerics>>(this._channelURL() + '/message', {
-      message: { ...message },
-    });
+    // 2. Build optimistic (fake) message and push into state immediately
+    const optimisticMessage = {
+      ...message,
+      id: messageId,
+      status: 'sending',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      user: this.getClient().user,
+      user_id: this.getClient().userID,
+      type: 'regular',
+    } as unknown as MessageResponse<ErmisChatGenerics>;
+
+    this.state.addMessageSorted(optimisticMessage);
+
+    // 3. Call API — don't update status on success (WS message.new will handle it)
+    try {
+      return await this.getClient().post<SendMessageAPIResponse<ErmisChatGenerics>>(
+        this._channelURL() + '/message',
+        { message: { ...message } },
+      );
+    } catch (error) {
+      // 4. On error: update status to 'error'
+      this.state.updateMessageStatus(messageId, 'error');
+      throw error;
+    }
   }
 
   async createPoll(pollMessage: PollMessage) {

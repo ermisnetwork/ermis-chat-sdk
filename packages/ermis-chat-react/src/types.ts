@@ -12,6 +12,10 @@ export type ChatContextValue = {
   setActiveChannel: (channel: Channel | null) => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
+  messages: FormatMessageResponse[];
+  setMessages: React.Dispatch<React.SetStateAction<FormatMessageResponse[]>>;
+  /** Re-read messages from SDK state into React state */
+  syncMessages: () => void;
 };
 
 export type ChatProviderProps = {

@@ -27,11 +27,19 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(({
   const quotedMessage = (message as any).quoted_message;
   const hasAttachments = message.attachments && message.attachments.length > 0;
 
+  const statusClass =
+    message.status === 'sending'
+      ? 'ermis-message--sending'
+      : message.status === 'error'
+        ? 'ermis-message--error'
+        : '';
+
   const itemClass = [
     'ermis-message-list__item',
     isOwnMessage ? 'ermis-message-list__item--own' : 'ermis-message-list__item--other',
     isFirstInGroup ? 'ermis-message-list__item--group-start' : 'ermis-message-list__item--group-cont',
     isHighlighted ? 'ermis-message-list__item--highlighted' : '',
+    statusClass,
   ].filter(Boolean).join(' ');
 
   const contentClass = [

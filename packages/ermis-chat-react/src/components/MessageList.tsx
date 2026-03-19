@@ -65,8 +65,7 @@ export const MessageList: React.FC<MessageListProps> = React.memo(({
   messageRenderers: customRenderers,
   loadMoreLimit = 25,
 }) => {
-  const { client, activeChannel } = useChatClient();
-  const [messages, setMessages] = useState<FormatMessageResponse[]>([]);
+  const { client, activeChannel, messages, setMessages } = useChatClient();
   const [loadingMore, setLoadingMore] = useState(false);
   const loadingNewerRef = useRef(false);
   const [hasMore, setHasMore] = useState(true);

@@ -388,6 +388,20 @@
   border-radius: var(--ermis-radius-md);
 }
 
+/* --- Optimistic UI: message status --- */
+.ermis-message--sending {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.ermis-message--error {
+  opacity: 0.8;
+}
+
+.ermis-message--error .ermis-message-bubble {
+  border: 1px solid #e74c3c;
+}
+
 /* --- Quoted message preview --- */
 .ermis-quoted-message {
   display: flex;

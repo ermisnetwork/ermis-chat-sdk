@@ -33,7 +33,7 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
   className,
   SendButton = DefaultSendButton,
 }) => {
-  const { client, activeChannel } = useChatClient();
+  const { client, activeChannel, syncMessages } = useChatClient();
   const editableRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [sending, setSending] = useState(false);
@@ -221,7 +221,14 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
         message.mentioned_users = payload.mentioned_users;
       }
 
-      await activeChannel.sendMessage(message);
+      // Start sendMessage (injects optimistic message into SDK state synchronously)
+      const sendPromise = activeChannel.sendMessage(message);
+
+      // Sync React state IMMEDIATELY — optimistic message is already in SDK state
+      syncMessages();
+
+      // Now wait for API response
+      await sendPromise;
 
       // Clear successful files
       files.forEach((f) => {
@@ -236,8 +243,14 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
       onSend?.(payload.text);
     } catch (err) {
       console.error('Failed to send message:', err);
+      // Sync React state to show error status
+      syncMessages();
     } finally {
       setSending(false);
+      // Focus after React re-renders (re-enables contentEditable)
+      requestAnimationFrame(() => {
+        editableRef.current?.focus();
+      });
     }
   }, [activeChannel, hasContent, sending, buildPayload, reset, onSend, isTeamChannel, files]);
 

@@ -303,6 +303,16 @@ export class ChannelState<ErmisChatGenerics extends ExtendableGenerics = Default
     this.isUpToDate = isUpToDate;
   };
 
+  /**
+   * Update the status of a message by ID (used for optimistic UI).
+   */
+  updateMessageStatus(messageId: string, status: string) {
+    this._updateMessage({ id: messageId }, (msg) => ({
+      ...msg,
+      status,
+    }));
+  }
+
   _addToMessageList(
     messages: Array<ReturnType<ChannelState<ErmisChatGenerics>['formatMessage']>>,
     message: ReturnType<ChannelState<ErmisChatGenerics>['formatMessage']>,
