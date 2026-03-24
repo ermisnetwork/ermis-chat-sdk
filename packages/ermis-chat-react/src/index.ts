@@ -25,7 +25,7 @@ export { ChannelHeader } from './components/ChannelHeader';
 export type { ChannelHeaderProps } from './components/ChannelHeader';
 export type { ChannelHeaderData } from './types';
 
-export type { MessageListProps, MessageBubbleProps, MessageItemProps, SystemMessageItemProps } from './types';
+export type { MessageListProps, MessageBubbleProps, MessageItemProps, SystemMessageItemProps, DateSeparatorProps, JumpToLatestProps } from './types';
 
 export { VirtualMessageList } from './components/VirtualMessageList';
 

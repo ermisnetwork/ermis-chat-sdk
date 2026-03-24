@@ -13,19 +13,27 @@ import {
   type MessageBubbleProps,
 } from './MessageRenderers';
 import { getDateKey, formatDateLabel, getMessageUserId } from '../utils';
+import { QuotedMessagePreview } from './QuotedMessagePreview';
 import type { MessageListProps } from '../types';
 
 /* ----------------------------------------------------------
    Internal sub-components
    ---------------------------------------------------------- */
-const DateSeparator: React.FC<{ label: string }> = React.memo(({ label }) => (
+const DefaultDateSeparator: React.FC<{ label: string }> = React.memo(({ label }) => (
   <div className="ermis-message-list__date-separator">
     <div className="ermis-message-list__date-separator-line" />
     <span className="ermis-message-list__date-separator-label">{label}</span>
     <div className="ermis-message-list__date-separator-line" />
   </div>
 ));
-(DateSeparator as any).displayName = 'DateSeparator';
+(DefaultDateSeparator as any).displayName = 'DefaultDateSeparator';
+
+const DefaultJumpToLatest: React.FC<{ onClick: () => void }> = React.memo(({ onClick }) => (
+  <button className="ermis-message-list__jump-latest" onClick={onClick}>
+    ↓ Jump to latest
+  </button>
+));
+(DefaultJumpToLatest as any).displayName = 'DefaultJumpToLatest';
 
 const DefaultEmpty = React.memo(() => (
   <div className="ermis-message-list__empty">
@@ -63,6 +71,11 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
   MessageBubble = DefaultBubble,
   messageRenderers: customRenderers,
   loadMoreLimit = 25,
+  DateSeparatorComponent = DefaultDateSeparator,
+  MessageItemComponent = MessageItem,
+  SystemMessageItemComponent = SystemMessageItem,
+  JumpToLatestButton = DefaultJumpToLatest,
+  QuotedMessagePreviewComponent = QuotedMessagePreview,
 }) => {
   const { client, activeChannel, messages, setMessages, syncMessages } = useChatClient();
   const vlistRef = useRef<VListHandle>(null);
@@ -144,7 +157,7 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
       const showDateSeparator =
         !prevMsg || getDateKey(message.created_at) !== getDateKey(prevMsg.created_at);
       const dateSeparator = showDateSeparator ? (
-        <DateSeparator label={formatDateLabel(message.created_at)} />
+        <DateSeparatorComponent label={formatDateLabel(message.created_at)} />
       ) : null;
 
       if (renderMessage) {
@@ -160,7 +173,7 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
         return (
           <div key={message.id || `msg-${index}`}>
             {dateSeparator}
-            <SystemMessageItem
+            <SystemMessageItemComponent
               message={message}
               isOwnMessage={isOwnMessage}
               SystemRenderer={renderers.system}
@@ -183,7 +196,7 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
       return (
         <div key={message.id || `msg-${index}`}>
           {dateSeparator}
-          <MessageItem
+          <MessageItemComponent
             message={message}
             isOwnMessage={isOwnMessage}
             isFirstInGroup={isFirstInGroup}
@@ -192,11 +205,12 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
             MessageBubble={MessageBubble}
             MessageRenderer={MessageRenderer}
             onClickQuote={scrollToMessage}
+            QuotedMessagePreviewComponent={QuotedMessagePreviewComponent}
           />
         </div>
       );
     });
-  }, [messages, currentUserId, highlightedId, renderers, renderMessage, AvatarComponent, MessageBubble, scrollToMessage]);
+  }, [messages, currentUserId, highlightedId, renderers, renderMessage, AvatarComponent, MessageBubble, scrollToMessage, DateSeparatorComponent, MessageItemComponent, SystemMessageItemComponent, QuotedMessagePreviewComponent]);
 
   if (!activeChannel) return null;
 
@@ -214,14 +228,7 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
       </VList>
 
       {/* Jump to latest button */}
-      {hasNewer && (
-        <button
-          className="ermis-message-list__jump-latest"
-          onClick={jumpToLatest}
-        >
-          ↓ Jump to latest
-        </button>
-      )}
+      {hasNewer && <JumpToLatestButton onClick={jumpToLatest} />}
     </div>
   );
 });

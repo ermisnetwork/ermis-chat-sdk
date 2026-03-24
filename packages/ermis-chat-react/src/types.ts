@@ -122,18 +122,42 @@ export type MessageBubbleProps = {
   children: React.ReactNode;
 };
 
+export type DateSeparatorProps = {
+  label: string;
+};
+
+export type JumpToLatestProps = {
+  onClick: () => void;
+};
+
 /* ----------------------------------------------------------
    MessageList types
    ---------------------------------------------------------- */
 export type MessageListProps = {
+  /** Fully custom render for each message */
   renderMessage?: (message: FormatMessageResponse, isOwnMessage: boolean) => React.ReactNode;
+  /** Additional CSS class name */
   className?: string;
+  /** Custom empty state component */
   EmptyStateIndicator?: React.ComponentType;
+  /** Custom avatar component */
   AvatarComponent?: React.ComponentType<AvatarProps>;
+  /** Custom message bubble wrapper */
   MessageBubble?: React.ComponentType<MessageBubbleProps>;
+  /** Custom renderers per message type */
   messageRenderers?: Partial<Record<MessageLabel, React.ComponentType<MessageRendererProps>>>;
   /** Number of older messages to load per page (default: 25) */
   loadMoreLimit?: number;
+  /** Custom date separator component */
+  DateSeparatorComponent?: React.ComponentType<DateSeparatorProps>;
+  /** Custom message item component (replaces the entire row) */
+  MessageItemComponent?: React.ComponentType<MessageItemProps>;
+  /** Custom system message item component */
+  SystemMessageItemComponent?: React.ComponentType<SystemMessageItemProps>;
+  /** Custom "Jump to latest" button */
+  JumpToLatestButton?: React.ComponentType<JumpToLatestProps>;
+  /** Custom quoted message preview inside message items */
+  QuotedMessagePreviewComponent?: React.ComponentType<QuotedMessagePreviewProps>;
 };
 
 /* ----------------------------------------------------------
@@ -148,6 +172,8 @@ export type MessageItemProps = {
   MessageBubble: React.ComponentType<MessageBubbleProps>;
   MessageRenderer: React.ComponentType<MessageRendererProps>;
   onClickQuote?: (messageId: string) => void;
+  /** Custom quoted message preview component */
+  QuotedMessagePreviewComponent?: React.ComponentType<QuotedMessagePreviewProps>;
 };
 
 export type SystemMessageItemProps = {

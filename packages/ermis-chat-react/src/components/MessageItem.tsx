@@ -20,6 +20,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(({
   MessageBubble,
   MessageRenderer,
   onClickQuote,
+  QuotedMessagePreviewComponent = QuotedMessagePreview,
 }) => {
   const userName = message.user?.name || message.user_id;
   const userAvatar = message.user?.avatar;
@@ -64,7 +65,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(({
         )}
         {/* Quoted message preview */}
         {quotedMessage && onClickQuote && (
-          <QuotedMessagePreview
+          <QuotedMessagePreviewComponent
             quotedMessage={quotedMessage}
             isOwnMessage={isOwnMessage}
             onClick={onClickQuote}
