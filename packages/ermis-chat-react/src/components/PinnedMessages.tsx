@@ -124,9 +124,9 @@ export const PinnedMessages: React.FC<PinnedMessagesProps> = React.memo(({
   const hasMore = pinnedMessages.length > maxCollapsed;
 
   return (
-    <div className={`ermis-pinned-messages${className ? ` ${className}` : ''}`}>
+    <div className={`ermis-pinned-messages${expanded ? ' ermis-pinned-messages--expanded' : ''}${className ? ` ${className}` : ''}`}>
       {/* Header bar */}
-      <div className="ermis-pinned-messages__header">
+      <div className="ermis-pinned-messages__header" onClick={toggleExpanded}>
         <svg className="ermis-pinned-messages__icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
           <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" />
         </svg>
@@ -136,7 +136,7 @@ export const PinnedMessages: React.FC<PinnedMessagesProps> = React.memo(({
         {hasMore && (
           <button
             className="ermis-pinned-messages__toggle"
-            onClick={toggleExpanded}
+            onClick={(e) => { e.stopPropagation(); toggleExpanded(); }}
           >
             {expanded ? 'Collapse' : 'See all'}
           </button>

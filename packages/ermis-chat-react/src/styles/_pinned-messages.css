@@ -5,6 +5,12 @@
   border-bottom: 1px solid var(--ermis-border);
   background-color: var(--ermis-bg-secondary);
   font-family: var(--ermis-font-family);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .ermis-pinned-messages__header {
@@ -14,6 +20,7 @@
   padding: var(--ermis-spacing-xs) var(--ermis-spacing-md);
   font-size: var(--ermis-font-size-xs);
   color: var(--ermis-text-secondary);
+  cursor: pointer; /* make header clickable to toggle */
 }
 
 .ermis-pinned-messages__icon {
@@ -43,11 +50,21 @@
   background-color: var(--ermis-bg-hover);
 }
 
+/* Accordion transition for the list */
 .ermis-pinned-messages__list {
-  padding: 0 var(--ermis-spacing-md) var(--ermis-spacing-xs);
+  padding: 0 var(--ermis-spacing-md);
   display: flex;
   flex-direction: column;
   gap: 2px;
+  max-height: 0;
+  overflow-y: auto;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease;
+  scrollbar-width: thin;
+}
+
+.ermis-pinned-messages--expanded .ermis-pinned-messages__list {
+  max-height: 300px;
+  padding-bottom: var(--ermis-spacing-xs);
 }
 
 .ermis-pinned-messages__item {
