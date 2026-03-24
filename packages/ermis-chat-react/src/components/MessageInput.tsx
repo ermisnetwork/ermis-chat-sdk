@@ -6,7 +6,7 @@ import type { MentionMember, MessageInputProps, FilePreviewItem } from '../types
 import { MentionSuggestions } from './MentionSuggestions';
 import { FilesPreview } from './FilesPreview';
 
-export type { MessageInputProps, SendButtonProps, AttachButtonProps } from '../types';
+export type { MessageInputProps, SendButtonProps, AttachButtonProps, EmojiPickerProps, EmojiButtonProps } from '../types';
 
 let _fileIdCounter = 0;
 function nextFileId(): string {
@@ -43,6 +43,21 @@ const DefaultAttachButton: React.FC<{ disabled: boolean; onClick: () => void }> 
 ));
 DefaultAttachButton.displayName = 'DefaultAttachButton';
 
+const DefaultEmojiButton: React.FC<{ active: boolean; onClick: () => void }> = React.memo(({
+  active,
+  onClick,
+}) => (
+  <button
+    className={`ermis-message-input__emoji-btn${active ? ' ermis-message-input__emoji-btn--active' : ''}`}
+    onClick={onClick}
+    type="button"
+    aria-label="Emoji"
+  >
+    😀
+  </button>
+));
+DefaultEmojiButton.displayName = 'DefaultEmojiButton';
+
 export const MessageInput: React.FC<MessageInputProps> = React.memo(({
   placeholder = 'Type a message...',
   onSend,
@@ -55,6 +70,8 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
   disableMentions = false,
   renderAbove,
   onBeforeSend,
+  EmojiPickerComponent,
+  EmojiButtonComponent = DefaultEmojiButton,
 }) => {
   const { client, activeChannel, syncMessages } = useChatClient();
   const editableRef = useRef<HTMLDivElement>(null);
@@ -62,6 +79,7 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
   const [sending, setSending] = useState(false);
   const [hasContent, setHasContent] = useState(false);
   const [files, setFiles] = useState<FilePreviewItem[]>([]);
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
 
   const isTeamChannel = activeChannel?.type === 'team';
 
@@ -312,6 +330,25 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
     document.execCommand('insertText', false, plainText);
   }, []);
 
+  /* ---------- Emoji helpers ---------- */
+  const handleEmojiSelect = useCallback((emoji: string) => {
+    const el = editableRef.current;
+    if (!el) return;
+    el.focus();
+    // Insert emoji at cursor using execCommand so undo/redo works
+    document.execCommand('insertText', false, emoji);
+    setHasContent(true);
+    setEmojiPickerOpen(false);
+  }, []);
+
+  const handleEmojiClose = useCallback(() => {
+    setEmojiPickerOpen(false);
+  }, []);
+
+  const toggleEmojiPicker = useCallback(() => {
+    setEmojiPickerOpen((prev) => !prev);
+  }, []);
+
   if (!activeChannel) return null;
 
   const isStillUploading = files.some((f) => f.status === 'uploading');
@@ -366,9 +403,21 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
             onPaste={handlePaste}
             suppressContentEditableWarning
           />
+
+          {/* Emoji button — shown only when EmojiPickerComponent is provided */}
+          {EmojiPickerComponent && (
+            <EmojiButtonComponent active={emojiPickerOpen} onClick={toggleEmojiPicker} />
+          )}
         </div>
         <SendButton disabled={!hasContent || sending || isStillUploading} onClick={handleSend} />
       </div>
+
+      {/* Emoji picker — positioned above input */}
+      {EmojiPickerComponent && emojiPickerOpen && (
+        <div className="ermis-message-input__emoji-picker">
+          <EmojiPickerComponent onSelect={handleEmojiSelect} onClose={handleEmojiClose} />
+        </div>
+      )}
     </div>
   );
 });

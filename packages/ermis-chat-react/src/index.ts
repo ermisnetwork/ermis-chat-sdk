@@ -47,7 +47,7 @@ export {
 export type { MessageRendererProps, AttachmentProps } from './components/MessageRenderers';
 
 export { MessageInput } from './components/MessageInput';
-export type { MessageInputProps, SendButtonProps, AttachButtonProps } from './components/MessageInput';
+export type { MessageInputProps, SendButtonProps, AttachButtonProps, EmojiPickerProps, EmojiButtonProps } from './components/MessageInput';
 
 export { FilesPreview } from './components/FilesPreview';
 export type { FilePreviewItem, FilesPreviewProps } from './components/FilesPreview';

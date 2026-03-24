@@ -185,6 +185,22 @@ export type SystemMessageItemProps = {
 export type SendButtonProps = { disabled: boolean; onClick: () => void };
 export type AttachButtonProps = { disabled: boolean; onClick: () => void };
 
+/** Props passed to a consumer-provided emoji picker component */
+export type EmojiPickerProps = {
+  /** Called when user selects an emoji — insert the emoji string into the input */
+  onSelect: (emoji: string) => void;
+  /** Called when the picker should close (e.g. click outside) */
+  onClose: () => void;
+};
+
+/** Props passed to the emoji button component */
+export type EmojiButtonProps = {
+  /** Whether the picker is currently open */
+  active: boolean;
+  /** Toggle the picker */
+  onClick: () => void;
+};
+
 export type MessageInputProps = {
   /** Placeholder text */
   placeholder?: string;
@@ -208,6 +224,10 @@ export type MessageInputProps = {
   renderAbove?: () => React.ReactNode;
   /** Hook called before sending — return false to cancel */
   onBeforeSend?: (text: string, attachments: FilePreviewItem[]) => boolean | Promise<boolean>;
+  /** Consumer-provided emoji picker component (not bundled — bring your own) */
+  EmojiPickerComponent?: React.ComponentType<EmojiPickerProps>;
+  /** Custom emoji button component (defaults to 😀 toggle button) */
+  EmojiButtonComponent?: React.ComponentType<EmojiButtonProps>;
 };
 
 /* ----------------------------------------------------------

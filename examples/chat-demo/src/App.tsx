@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ErmisChat } from '@ermis-network/ermis-chat-sdk';
 import {
   ChatProvider,
@@ -7,7 +7,9 @@ import {
   ChannelHeader,
   MessageInput,
   VirtualMessageList,
+  type EmojiPickerProps,
 } from '@ermis-network/ermis-chat-react';
+import EmojiPicker, { type EmojiClickData } from 'emoji-picker-react';
 
 // TODO: Replace with your actual credentials
 const API_KEY = 'sXhcPu0JneUbQ6TG2tXePK8MC2tBAHn9';
@@ -15,6 +17,39 @@ const PROJECT_ID = 'ec964975-ae84-4a8e-91a1-222ca3aeeef8';
 const BASE_URL = 'https://api-trieve.ermis.network';
 const USER_ID = '0xf72d58f7353c2461953302a4b214d09ff33eeba1';
 const USER_TOKEN = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiMHhmNzJkNThmNzM1M2MyNDYxOTUzMzAyYTRiMjE0ZDA5ZmYzM2VlYmExIiwiY2xpZW50X2lkIjoiMzNhZTc0NzMtNjMxNS00NDMzLTgyYjAtMmFmYzNhMzk5OWUyIiwiY2hhaW5faWQiOjEsInByb2plY3RfaWQiOiJlYzk2NDk3NS1hZTg0LTRhOGUtOTFhMS0yMjJjYTNhZWVlZjgiLCJhcGlrZXkiOiJzWGhjUHUwSm5lVWJRNlRHMnRYZVBLOE1DMnRCQUhuOSIsImVybWlzIjpmYWxzZSwiZXhwIjoxODcyMTE1NjA2Mzg4LCJhZG1pbiI6ZmFsc2UsImdhdGUiOmZhbHNlfQ.ag13LQHYxCh8gQseQVx1wFSA12QqFxG6uenmSStBrn8';
+
+/* -------------------------------------------------------
+   Consumer Emoji Picker — wraps emoji-picker-react
+   with the UI Kit’s EmojiPickerProps contract
+   ------------------------------------------------------- */
+const ConsumerEmojiPicker = ({ onSelect, onClose }: EmojiPickerProps) => {
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Close picker on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [onClose]);
+
+  const handleEmojiClick = useCallback((emojiData: EmojiClickData) => {
+    onSelect(emojiData.emoji);
+  }, [onSelect]);
+
+  return (
+    <div ref={ref}>
+      <EmojiPicker
+        onEmojiClick={handleEmojiClick}
+        width={350}
+        height={400}
+      />
+    </div>
+  );
+};
 
 function App() {
   const [client, setClient] = useState<ErmisChat | null>(null);
@@ -66,7 +101,7 @@ function App() {
             <ChannelHeader />
             <VirtualMessageList />
             {/* <MessageList /> */}
-            <MessageInput placeholder="Type a message..." />
+            <MessageInput placeholder="Type a message..." EmojiPickerComponent={ConsumerEmojiPicker} />
           </Channel>
         </div>
       </div>
