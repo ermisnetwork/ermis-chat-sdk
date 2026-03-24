@@ -1,62 +1,15 @@
-import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useChatClient } from '../hooks/useChatClient';
 import { useMentions } from '../hooks/useMentions';
-import { isHeicFile, isVideoFile, normalizeFileName, buildAttachmentPayload } from '@ermis-network/ermis-chat-sdk';
-import type { MentionMember, MessageInputProps, FilePreviewItem } from '../types';
+import { useFileUpload } from '../hooks/useFileUpload';
+import { useEmojiPicker } from '../hooks/useEmojiPicker';
+import { useMessageSend } from '../hooks/useMessageSend';
+import { DefaultSendButton, DefaultAttachButton, DefaultEmojiButton } from './MessageInputDefaults';
 import { MentionSuggestions } from './MentionSuggestions';
 import { FilesPreview } from './FilesPreview';
+import type { MentionMember, MessageInputProps } from '../types';
 
 export type { MessageInputProps, SendButtonProps, AttachButtonProps, EmojiPickerProps, EmojiButtonProps } from '../types';
-
-let _fileIdCounter = 0;
-function nextFileId(): string {
-  return `file-${Date.now()}-${++_fileIdCounter}`;
-}
-
-const DefaultSendButton: React.FC<{ disabled: boolean; onClick: () => void }> = React.memo(({
-  disabled,
-  onClick,
-}) => (
-  <button
-    className="ermis-message-input__send-btn"
-    onClick={onClick}
-    disabled={disabled}
-  >
-    Send
-  </button>
-));
-DefaultSendButton.displayName = 'DefaultSendButton';
-
-const DefaultAttachButton: React.FC<{ disabled: boolean; onClick: () => void }> = React.memo(({
-  disabled,
-  onClick,
-}) => (
-  <button
-    className="ermis-message-input__attach-btn"
-    onClick={onClick}
-    type="button"
-    aria-label="Attach files"
-    disabled={disabled}
-  >
-    📎
-  </button>
-));
-DefaultAttachButton.displayName = 'DefaultAttachButton';
-
-const DefaultEmojiButton: React.FC<{ active: boolean; onClick: () => void }> = React.memo(({
-  active,
-  onClick,
-}) => (
-  <button
-    className={`ermis-message-input__emoji-btn${active ? ' ermis-message-input__emoji-btn--active' : ''}`}
-    onClick={onClick}
-    type="button"
-    aria-label="Emoji"
-  >
-    😀
-  </button>
-));
-DefaultEmojiButton.displayName = 'DefaultEmojiButton';
 
 export const MessageInput: React.FC<MessageInputProps> = React.memo(({
   placeholder = 'Type a message...',
@@ -74,14 +27,8 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
   EmojiButtonComponent = DefaultEmojiButton,
 }) => {
   const { client, activeChannel, syncMessages } = useChatClient();
-  const editableRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [sending, setSending] = useState(false);
+  const editableRef = React.useRef<HTMLDivElement>(null);
   const [hasContent, setHasContent] = useState(false);
-  const [files, setFiles] = useState<FilePreviewItem[]>([]);
-  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
-  // Save cursor position before emoji picker steals focus
-  const savedRangeRef = useRef<Range | null>(null);
 
   const isTeamChannel = activeChannel?.type === 'team';
 
@@ -92,16 +39,25 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
     }
   }, [activeChannel]);
 
+  /* ---------- Hooks ---------- */
+  const {
+    files, setFiles, fileInputRef,
+    handleFilesSelected, handleRemoveFile, handleAttachClick, cleanupFiles,
+  } = useFileUpload({ activeChannel, editableRef, setHasContent });
+
   // Cleanup blob URLs on unmount
   useEffect(() => {
-    return () => {
-      files.forEach((f) => {
-        if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
-      });
-    };
+    return () => cleanupFiles();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Build member list from channel state (only used for team channels)
+  const {
+    emojiPickerOpen,
+    handleEmojiSelect,
+    handleEmojiClose,
+    toggleEmojiPicker,
+  } = useEmojiPicker({ editableRef, setHasContent });
+
+  // Build member list from channel state (only for team channels)
   const members = useMemo<MentionMember[]>(() => {
     if (!isTeamChannel) return [];
     const list: MentionMember[] = [];
@@ -119,190 +75,32 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
   }, [activeChannel, isTeamChannel]);
 
   const {
-    showSuggestions,
-    filteredMembers,
-    highlightIndex,
+    showSuggestions, filteredMembers, highlightIndex,
     handleInput: mentionHandleInput,
     handleKeyDown: mentionHandleKeyDown,
-    selectMention,
-    buildPayload,
-    reset,
+    selectMention, buildPayload, reset,
   } = useMentions({
     members,
     currentUserId: client.userID,
     editableRef,
   });
 
-  /**
-   * Upload a single file immediately:
-   * 1. Normalize file name
-   * 2. Call sendFile API
-   * 3. For video: generate + upload thumbnail
-   * 4. Update file item state with uploaded URL
-   */
-  const uploadSingleFile = useCallback(async (item: FilePreviewItem) => {
-    if (!activeChannel) return;
+  const { sending, handleSend } = useMessageSend({
+    activeChannel,
+    editableRef,
+    files,
+    setFiles,
+    hasContent,
+    setHasContent,
+    isTeamChannel,
+    buildPayload,
+    reset,
+    syncMessages,
+    onSend,
+    onBeforeSend,
+  });
 
-    try {
-      // Normalize file name
-      const normalizedName = normalizeFileName(item.file.name);
-      const fileToUpload = normalizedName !== item.file.name
-        ? new File([item.file], normalizedName, { type: item.file.type, lastModified: item.file.lastModified })
-        : item.file;
-
-      // Upload file via sendFile API
-      const response = await activeChannel.sendFile(fileToUpload, fileToUpload.name, fileToUpload.type);
-      const uploadedUrl = response.file;
-
-      // For video files: generate thumbnail + upload
-      let thumbUrl = '';
-      if (isVideoFile(item.file)) {
-        try {
-          const thumbBlob = await activeChannel.getThumbBlobVideo(item.file);
-          if (thumbBlob) {
-            const thumbFile = new File([thumbBlob], `thumb_${normalizedName}.jpg`, { type: 'image/jpeg' });
-            const thumbResp = await activeChannel.sendFile(thumbFile, thumbFile.name, 'image/jpeg');
-            thumbUrl = thumbResp.file;
-          }
-        } catch {
-          // Thumbnail failure is non-critical
-        }
-      }
-
-      // Update state: done with uploaded URL
-      setFiles((prev) =>
-        prev.map((f) =>
-          f.id === item.id
-            ? { ...f, status: 'done' as const, uploadedUrl, thumbUrl, normalizedFile: fileToUpload }
-            : f,
-        ),
-      );
-    } catch (err: any) {
-      // Update state: error
-      setFiles((prev) =>
-        prev.map((f) =>
-          f.id === item.id
-            ? { ...f, status: 'error' as const, error: err?.message || 'Upload failed' }
-            : f,
-        ),
-      );
-    }
-  }, [activeChannel]);
-
-  // Handle file selection → upload immediately
-  const handleFilesSelected = useCallback((selectedFiles: FileList | null) => {
-    if (!selectedFiles || selectedFiles.length === 0) return;
-
-    const newItems: FilePreviewItem[] = Array.from(selectedFiles).map((file) => {
-      const isPreviewable =
-        (file.type.startsWith('image/') && !isHeicFile(file)) ||
-        file.type.startsWith('video/');
-      return {
-        id: nextFileId(),
-        file,
-        previewUrl: isPreviewable ? URL.createObjectURL(file) : undefined,
-        status: 'uploading' as const, // Start uploading immediately
-      };
-    });
-
-    setFiles((prev) => [...prev, ...newItems]);
-    setHasContent(true);
-
-    // Upload each file immediately
-    newItems.forEach((item) => uploadSingleFile(item));
-  }, [uploadSingleFile]);
-
-  // Remove a file from the list
-  const handleRemoveFile = useCallback((id: string) => {
-    setFiles((prev) => {
-      const item = prev.find((f) => f.id === id);
-      if (item?.previewUrl) URL.revokeObjectURL(item.previewUrl);
-      const remaining = prev.filter((f) => f.id !== id);
-      const el = editableRef.current;
-      const textContent = el?.textContent?.trim() ?? '';
-      if (remaining.length === 0 && textContent.length === 0) {
-        setHasContent(false);
-      }
-      return remaining;
-    });
-  }, []);
-
-  // Open file picker
-  const handleAttachClick = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
-
-  const handleSend = useCallback(async () => {
-    if (!activeChannel || !hasContent || sending) return;
-
-    // Wait for all files to finish uploading
-    const stillUploading = files.some((f) => f.status === 'uploading');
-    if (stillUploading) return;
-
-    const payload = buildPayload();
-    const text = payload.text.trim();
-    const uploadedFiles = files.filter((f) => f.status === 'done');
-
-    if (!text && uploadedFiles.length === 0) return;
-
-    // onBeforeSend hook — return false to cancel
-    if (onBeforeSend) {
-      const proceed = await onBeforeSend(text, uploadedFiles);
-      if (!proceed) return;
-    }
-
-    try {
-      setSending(true);
-
-      // Build attachment payloads from already-uploaded files
-      const attachments = uploadedFiles.map((f) => {
-        const fileObj = f.normalizedFile || f.file;
-        return buildAttachmentPayload(fileObj, f.uploadedUrl!, f.thumbUrl);
-      });
-
-      // Build message
-      const message: Record<string, any> = { text };
-      if (attachments.length > 0) {
-        message.attachments = attachments;
-      }
-      if (isTeamChannel) {
-        message.mentioned_all = payload.mentioned_all;
-        message.mentioned_users = payload.mentioned_users;
-      }
-
-      // Start sendMessage (injects optimistic message into SDK state synchronously)
-      const sendPromise = activeChannel.sendMessage(message);
-
-      // Sync React state IMMEDIATELY — optimistic message is already in SDK state
-      syncMessages();
-
-      // Now wait for API response
-      await sendPromise;
-
-      // Clear successful files
-      files.forEach((f) => {
-        if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
-      });
-      // Keep only error files
-      const errorFiles = files.filter((f) => f.status === 'error');
-      setFiles(errorFiles);
-
-      reset();
-      setHasContent(errorFiles.length > 0);
-      onSend?.(payload.text);
-    } catch (err) {
-      console.error('Failed to send message:', err);
-      // Sync React state to show error status
-      syncMessages();
-    } finally {
-      setSending(false);
-      // Focus after React re-renders (re-enables contentEditable)
-      requestAnimationFrame(() => {
-        editableRef.current?.focus();
-      });
-    }
-  }, [activeChannel, hasContent, sending, buildPayload, reset, onSend, isTeamChannel, files]);
-
+  /* ---------- Input event handlers ---------- */
   const handleInput = useCallback(() => {
     const el = editableRef.current;
     const content = el?.textContent?.trim() ?? '';
@@ -330,46 +128,6 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
     e.preventDefault();
     const plainText = e.clipboardData.getData('text/plain');
     document.execCommand('insertText', false, plainText);
-  }, []);
-
-  /* ---------- Emoji helpers ---------- */
-  const handleEmojiSelect = useCallback((emoji: string) => {
-    const el = editableRef.current;
-    if (!el) return;
-
-    // Restore saved cursor position, or move to end
-    el.focus();
-    const sel = window.getSelection();
-    if (sel) {
-      sel.removeAllRanges();
-      if (savedRangeRef.current) {
-        sel.addRange(savedRangeRef.current);
-        savedRangeRef.current = null;
-      } else {
-        // Fallback: move cursor to end
-        const range = document.createRange();
-        range.selectNodeContents(el);
-        range.collapse(false);
-        sel.addRange(range);
-      }
-    }
-
-    document.execCommand('insertText', false, emoji + ' ');
-    setHasContent(true);
-    setEmojiPickerOpen(false);
-  }, []);
-
-  const handleEmojiClose = useCallback(() => {
-    setEmojiPickerOpen(false);
-  }, []);
-
-  const toggleEmojiPicker = useCallback(() => {
-    // Save current cursor position before picker steals focus
-    const sel = window.getSelection();
-    if (sel && sel.rangeCount > 0) {
-      savedRangeRef.current = sel.getRangeAt(0).cloneRange();
-    }
-    setEmojiPickerOpen((prev) => !prev);
   }, []);
 
   if (!activeChannel) return null;
