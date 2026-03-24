@@ -6,7 +6,7 @@ import { useChannelListUpdates } from '../hooks/useChannelListUpdates';
 import { Avatar } from './Avatar';
 import type { ChannelItemProps, ChannelListProps } from '../types';
 
-export type { ChannelListProps } from '../types';
+export type { ChannelListProps, ChannelItemProps } from '../types';
 
 /**
  * Build a userId → displayName map from channel members.
@@ -76,9 +76,9 @@ function getLastMessagePreview(
 }
 
 /* ----------------------------------------------------------
-   Memoized channel list item
+   Memoized channel list item (exported for consumer reuse)
    ---------------------------------------------------------- */
-const ChannelItem: React.FC<ChannelItemProps> = React.memo(({
+export const ChannelItem: React.FC<ChannelItemProps> = React.memo(({
   channel,
   isActive,
   hasUnread,
@@ -148,6 +148,7 @@ export const ChannelList: React.FC<ChannelListProps> = React.memo(({
   LoadingIndicator = DefaultLoading,
   EmptyStateIndicator = DefaultEmpty,
   AvatarComponent = Avatar,
+  ChannelItemComponent = ChannelItem,
 }) => {
   const { client, activeChannel, setActiveChannel } = useChatClient();
   const [channels, setChannels] = useState<Channel[]>([]);
@@ -220,7 +221,7 @@ export const ChannelList: React.FC<ChannelListProps> = React.memo(({
         }
 
         return (
-          <ChannelItem
+          <ChannelItemComponent
             key={channel.cid}
             channel={channel}
             isActive={isActive}

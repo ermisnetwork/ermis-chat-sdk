@@ -15,8 +15,8 @@ export { useChannelListUpdates } from './hooks/useChannelListUpdates';
 export { Avatar } from './components/Avatar';
 export type { AvatarProps } from './components/Avatar';
 
-export { ChannelList } from './components/ChannelList';
-export type { ChannelListProps } from './components/ChannelList';
+export { ChannelList, ChannelItem } from './components/ChannelList';
+export type { ChannelListProps, ChannelItemProps } from './components/ChannelList';
 
 export { Channel } from './components/Channel';
 export type { ChannelProps } from './components/Channel';

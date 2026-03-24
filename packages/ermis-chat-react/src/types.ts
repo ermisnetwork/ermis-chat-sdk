@@ -100,6 +100,8 @@ export type ChannelListProps = {
   LoadingIndicator?: React.ComponentType;
   EmptyStateIndicator?: React.ComponentType;
   AvatarComponent?: React.ComponentType<AvatarProps>;
+  /** Replace the default channel list item component */
+  ChannelItemComponent?: React.ComponentType<ChannelItemProps>;
 };
 
 /* ----------------------------------------------------------
