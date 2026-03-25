@@ -202,10 +202,6 @@
   pointer-events: none;
 }
 
-.ermis-message--error {
-  opacity: 0.8;
-}
-
 .ermis-message--error .ermis-message-bubble {
   border: 1px solid #e74c3c;
 }

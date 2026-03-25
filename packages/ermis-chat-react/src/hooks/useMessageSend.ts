@@ -1,7 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { buildAttachmentPayload } from '@ermis-network/ermis-chat-sdk';
 import type { Channel, FormatMessageResponse } from '@ermis-network/ermis-chat-sdk';
-import { isUserManagedAttachment } from '../utils';
 import type { FilePreviewItem } from '../types';
 
 export type UseMessageSendOptions = {
@@ -46,13 +45,16 @@ export function useMessageSend({
   clearEditingMessage,
 }: UseMessageSendOptions) {
   const [sending, setSending] = useState(false);
+  const isProcessingRef = useRef(false);
 
   const handleSend = useCallback(async () => {
-    if (!activeChannel || !hasContent || sending) return;
+    if (!activeChannel || !hasContent || sending || isProcessingRef.current) return;
 
     // Wait for all files to finish uploading
     const stillUploading = files.some((f) => f.status === 'uploading');
     if (stillUploading) return;
+
+    isProcessingRef.current = true;
 
     const payload = buildPayload();
     const text = payload.text.trim();
@@ -63,7 +65,10 @@ export function useMessageSend({
     // onBeforeSend hook — return false to cancel
     if (onBeforeSend) {
       const proceed = await onBeforeSend(text, uploadedFiles);
-      if (!proceed) return;
+      if (!proceed) {
+        isProcessingRef.current = false;
+        return;
+      }
     }
 
     try {
@@ -101,29 +106,43 @@ export function useMessageSend({
         sendPromise = activeChannel.sendMessage(message as any);
       }
 
-      // Sync React state IMMEDIATELY — optimistic message is already in SDK state
+      // --- 0. OPTIMISTIC UI UPDATE ---
+      // Instantly injects the `status: 'sending'` message scaffold from SDK into the React map
       syncMessages();
 
-      // Now wait for API response
-      await sendPromise;
+      // Instantly scroll the VirtualMessageList down to reveal this newly injected optimistic object
+      // wait for React to finish rendering the new dom node
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('ermis:scroll-to-bottom', { detail: { smooth: true } }));
+      }, 50);
 
+      // --- 1. CLEAR UI IMMEDIATELY (FIRE AND FORGET) ---
       // Clear successful files
       files.forEach((f) => {
         if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
       });
-      // Keep only error files
+
       const errorFiles = files.filter((f) => f.status === 'error');
       setFiles(errorFiles);
+      setHasContent(errorFiles.length > 0);
 
       reset();
       clearQuotedMessage?.();
       clearEditingMessage?.();
-      setHasContent(errorFiles.length > 0);
       onSend?.(payload.text);
+
+      // --- 2. DELEGATE TO WEBSOCKET ---
+      // The API call runs in background. We do not block the UI for resolution.
+      // Message lists will automatically update when the backend blasts the `message.new` WS event.
+      sendPromise.catch((err: Error) => {
+        console.error('Failed to send message over API:', err);
+        // Sync React to render the SDK's internal 'status: failed' UI state
+        syncMessages();
+      });
     } catch (err) {
-      console.error('Failed to send message:', err);
-      syncMessages();
+      console.error('Failed to process message send:', err);
     } finally {
+      isProcessingRef.current = false;
       setSending(false);
       requestAnimationFrame(() => {
         editableRef.current?.focus();

@@ -178,6 +178,9 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
+      // Prevent reacting to "Enter" when constructing characters with an IME (e.g. Vietnamese telex)
+      if (e.nativeEvent.isComposing) return;
+
       if (e.key === 'Escape') {
         if (editingMessage) {
           cancelEdit();

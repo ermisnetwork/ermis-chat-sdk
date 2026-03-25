@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { VList, type VListHandle } from 'virtua';
 import type { MessageLabel } from '@ermis-network/ermis-chat-sdk';
 import { useChatClient } from '../hooks/useChatClient';
@@ -107,6 +107,17 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
     if (count === 0) return;
     vlistRef.current?.scrollToIndex(count - 1, { align: 'end', smooth });
   }, []);
+
+  // Listen for global scroll requests (e.g., optimistic message sends from MessageInput)
+  useEffect(() => {
+    const handleScrollEvent = (e: Event) => {
+      const customEvent = e as CustomEvent;
+
+      scrollToBottom(customEvent.detail?.smooth);
+    };
+    window.addEventListener('ermis:scroll-to-bottom', handleScrollEvent);
+    return () => window.removeEventListener('ermis:scroll-to-bottom', handleScrollEvent);
+  }, [scrollToBottom]);
 
   // Shared guard: skip scroll-triggered loads during jump transitions
   const jumpingRef = useRef(false);
