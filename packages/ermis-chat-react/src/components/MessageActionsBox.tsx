@@ -100,6 +100,19 @@ export const MessageActionsBox: React.FC<MessageActionsBoxProps> = ({
     };
   }, [isOpen, onClose]);
 
+  const handleCopy = async () => {
+    if (onCopy) {
+      onCopy(message);
+    } else if (message.text) {
+      try {
+        await navigator.clipboard.writeText(message.text);
+      } catch (err) {
+        console.error('Failed to copy text:', err);
+      }
+    }
+    onClose();
+  };
+
   /* ── Inline hover buttons (Reply · Forward · More) ── */
   const hoverButtons = (
     <div className={`ermis-message-list__actions ${isOpen ? 'ermis-message-list__actions--active' : ''}`}>
@@ -174,7 +187,7 @@ export const MessageActionsBox: React.FC<MessageActionsBoxProps> = ({
             </button>
           )}
           {actions.canCopy && (
-            <button className="ermis-message-actions-box__item" onClick={() => { onCopy?.(message); onClose(); }}>
+            <button className="ermis-message-actions-box__item" onClick={handleCopy}>
               Copy
             </button>
           )}

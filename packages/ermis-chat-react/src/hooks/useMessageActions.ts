@@ -54,8 +54,8 @@ export const useMessageActions = (message: FormatMessageResponse, isOwnMessage: 
     const canReply = !isSystem && !isSignal && hasCap('send-reply');
     const canQuote = !isSystem && !isSignal && hasCap('quote-message');
     const canPin = !isSystem && !isSignal && hasCap('pin-message');
-    const canCopy = !isSystem && !isSignal;
+    const canCopy = !isSystem && !isSignal && Boolean(message.text?.trim());
 
     return { canEdit, canDelete, canDeleteForMe, canReply, canQuote, canPin, canCopy, isPinned };
-  }, [activeChannel, client.userID, messageType, isPinnedFlag, isOwnMessage]);
+  }, [activeChannel, client.userID, messageType, message.text, isPinnedFlag, isOwnMessage]);
 };
