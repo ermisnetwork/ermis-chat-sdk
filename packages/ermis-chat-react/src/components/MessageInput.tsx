@@ -7,6 +7,7 @@ import { useMessageSend } from '../hooks/useMessageSend';
 import { DefaultSendButton, DefaultAttachButton, DefaultEmojiButton } from './MessageInputDefaults';
 import { MentionSuggestions } from './MentionSuggestions';
 import { FilesPreview } from './FilesPreview';
+import { ReplyPreview } from './ReplyPreview';
 import type { MentionMember, MessageInputProps } from '../types';
 
 export type { MessageInputProps, SendButtonProps, AttachButtonProps, EmojiPickerProps, EmojiButtonProps } from '../types';
@@ -25,19 +26,20 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
   onBeforeSend,
   EmojiPickerComponent,
   EmojiButtonComponent = DefaultEmojiButton,
+  ReplyPreviewComponent = ReplyPreview,
 }) => {
-  const { client, activeChannel, syncMessages } = useChatClient();
+  const { client, activeChannel, syncMessages, quotedMessage, setQuotedMessage } = useChatClient();
   const editableRef = React.useRef<HTMLDivElement>(null);
   const [hasContent, setHasContent] = useState(false);
 
   const isTeamChannel = activeChannel?.type === 'team';
 
-  // Auto-focus when channel changes
+  // Auto-focus when channel changes or when reply is selected
   useEffect(() => {
     if (activeChannel && editableRef.current) {
       editableRef.current.focus();
     }
-  }, [activeChannel]);
+  }, [activeChannel, quotedMessage]);
 
   /* ---------- Hooks ---------- */
   const {
@@ -98,6 +100,8 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
     syncMessages,
     onSend,
     onBeforeSend,
+    quotedMessage,
+    clearQuotedMessage: () => setQuotedMessage(null),
   });
 
   /* ---------- Input event handlers ---------- */
@@ -136,6 +140,14 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
 
   return (
     <div className={`ermis-message-input${className ? ` ${className}` : ''}`}>
+      {/* Reply preview */}
+      {quotedMessage && (
+        <ReplyPreviewComponent
+          message={quotedMessage}
+          onDismiss={() => setQuotedMessage(null)}
+        />
+      )}
+
       {/* Custom content above input */}
       {renderAbove?.()}
 

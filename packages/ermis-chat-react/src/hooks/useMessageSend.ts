@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { buildAttachmentPayload } from '@ermis-network/ermis-chat-sdk';
-import type { Channel } from '@ermis-network/ermis-chat-sdk';
+import type { Channel, FormatMessageResponse } from '@ermis-network/ermis-chat-sdk';
 import type { FilePreviewItem } from '../types';
 
 export type UseMessageSendOptions = {
@@ -16,6 +16,10 @@ export type UseMessageSendOptions = {
   syncMessages: () => void;
   onSend?: (text: string) => void;
   onBeforeSend?: (text: string, attachments: FilePreviewItem[]) => boolean | Promise<boolean>;
+  /** Message being replied to */
+  quotedMessage?: FormatMessageResponse | null;
+  /** Clear quoted message after send */
+  clearQuotedMessage?: () => void;
 };
 
 export function useMessageSend({
@@ -31,6 +35,8 @@ export function useMessageSend({
   syncMessages,
   onSend,
   onBeforeSend,
+  quotedMessage,
+  clearQuotedMessage,
 }: UseMessageSendOptions) {
   const [sending, setSending] = useState(false);
 
@@ -71,6 +77,9 @@ export function useMessageSend({
         message.mentioned_all = payload.mentioned_all;
         message.mentioned_users = payload.mentioned_users;
       }
+      if (quotedMessage?.id) {
+        message.quoted_message_id = quotedMessage.id;
+      }
 
       // Start sendMessage (injects optimistic message into SDK state synchronously)
       const sendPromise = activeChannel.sendMessage(message);
@@ -90,6 +99,7 @@ export function useMessageSend({
       setFiles(errorFiles);
 
       reset();
+      clearQuotedMessage?.();
       setHasContent(errorFiles.length > 0);
       onSend?.(payload.text);
     } catch (err) {

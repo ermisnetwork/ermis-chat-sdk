@@ -16,6 +16,9 @@ export type ChatContextValue = {
   setMessages: React.Dispatch<React.SetStateAction<FormatMessageResponse[]>>;
   /** Re-read messages from SDK state into React state */
   syncMessages: () => void;
+  /** Message being replied to (shown as preview in MessageInput) */
+  quotedMessage: FormatMessageResponse | null;
+  setQuotedMessage: (message: FormatMessageResponse | null) => void;
 };
 
 export type ChatProviderProps = {
@@ -159,11 +162,13 @@ export type MessageListProps = {
   /** Custom quoted message preview inside message items */
   QuotedMessagePreviewComponent?: React.ComponentType<QuotedMessagePreviewProps>;
   /** Custom message actions component (hover buttons + dropdown) */
-  MessageActionsBoxComponent?: React.ComponentType<{ message: FormatMessageResponse; isOwnMessage: boolean }>;
+  MessageActionsBoxComponent?: React.ComponentType<MessageActionsBoxProps>;
   /** Show pinned messages bar (default: true) */
   showPinnedMessages?: boolean;
   /** Custom pinned messages component */
   PinnedMessagesComponent?: React.ComponentType<any>;
+  /** Custom reply preview component in MessageInput */
+  ReplyPreviewComponent?: React.ComponentType<ReplyPreviewProps>;
 };
 
 /* ----------------------------------------------------------
@@ -181,10 +186,7 @@ export type MessageItemProps = {
   /** Custom quoted message preview component */
   QuotedMessagePreviewComponent?: React.ComponentType<QuotedMessagePreviewProps>;
   /** Custom message actions component (hover buttons + dropdown) */
-  MessageActionsBoxComponent?: React.ComponentType<{
-    message: FormatMessageResponse;
-    isOwnMessage: boolean;
-  }>;
+  MessageActionsBoxComponent?: React.ComponentType<MessageActionsBoxProps>;
 };
 
 export type SystemMessageItemProps = {
@@ -239,6 +241,55 @@ export type MessageInputProps = {
   EmojiPickerComponent?: React.ComponentType<EmojiPickerProps>;
   /** Custom emoji button component (defaults to 😀 toggle button) */
   EmojiButtonComponent?: React.ComponentType<EmojiButtonProps>;
+  /** Custom reply preview component */
+  ReplyPreviewComponent?: React.ComponentType<ReplyPreviewProps>;
+};
+
+/* ----------------------------------------------------------
+   ReplyPreview types
+   ---------------------------------------------------------- */
+export type ReplyPreviewProps = {
+  message: FormatMessageResponse;
+  onDismiss: () => void;
+};
+
+/* ----------------------------------------------------------
+   Message Actions Box types
+   ---------------------------------------------------------- */
+export type MessageActionsBoxProps = {
+  message: FormatMessageResponse;
+  isOwnMessage: boolean;
+  onReply?: (message: FormatMessageResponse) => void;
+  onForward?: (message: FormatMessageResponse) => void;
+  onPinToggle?: (message: FormatMessageResponse, isPinned: boolean) => void;
+  onEdit?: (message: FormatMessageResponse) => void;
+  onCopy?: (message: FormatMessageResponse) => void;
+  onDelete?: (message: FormatMessageResponse) => void;
+  onDeleteForMe?: (message: FormatMessageResponse) => void;
+};
+
+/* ----------------------------------------------------------
+   Pinned Messages types
+   ---------------------------------------------------------- */
+export type PinnedMessageItemProps = {
+  message: FormatMessageResponse;
+  isOwnMessage: boolean;
+  onClickMessage?: (messageId: string) => void;
+  onUnpin?: (messageId: string) => void;
+  AvatarComponent: React.ComponentType<AvatarProps>;
+};
+
+export type PinnedMessagesProps = {
+  /** Additional CSS class name */
+  className?: string;
+  /** Custom avatar component */
+  AvatarComponent?: React.ComponentType<AvatarProps>;
+  /** Custom pinned message item component */
+  PinnedMessageItemComponent?: React.ComponentType<PinnedMessageItemProps>;
+  /** Callback when a pinned message is clicked (e.g. scroll to it) */
+  onClickMessage?: (messageId: string) => void;
+  /** Max messages to show in collapsed state (default: 1) */
+  maxCollapsed?: number;
 };
 
 /* ----------------------------------------------------------

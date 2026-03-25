@@ -2,21 +2,11 @@ import React, { useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import type { FormatMessageResponse } from '@ermis-network/ermis-chat-sdk';
 import { useMessageActions } from '../hooks/useMessageActions';
+import { useChatClient } from '../hooks/useChatClient';
+import type { MessageActionsBoxProps } from '../types';
 
 // Global event name used to close any other open actions box
 const CLOSE_ALL_EVENT = 'ermis:close-all-actions';
-
-export type MessageActionsBoxProps = {
-  message: FormatMessageResponse;
-  isOwnMessage: boolean;
-  onReply?: (message: FormatMessageResponse) => void;
-  onForward?: (message: FormatMessageResponse) => void;
-  onPinToggle?: (message: FormatMessageResponse, isPinned: boolean) => void;
-  onEdit?: (message: FormatMessageResponse) => void;
-  onCopy?: (message: FormatMessageResponse) => void;
-  onDelete?: (message: FormatMessageResponse) => void;
-  onDeleteForMe?: (message: FormatMessageResponse) => void;
-};
 
 /** Dispatch a global event to close all open action boxes */
 export const closeAllActionBoxes = () => {
@@ -26,7 +16,7 @@ export const closeAllActionBoxes = () => {
 export const MessageActionsBox: React.FC<MessageActionsBoxProps> = ({
   message,
   isOwnMessage,
-  onReply,
+  onReply: onReplyProp,
   onForward,
   onPinToggle,
   onEdit,
@@ -34,10 +24,14 @@ export const MessageActionsBox: React.FC<MessageActionsBoxProps> = ({
   onDelete,
   onDeleteForMe,
 }) => {
+  const { setQuotedMessage } = useChatClient();
   const [anchorRect, setAnchorRect] = React.useState<DOMRect | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceId = useRef(Math.random().toString(36).slice(2));
   const actions = useMessageActions(message, isOwnMessage);
+
+  // Default reply handler: set quoted message in context
+  const onReply = onReplyProp ?? ((msg: FormatMessageResponse) => setQuotedMessage(msg));
 
   const isOpen = anchorRect !== null;
   const onClose = useCallback(() => setAnchorRect(null), []);

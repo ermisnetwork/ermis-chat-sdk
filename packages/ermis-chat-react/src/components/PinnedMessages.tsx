@@ -2,31 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useChatClient } from '../hooks/useChatClient';
 import { Avatar } from './Avatar';
 import type { FormatMessageResponse } from '@ermis-network/ermis-chat-sdk';
-import type { AvatarProps } from './Avatar';
-
-/* ----------------------------------------------------------
-   Types
-   ---------------------------------------------------------- */
-export type PinnedMessageItemProps = {
-  message: FormatMessageResponse;
-  isOwnMessage: boolean;
-  onClickMessage?: (messageId: string) => void;
-  onUnpin?: (messageId: string) => void;
-  AvatarComponent: React.ComponentType<AvatarProps>;
-};
-
-export type PinnedMessagesProps = {
-  /** Additional CSS class name */
-  className?: string;
-  /** Custom avatar component */
-  AvatarComponent?: React.ComponentType<AvatarProps>;
-  /** Custom pinned message item component */
-  PinnedMessageItemComponent?: React.ComponentType<PinnedMessageItemProps>;
-  /** Callback when a pinned message is clicked (e.g. scroll to it) */
-  onClickMessage?: (messageId: string) => void;
-  /** Max messages to show in collapsed state (default: 1) */
-  maxCollapsed?: number;
-};
+import type { PinnedMessageItemProps, PinnedMessagesProps } from '../types';
 
 /* ----------------------------------------------------------
    Default PinnedMessageItem
@@ -43,9 +19,13 @@ const DefaultPinnedMessageItem: React.FC<PinnedMessageItemProps> = React.memo(({
   const hasAttachments = message.attachments && message.attachments.length > 0;
 
   let previewText = message.text || '';
+  const isSticker = message.type === 'sticker';
+
   if (!previewText && hasAttachments) {
     const firstAttach = message.attachments![0];
     previewText = firstAttach.title || `${firstAttach.type || 'file'}`;
+  } else if (isSticker) {
+    previewText = 'Sticker';
   }
 
   // Attachment icon prefix
@@ -56,6 +36,8 @@ const DefaultPinnedMessageItem: React.FC<PinnedMessageItemProps> = React.memo(({
     else if (type === 'video') attachIcon = '🎥 ';
     else if (type === 'audio') attachIcon = '🎵 ';
     else attachIcon = '📄 ';
+  } else if (isSticker) {
+    attachIcon = '😀 ';
   }
 
   return (
@@ -96,7 +78,7 @@ export const PinnedMessages: React.FC<PinnedMessagesProps> = React.memo(({
   onClickMessage,
   maxCollapsed = 1,
 }) => {
-  const { activeChannel, client } = useChatClient();
+  const { activeChannel, client, messages } = useChatClient();
   const [expanded, setExpanded] = useState(false);
   const currentUserId = client.userID;
 
@@ -109,7 +91,7 @@ export const PinnedMessages: React.FC<PinnedMessagesProps> = React.memo(({
     if (!activeChannel) return [];
     const pinned = (activeChannel.state as any)?.pinnedMessages;
     return Array.isArray(pinned) ? pinned : [];
-  }, [activeChannel]);
+  }, [activeChannel, messages]);
 
   const toggleExpanded = useCallback(() => {
     setExpanded((prev) => !prev);

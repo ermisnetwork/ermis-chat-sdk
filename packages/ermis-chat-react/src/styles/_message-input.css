@@ -246,3 +246,63 @@
   font-size: 14px;
   color: #e74c3c;
 }
+
+/* ----------------------------------------------------------
+   Reply Preview
+   ---------------------------------------------------------- */
+.ermis-message-input__reply-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--ermis-spacing-xs) var(--ermis-spacing-md);
+  background-color: var(--ermis-bg-primary);
+  border-left: 3px solid var(--ermis-accent);
+  border-radius: var(--ermis-radius-sm);
+  gap: var(--ermis-spacing-sm);
+}
+
+.ermis-message-input__reply-preview-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.ermis-message-input__reply-preview-label {
+  font-size: var(--ermis-font-size-xs);
+  color: var(--ermis-accent);
+  font-weight: 600;
+}
+
+.ermis-message-input__reply-preview-user {
+  font-size: var(--ermis-font-size-sm);
+  font-weight: 600;
+  color: var(--ermis-text-primary);
+}
+
+.ermis-message-input__reply-preview-text {
+  font-size: var(--ermis-font-size-xs);
+  color: var(--ermis-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ermis-message-input__reply-preview-dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ermis-text-secondary);
+  padding: 4px;
+  border-radius: var(--ermis-radius-sm);
+  flex-shrink: 0;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.ermis-message-input__reply-preview-dismiss:hover {
+  background-color: var(--ermis-bg-hover);
+  color: var(--ermis-text-primary);
+}

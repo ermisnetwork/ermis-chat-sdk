@@ -30,10 +30,11 @@ export type { MessageListProps, MessageBubbleProps, MessageItemProps, SystemMess
 export { VirtualMessageList } from './components/VirtualMessageList';
 
 export { PinnedMessages } from './components/PinnedMessages';
-export type { PinnedMessagesProps, PinnedMessageItemProps } from './components/PinnedMessages';
+export type { PinnedMessagesProps, PinnedMessageItemProps } from './types';
 
 export { MessageItem, SystemMessageItem } from './components/MessageItem';
 export { MessageActionsBox } from './components/MessageActionsBox';
+export type { MessageActionsBoxProps } from './types';
 
 export { useMessageActions } from './hooks/useMessageActions';
 
@@ -75,3 +76,5 @@ export type { UseChannelMessagesOptions } from './hooks/useChannelMessages';
 
 export { QuotedMessagePreview } from './components/QuotedMessagePreview';
 export type { QuotedMessagePreviewProps } from './components/QuotedMessagePreview';
+export { ReplyPreview } from './components/ReplyPreview';
+export type { ReplyPreviewProps } from './types';
