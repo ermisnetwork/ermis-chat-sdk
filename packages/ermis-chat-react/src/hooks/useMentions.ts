@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useDeferredValue, useMemo } from 'react';
+import { moveCaretAfterNode } from '../utils';
 import type {
   MentionMember,
   MentionPayload,
@@ -8,7 +9,15 @@ import type {
 
 export type { MentionMember, MentionPayload, UseMentionsOptions, UseMentionsReturn } from '../types';
 
-const MENTION_SPAN_CLASS = 'ermis-message-input__mention-span';
+export const MENTION_SPAN_CLASS = 'ermis-message-input__mention-span';
+
+/**
+ * Returns the raw HTML string for a mention span, useful for initializing contenteditable divs.
+ */
+export function getMentionHtml(userId: string, displayName: string): string {
+  const safeName = displayName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return `<span class="${MENTION_SPAN_CLASS}" data-mention-id="${userId}" contenteditable="false">@${safeName}</span>&nbsp;`;
+}
 
 /**
  * Insert an atomic mention <span> at the current cursor position inside a
@@ -44,12 +53,7 @@ function insertMentionAtCursor(
 
   const space = document.createTextNode('\u00A0');
   span.after(space);
-
-  const newRange = document.createRange();
-  newRange.setStartAfter(space);
-  newRange.collapse(true);
-  sel.removeAllRanges();
-  sel.addRange(newRange);
+  moveCaretAfterNode(space);
 
   editableEl.dispatchEvent(new Event('input', { bubbles: true }));
 }

@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { moveCaretToEnd } from '../utils';
 
 export type UseEmojiPickerOptions = {
   editableRef: React.RefObject<HTMLDivElement | null>;
@@ -16,17 +17,12 @@ export function useEmojiPicker({ editableRef, setHasContent }: UseEmojiPickerOpt
     // Restore saved cursor position, or move to end
     el.focus();
     const sel = window.getSelection();
-    if (sel) {
+    if (sel && savedRangeRef.current) {
       sel.removeAllRanges();
-      if (savedRangeRef.current) {
-        sel.addRange(savedRangeRef.current);
-        savedRangeRef.current = null;
-      } else {
-        const range = document.createRange();
-        range.selectNodeContents(el);
-        range.collapse(false);
-        sel.addRange(range);
-      }
+      sel.addRange(savedRangeRef.current);
+      savedRangeRef.current = null;
+    } else {
+      moveCaretToEnd(el);
     }
 
     document.execCommand('insertText', false, emoji + ' ');

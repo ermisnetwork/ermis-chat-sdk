@@ -9,7 +9,8 @@ import { MentionSuggestions } from './MentionSuggestions';
 import { FilesPreview } from './FilesPreview';
 import { ReplyPreview } from './ReplyPreview';
 import { EditPreview } from './EditPreview';
-import { buildUserMap } from '../utils';
+import { buildUserMap, replaceMentionsForPreview, moveCaretToEnd } from '../utils';
+import { getMentionHtml } from '../hooks/useMentions';
 import type { MentionMember, MessageInputProps, FilePreviewItem } from '../types';
 
 export type { MessageInputProps, SendButtonProps, AttachButtonProps, EmojiPickerProps, EmojiButtonProps } from '../types';
@@ -61,45 +62,21 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
       // Extract user map locally since we have `activeChannel.state.members`
       const userMap = buildUserMap(activeChannel?.state);
 
-      const replacements: { pattern: string; html: string }[] = [];
-      for (const userId of mentionedUsers) {
-        if (!userId) continue;
-        const name = userMap[userId] || userId;
-        const safeName = name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        replacements.push({
-          pattern: `@${userId}`,
-          html: `<span class="ermis-message-input__mention-span" data-mention-id="${userId}" contenteditable="false">@${safeName}</span>&nbsp;`,
-        });
-      }
-      if (mentionedAll) {
-        replacements.push({
-          pattern: '@all',
-          html: `<span class="ermis-message-input__mention-span" data-mention-id="__all__" contenteditable="false">@all</span>&nbsp;`,
-        });
-      }
-
-      let innerHTML = rawText
+      const htmlText = rawText
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/\n/g, '<br>');
 
-      if (replacements.length > 0) {
-        const escapedPatterns = replacements.map((r) => r.pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-        const regex = new RegExp(`(${escapedPatterns.join('|')})`, 'g');
-        const patternToHtml = new Map(replacements.map((r) => [r.pattern, r.html]));
-        innerHTML = innerHTML.replace(regex, (match) => patternToHtml.get(match) || match);
-      }
-
-      editableRef.current.innerHTML = innerHTML;
+      editableRef.current.innerHTML = replaceMentionsForPreview(
+        htmlText,
+        editingMessage,
+        userMap,
+        getMentionHtml
+      );
 
       // Move cursor to the end
-      const range = document.createRange();
-      const sel = window.getSelection();
-      range.selectNodeContents(editableRef.current);
-      range.collapse(false);
-      sel?.removeAllRanges();
-      sel?.addRange(range);
+      moveCaretToEnd(editableRef.current);
 
       // 2. Prefill existing attachments natively (only user-managed files)
       if (editingMessage.attachments && editingMessage.attachments.length > 0) {

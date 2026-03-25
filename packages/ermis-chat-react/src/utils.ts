@@ -52,8 +52,9 @@ export function getMessageUserId(message: FormatMessageResponse): string {
  */
 export function replaceMentionsForPreview(
   text: string,
-  message: FormatMessageResponse,
-  userMap: Record<string, string>
+  message: FormatMessageResponse | { mentioned_users?: string[]; mentioned_all?: boolean },
+  userMap: Record<string, string>,
+  renderWrapper?: (userId: string, name: string) => string
 ): string {
   const mentionedUsers: string[] = (message as any).mentioned_users ?? [];
   const mentionedAll: boolean = (message as any).mentioned_all ?? false;
@@ -67,14 +68,18 @@ export function replaceMentionsForPreview(
 
   for (const userId of mentionedUsers) {
     if (!userId) continue;
+    const name = userMap[userId] ?? userId;
     replacements.push({
       pattern: `@${userId}`,
-      label: `@${userMap[userId] ?? userId}`,
+      label: renderWrapper ? renderWrapper(userId, name) : `@${name}`,
     });
   }
 
   if (mentionedAll) {
-    replacements.push({ pattern: '@all', label: '@all' });
+    replacements.push({
+      pattern: '@all',
+      label: renderWrapper ? renderWrapper('__all__', 'all') : '@all'
+    });
   }
 
   if (replacements.length === 0) return text;
@@ -102,4 +107,30 @@ export function buildUserMap(channelState: any): Record<string, string> {
     }
   }
   return map;
+}
+
+/**
+ * Move caret to the very end of a contenteditable element.
+ */
+export function moveCaretToEnd(el: HTMLElement) {
+  const sel = window.getSelection();
+  if (!sel) return;
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  range.collapse(false);
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+/**
+ * Move caret immediately after a specific DOM node.
+ */
+export function moveCaretAfterNode(node: Node) {
+  const sel = window.getSelection();
+  if (!sel) return;
+  const range = document.createRange();
+  range.setStartAfter(node);
+  range.collapse(true);
+  sel.removeAllRanges();
+  sel.addRange(range);
 }
