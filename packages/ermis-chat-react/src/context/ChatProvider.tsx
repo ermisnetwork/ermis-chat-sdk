@@ -12,23 +12,30 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
   children,
   initialTheme = 'light',
 }) => {
-  const [activeChannel, setActiveChannel] = useState<Channel | null>(null);
+  const [activeChannelRaw, setActiveChannelRaw] = useState<Channel | null>(null);
   const [theme, setTheme] = useState<Theme>(initialTheme);
   const [messages, setMessages] = useState<FormatMessageResponse[]>([]);
   const [quotedMessage, setQuotedMessage] = useState<FormatMessageResponse | null>(null);
   const [editingMessage, setEditingMessage] = useState<FormatMessageResponse | null>(null);
+
+  const activeChannel = activeChannelRaw;
+
+  const setActiveChannel = useCallback((channel: Channel | null) => {
+    setActiveChannelRaw(channel);
+    setQuotedMessage(null);
+    setEditingMessage(null);
+    if (channel) {
+      setMessages([...channel.state.latestMessages]);
+    } else {
+      setMessages([]);
+    }
+  }, []);
 
   /** Re-read messages from SDK state into React state */
   const syncMessages = useCallback(() => {
     if (activeChannel) {
       setMessages([...activeChannel.state.latestMessages]);
     }
-  }, [activeChannel]);
-
-  // Clear reply/edit state when switching channels
-  useEffect(() => {
-    setQuotedMessage(null);
-    setEditingMessage(null);
   }, [activeChannel]);
 
   const value: ChatContextValue = {

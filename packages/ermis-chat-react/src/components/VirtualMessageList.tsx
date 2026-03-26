@@ -89,7 +89,7 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
   showPinnedMessages = true,
   PinnedMessagesComponent = PinnedMessages,
 }) => {
-  const { client, activeChannel, messages, setMessages, syncMessages } = useChatClient();
+  const { client, messages } = useChatClient();
   const vlistRef = useRef<VListHandle>(null);
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
@@ -130,19 +130,15 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
     loadingMoreRef, loadingNewerRef,
     handleScroll,
   } = useLoadMessages({
-    activeChannel,
     vlistRef,
-    setMessages,
     messagesRef,
     jumpingRef,
     loadMoreLimit,
   });
 
   const { highlightedId, scrollToMessage, jumpToLatest } = useScrollToMessage({
-    activeChannel,
     vlistRef,
     messagesRef,
-    setMessages,
     setHasMore,
     setHasNewer,
     getVListElement,
@@ -151,8 +147,6 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
   });
 
   useChannelMessages({
-    activeChannel,
-    syncMessages,
     scrollToBottom,
     jumpingRef,
     onChannelSwitch: useCallback(() => {
@@ -235,8 +229,6 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
       );
     });
   }, [messages, currentUserId, highlightedId, renderers, renderMessage, AvatarComponent, MessageBubble, scrollToMessage, DateSeparatorComponent, MessageItemComponent, SystemMessageItemComponent, QuotedMessagePreviewComponent]);
-
-  if (!activeChannel) return null;
 
   return (
     <div ref={containerRef} className={`ermis-message-list${className ? ` ${className}` : ''}`}>

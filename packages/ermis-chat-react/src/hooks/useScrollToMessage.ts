@@ -1,14 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { FormatMessageResponse, Channel } from '@ermis-network/ermis-chat-sdk';
+import type { FormatMessageResponse } from '@ermis-network/ermis-chat-sdk';
 import { formatMessage } from '@ermis-network/ermis-chat-sdk';
 import type { VListHandle } from 'virtua';
 import { dedupMessages } from './useLoadMessages';
+import { useChatClient } from './useChatClient';
 
 export type UseScrollToMessageOptions = {
-  activeChannel: Channel | null;
   vlistRef: React.RefObject<VListHandle | null>;
   messagesRef: React.MutableRefObject<FormatMessageResponse[]>;
-  setMessages: React.Dispatch<React.SetStateAction<FormatMessageResponse[]>>;
   setHasMore: React.Dispatch<React.SetStateAction<boolean>>;
   setHasNewer: React.Dispatch<React.SetStateAction<boolean>>;
   /** Getter to access the VList DOM element (scoped to container) */
@@ -25,16 +24,15 @@ export type UseScrollToMessageReturn = {
 };
 
 export function useScrollToMessage({
-  activeChannel,
   vlistRef,
   messagesRef,
-  setMessages,
   setHasMore,
   setHasNewer,
   getVListElement,
   scrollToBottom,
   jumpingRef,
 }: UseScrollToMessageOptions): UseScrollToMessageReturn {
+  const { activeChannel, setMessages } = useChatClient();
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -110,7 +108,9 @@ export function useScrollToMessage({
               vlistEl.style.opacity = '1';
             }
             highlight(messageId);
-            setTimeout(() => { jumpingRef.current = false; }, 500);
+            setTimeout(() => {
+              jumpingRef.current = false;
+            }, 500);
           }, 100);
         }, 200);
       } catch (err) {
@@ -144,7 +144,9 @@ export function useScrollToMessage({
           vlistEl.style.transition = 'opacity 200ms ease-in';
           vlistEl.style.opacity = '1';
         }
-        setTimeout(() => { jumpingRef.current = false; }, 500);
+        setTimeout(() => {
+          jumpingRef.current = false;
+        }, 500);
       }, 100);
     }, 200);
   }, [activeChannel, scrollToBottom, getVListElement, setMessages, setHasMore, setHasNewer]);

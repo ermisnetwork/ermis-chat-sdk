@@ -23,11 +23,7 @@ export const Channel: React.FC<ChannelProps> = React.memo(({
   EmptyStateIndicator = DefaultEmpty,
   HeaderComponent,
 }) => {
-  const { activeChannel, syncMessages } = useChatClient();
-
-  useEffect(() => {
-    syncMessages();
-  }, [syncMessages])
+  const { activeChannel } = useChatClient();
 
   const headerData = useMemo(() => {
     if (!activeChannel || !HeaderComponent) return null;

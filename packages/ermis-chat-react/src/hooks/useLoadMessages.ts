@@ -1,8 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { FormatMessageResponse } from '@ermis-network/ermis-chat-sdk';
 import { formatMessage } from '@ermis-network/ermis-chat-sdk';
-import type { Channel } from '@ermis-network/ermis-chat-sdk';
 import type { VListHandle } from 'virtua';
+import { useChatClient } from './useChatClient';
 
 const LOAD_MORE_THRESHOLD = 200;
 
@@ -17,9 +17,7 @@ export const dedupMessages = (incoming: any[], existing?: any[]) => {
 };
 
 export type UseLoadMessagesOptions = {
-  activeChannel: Channel | null;
   vlistRef: React.RefObject<VListHandle | null>;
-  setMessages: React.Dispatch<React.SetStateAction<FormatMessageResponse[]>>;
   messagesRef: React.MutableRefObject<FormatMessageResponse[]>;
   /** Shared guard ref — skip scroll-triggered loads during jump transitions */
   jumpingRef: React.MutableRefObject<boolean>;
@@ -43,13 +41,12 @@ export type UseLoadMessagesReturn = {
 };
 
 export function useLoadMessages({
-  activeChannel,
   vlistRef,
-  setMessages,
   messagesRef,
   jumpingRef,
   loadMoreLimit = 25,
 }: UseLoadMessagesOptions): UseLoadMessagesReturn {
+  const { activeChannel, setMessages } = useChatClient();
   const [hasMore, setHasMore] = useState(true);
   const [hasNewer, setHasNewer] = useState(false);
   const [shiftMode, setShiftMode] = useState(false);
@@ -80,10 +77,7 @@ export function useLoadMessages({
 
     loadingMoreRef.current = true;
     try {
-      const olderRaw = await activeChannel.queryMessagesLessThanId(
-        oldestMessage.id,
-        loadMoreLimit,
-      );
+      const olderRaw = await activeChannel.queryMessagesLessThanId(oldestMessage.id, loadMoreLimit);
 
       if (olderRaw.length === 0) {
         setHasMore(false);
@@ -115,10 +109,7 @@ export function useLoadMessages({
 
     loadingNewerRef.current = true;
     try {
-      const newerRaw = await activeChannel.queryMessagesGreaterThanId(
-        newestMessage.id,
-        loadMoreLimit,
-      );
+      const newerRaw = await activeChannel.queryMessagesGreaterThanId(newestMessage.id, loadMoreLimit);
 
       if (newerRaw.length === 0) {
         setHasNewer(false);
@@ -140,23 +131,26 @@ export function useLoadMessages({
     }
   }, [activeChannel, loadMoreLimit, setMessages]);
 
-  const handleScroll = useCallback((offset: number) => {
-    if (jumpingRef.current) return;
-    const handle = vlistRef.current;
-    if (!handle) return;
-    const { scrollSize, viewportSize } = handle;
+  const handleScroll = useCallback(
+    (offset: number) => {
+      if (jumpingRef.current) return;
+      const handle = vlistRef.current;
+      if (!handle) return;
+      const { scrollSize, viewportSize } = handle;
 
-    // Skip if content doesn't fill the viewport
-    if (scrollSize <= viewportSize) return;
+      // Skip if content doesn't fill the viewport
+      if (scrollSize <= viewportSize) return;
 
-    if (offset <= LOAD_MORE_THRESHOLD && hasMoreRef.current) {
-      loadMore();
-    }
+      if (offset <= LOAD_MORE_THRESHOLD && hasMoreRef.current) {
+        loadMore();
+      }
 
-    if (offset + viewportSize >= scrollSize - LOAD_MORE_THRESHOLD && hasNewerRef.current) {
-      loadNewer();
-    }
-  }, [loadMore, loadNewer]);
+      if (offset + viewportSize >= scrollSize - LOAD_MORE_THRESHOLD && hasNewerRef.current) {
+        loadNewer();
+      }
+    },
+    [loadMore, loadNewer],
+  );
 
   return {
     shiftMode,

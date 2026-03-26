@@ -59,7 +59,7 @@ function getLastMessagePreview(
   // Format mentions if necessary
   const mentionedUsers = (lastMsg as any).mentioned_users;
   const mentionedAll = (lastMsg as any).mentioned_all;
-  
+
   if (displayText && (mentionedAll || (mentionedUsers && mentionedUsers.length > 0))) {
     const userMap = buildUserMap(channel.state);
     displayText = replaceMentionsForPreview(displayText, lastMsg as any, userMap);

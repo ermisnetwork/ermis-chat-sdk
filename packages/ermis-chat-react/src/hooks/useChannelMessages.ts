@@ -1,9 +1,8 @@
 import { useEffect } from 'react';
-import type { Event, Channel } from '@ermis-network/ermis-chat-sdk';
+import type { Event } from '@ermis-network/ermis-chat-sdk';
+import { useChatClient } from './useChatClient';
 
 export type UseChannelMessagesOptions = {
-  activeChannel: Channel | null;
-  syncMessages: () => void;
   scrollToBottom: (smooth: boolean) => void;
   /** Shared guard ref — blocks scroll-triggered loads during channel switch */
   jumpingRef: React.MutableRefObject<boolean>;
@@ -18,12 +17,11 @@ export type UseChannelMessagesOptions = {
  * - Channel switch → reset state + scroll to bottom
  */
 export function useChannelMessages({
-  activeChannel,
-  syncMessages,
   scrollToBottom,
   jumpingRef,
   onChannelSwitch,
 }: UseChannelMessagesOptions): void {
+  const { activeChannel, syncMessages } = useChatClient();
   useEffect(() => {
     if (!activeChannel) return;
 
