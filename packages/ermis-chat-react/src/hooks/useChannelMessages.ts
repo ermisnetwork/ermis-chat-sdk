@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import type { Event } from '@ermis-network/ermis-chat-sdk';
 import { useChatClient } from './useChatClient';
 
@@ -10,6 +10,12 @@ export type UseChannelMessagesOptions = {
   /** Called to reset load-more state when channel switches */
   onChannelSwitch?: () => void;
 };
+
+/**
+ * Schedule multiple scroll-to-bottom attempts with increasing delays.
+ * Handles content that changes height after initial render (images, embeds).
+ */
+const SCROLL_DELAYS = [50, 200, 500, 1000];
 
 /**
  * Subscribes to channel message events and handles:
@@ -24,6 +30,16 @@ export function useChannelMessages({
   onChannelSwitch,
 }: UseChannelMessagesOptions): void {
   const { client, activeChannel, syncMessages } = useChatClient();
+
+  const scheduleScrollToBottom = useCallback(
+    (smooth: boolean) => {
+      SCROLL_DELAYS.forEach((delay) => {
+        setTimeout(() => scrollToBottom(smooth), delay);
+      });
+    },
+    [scrollToBottom],
+  );
+
   useEffect(() => {
     if (!activeChannel) return;
 
@@ -41,16 +57,16 @@ export function useChannelMessages({
     }, 0);
 
     const handleNewMessage = (event: Event) => {
+      // Capture scroll state BEFORE sync causes re-render
+      const wasAtBottom = isAtBottomRef.current;
+
       syncMessages();
 
       const isOwnMessage = event.message?.user?.id === client.userID || event.message?.user_id === client.userID;
 
-      // Wait for React to render the new message, then scroll to bottom
-      setTimeout(() => {
-        if (isOwnMessage || isAtBottomRef.current) {
-          scrollToBottom(true);
-        }
-      }, 200);
+      if (isOwnMessage || wasAtBottom) {
+        scheduleScrollToBottom(true);
+      }
     };
 
     const handleMessageChange = (_event: Event) => {

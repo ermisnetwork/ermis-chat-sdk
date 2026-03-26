@@ -45,11 +45,23 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
     }
   }, [activeChannel, quotedMessage, editingMessage]);
 
+
   /* ---------- Hooks ---------- */
   const {
     files, setFiles, fileInputRef,
     handleFilesSelected, handleRemoveFile, handleAttachClick, cleanupFiles,
   } = useFileUpload({ activeChannel, editableRef, setHasContent });
+
+  // When preview panels appear/disappear the input grows/shrinks,
+  // squeezing the VList viewport. Re-scroll to bottom so the last message stays visible.
+  const hasFiles = files.length > 0;
+  useEffect(() => {
+    // Small delay to let the layout reflow after the preview renders
+    const timer = setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('ermis:scroll-to-bottom', { detail: { smooth: false } }));
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [quotedMessage, editingMessage, hasFiles]);
 
   // Pre-fill text and legacy attachments when editingMessage is set
   useEffect(() => {
