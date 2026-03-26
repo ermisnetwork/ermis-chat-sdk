@@ -159,10 +159,23 @@ export const MessageActionsBox: React.FC<MessageActionsBoxProps> = ({
   /* ── Portal dropdown menu ── */
   let dropdown: React.ReactNode = null;
   if (isOpen && anchorRect) {
+    const spaceBelow = window.innerHeight - anchorRect.bottom;
+    const spaceAbove = anchorRect.top;
+    const estimatedDropdownHeight = 250;
+
+    let verticalStyle: React.CSSProperties = {};
+    if (spaceBelow < estimatedDropdownHeight && spaceAbove > spaceBelow) {
+      // Open upwards (bottom-aligned to the top of the trigger)
+      verticalStyle = { bottom: window.innerHeight - anchorRect.top + 4 };
+    } else {
+      // Open downwards
+      verticalStyle = { top: anchorRect.bottom + 4 };
+    }
+
     const style: React.CSSProperties = {
       position: 'fixed',
       zIndex: 99999,
-      top: anchorRect.bottom + 4,
+      ...verticalStyle,
       ...(isOwnMessage
         ? { right: window.innerWidth - anchorRect.right }
         : { left: anchorRect.left }),
