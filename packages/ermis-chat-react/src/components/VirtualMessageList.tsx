@@ -94,7 +94,7 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
   ReadReceiptsTooltipComponent,
   readReceiptsMaxAvatars = 5,
 }) => {
-  const { client, messages, readState } = useChatClient();
+  const { client, messages, readState, activeChannel } = useChatClient();
   const vlistRef = useRef<VListHandle>(null);
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
@@ -107,10 +107,21 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
   }, []);
 
   /* ---------- Scroll to bottom helper ---------- */
-  const scrollToBottom = useCallback((smooth = false) => {
+  const scrollToBottom = useCallback((smooth = false, attempts = 0) => {
+    const handle = vlistRef.current;
+    if (!handle) return;
+
     const count = messagesRef.current.length;
     if (count === 0) return;
-    vlistRef.current?.scrollToIndex(count - 1, { align: 'end', smooth });
+
+    // Ensure virtua has measured the viewport via ResizeObserver.
+    // If viewportSize is unmeasured (0) or scrollSize is 0, align: 'end' calculates wrong.
+    if ((!handle.viewportSize || handle.viewportSize === 0) && attempts < 10) {
+      requestAnimationFrame(() => scrollToBottom(smooth, attempts + 1));
+      return;
+    }
+
+    handle.scrollToIndex(count - 1, { align: 'end', smooth });
   }, []);
 
   // Listen for global scroll requests (e.g., optimistic message sends from MessageInput)
@@ -294,6 +305,7 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
       {messages.length === 0 && <EmptyStateIndicator />}
 
       <VList
+        key={activeChannel?.cid || 'empty'}
         ref={vlistRef}
         shift={shiftMode}
         onScroll={handleScroll}

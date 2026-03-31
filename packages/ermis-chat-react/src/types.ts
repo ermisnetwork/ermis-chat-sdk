@@ -307,7 +307,7 @@ export type MessageInputProps = {
   /** Custom reply preview component */
   ReplyPreviewComponent?: React.ComponentType<ReplyPreviewProps>;
   /** Custom edit preview component */
-  EditPreviewComponent?: React.ComponentType<{ message: FormatMessageResponse; onDismiss: () => void; }>;
+  EditPreviewComponent?: React.ComponentType<{ message: FormatMessageResponse; onDismiss: () => void }>;
 };
 
 /* ----------------------------------------------------------
@@ -400,8 +400,6 @@ export type MentionSuggestionsProps = {
   highlightIndex: number;
   onSelect: (member: MentionMember) => void;
 };
-
-
 
 /* ----------------------------------------------------------
    useChannel types

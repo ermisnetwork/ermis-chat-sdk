@@ -46,17 +46,21 @@ export function useChannelMessages({
     // Reset state for the new channel
     onChannelSwitch?.();
 
+    // Manually force isAtBottom to true because we are jumping to the bottom.
+    // jumpingRef blocks the resulting scroll event from updating isAtBottomRef,
+    // so if it was false in the previous channel, it would stay false!
+    isAtBottomRef.current = true;
+
     // Block scroll triggers during channel-switch scroll
     jumpingRef.current = true;
-    // Defer scroll outside React lifecycle to avoid virtua flushSync warning.
-    // Use scheduleScrollToBottom (multiple retries) instead of a single call,
-    // because VList may not have rendered the new messages yet on the first attempt.
+    // Defer scroll outside React lifecycle to avoid virtua flushSync warning
     setTimeout(() => {
-      scheduleScrollToBottom(false);
-      // Unlock after the last scheduled scroll completes
+      scrollToBottom(false);
+      // Wait long enough for scrollToBottom's internal retries and the browser 
+      // to execute the scroll event
       setTimeout(() => {
         jumpingRef.current = false;
-      }, SCROLL_DELAYS[SCROLL_DELAYS.length - 1] + 100);
+      }, 100);
     }, 0);
 
     const handleNewMessage = (event: Event) => {
