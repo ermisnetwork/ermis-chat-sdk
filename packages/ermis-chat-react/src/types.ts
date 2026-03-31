@@ -230,6 +230,12 @@ export type ReadReceiptsProps = {
   TooltipComponent?: React.ComponentType<ReadReceiptsTooltipProps>;
   /** Whether to show the tooltip on hover (default: true) */
   showTooltip?: boolean;
+  /** Whether the message belongs to the current user (used to show 'Sent/Delivered' status when nobody has read it) */
+  isOwnMessage?: boolean;
+  /** Whether the message is the last in a group of consecutive messages by the same user */
+  isLastInGroup?: boolean;
+  /** The message status (e.g., 'sending', 'failed', 'sent') */
+  status?: string;
 };
 
 /* ----------------------------------------------------------

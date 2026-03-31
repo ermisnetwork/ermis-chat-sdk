@@ -248,6 +248,19 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
         prevType === 'signal' ||
         getMessageUserId(prevMsg) !== getMessageUserId(message);
 
+      const nextMsg = index < messages.length - 1 ? messages[index + 1] : null;
+      const nextType = (nextMsg?.type || 'regular') as MessageLabel;
+      const nextShowDateSeparator = nextMsg 
+        ? getDateKey(nextMsg.created_at) !== getDateKey(message.created_at)
+        : false;
+
+      const isLastInGroup =
+        !nextMsg ||
+        nextShowDateSeparator ||
+        nextType === 'system' ||
+        nextType === 'signal' ||
+        getMessageUserId(nextMsg) !== getMessageUserId(message);
+
       const MessageRenderer = renderers[messageType] || renderers.regular;
 
       return (
@@ -266,12 +279,15 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
             MessageActionsBoxComponent={MessageActionsBoxComponent}
           />
           {/* Read receipts — full width, right-aligned */}
-          {showReadReceipts && readByMap[message.id!] && readByMap[message.id!].length > 0 && (
+          {showReadReceipts && (
             <ReadReceiptsComponent
-              readers={readByMap[message.id!]}
+              readers={readByMap[message.id!] || []}
               maxAvatars={readReceiptsMaxAvatars}
               AvatarComponent={AvatarComponent}
               TooltipComponent={ReadReceiptsTooltipComponent}
+              isOwnMessage={isOwnMessage}
+              isLastInGroup={isLastInGroup}
+              status={message.status}
             />
           )}
         </div>
