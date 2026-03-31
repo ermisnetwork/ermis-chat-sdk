@@ -46,8 +46,9 @@ export const ReadReceipts: React.FC<ReadReceiptsProps> = React.memo(({
   status,
 }) => {
   if (!readers || readers.length === 0) {
-    if (isOwnMessage && (isLastInGroup || status === 'error')) {
-      if (status === 'error') {
+    const isError = status === 'error' || status === 'failed_offline';
+    if (isOwnMessage && (isLastInGroup || isError)) {
+      if (isError) {
         return (
           <div className="ermis-read-receipts">
             <div className="ermis-read-receipts__sent-status ermis-message-status--failed" title="Failed to send" style={{ color: 'var(--ermis-color-error, #f44336)' }}>

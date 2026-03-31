@@ -31,7 +31,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(({
   const statusClass =
     message.status === 'sending'
       ? 'ermis-message--sending'
-      : message.status === 'error'
+      : (message.status === 'error' || message.status === 'failed_offline')
         ? 'ermis-message--error'
         : '';
 

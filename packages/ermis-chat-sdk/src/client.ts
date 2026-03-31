@@ -711,6 +711,31 @@ export class ErmisChat<ErmisChatGenerics extends ExtendableGenerics = DefaultGen
       }
     }
 
+    if (event.type === 'connection.recovered') {
+      postListenerCallbacks.push(() => {
+        // Auto-resend offline failed messages
+        Object.values(this.activeChannels).forEach((channel) => {
+          if (!channel.state?.messages) return;
+          const offlineFailedMsgs = channel.state.messages.filter(
+            (m) =>
+              m.status === 'failed_offline' &&
+              m.user?.id === this.userID &&
+              (!m.attachments || m.attachments.length === 0),
+          );
+          offlineFailedMsgs.forEach((msg) => {
+            if (msg.id) {
+              channel.retryMessage(msg.id).catch((err) => {
+                this.logger('error', `Failed to auto-resend offline message ${msg.id}`, {
+                  tags: ['offline', 'retry'],
+                  err,
+                });
+              });
+            }
+          });
+        });
+      });
+    }
+
     return postListenerCallbacks;
   }
 

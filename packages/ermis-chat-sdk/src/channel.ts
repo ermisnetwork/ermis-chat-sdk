@@ -114,9 +114,43 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
         this._channelURL() + '/message',
         { message: { ...message } },
       );
-    } catch (error) {
-      // 4. On error: update status to 'error'
-      this.state.updateMessageStatus(messageId, 'error');
+    } catch (error: any) {
+      // 4. On error: check if it's an offline/network error
+      const isOfflineError = !error.response || error.code === 'ERR_NETWORK' || error.isWSFailure || !this.getClient().wsConnection?.isHealthy;
+      const statusToSet = isOfflineError ? 'failed_offline' : 'error';
+      this.state.updateMessageStatus(messageId, statusToSet);
+      throw error;
+    }
+  }
+
+  async retryMessage(messageId: string) {
+    const stateMsg = this.state.messages.find((m) => m.id === messageId);
+    if (!stateMsg) throw new Error(`Message ${messageId} not found in state`);
+
+    this.state.updateMessageStatus(messageId, 'sending');
+
+    const messagePayload: any = {
+      id: stateMsg.id,
+      text: stateMsg.text,
+      attachments: stateMsg.attachments,
+      mentioned_users: stateMsg.mentioned_users,
+      parent_id: stateMsg.parent_id,
+      quoted_message_id: stateMsg.quoted_message_id,
+      sticker_url: (stateMsg as any).sticker_url,
+    };
+
+    if (stateMsg.show_in_channel !== undefined) {
+      messagePayload.show_in_channel = stateMsg.show_in_channel;
+    }
+
+    try {
+      return await this.getClient().post<SendMessageAPIResponse<ErmisChatGenerics>>(
+        this._channelURL() + '/message',
+        { message: messagePayload },
+      );
+    } catch (error: any) {
+      const isOfflineError = !error.response || error.code === 'ERR_NETWORK' || error.isWSFailure || !this.getClient().wsConnection?.isHealthy;
+      this.state.updateMessageStatus(messageId, isOfflineError ? 'failed_offline' : 'error');
       throw error;
     }
   }
