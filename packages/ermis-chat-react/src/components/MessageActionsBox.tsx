@@ -24,7 +24,7 @@ export const MessageActionsBox: React.FC<MessageActionsBoxProps> = ({
   onDelete,
   onDeleteForMe,
 }) => {
-  const { setQuotedMessage, setEditingMessage, activeChannel } = useChatClient();
+  const { setQuotedMessage, setEditingMessage, setForwardingMessage, activeChannel } = useChatClient();
   const [anchorRect, setAnchorRect] = React.useState<DOMRect | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceId = useRef(Math.random().toString(36).slice(2));
@@ -32,6 +32,7 @@ export const MessageActionsBox: React.FC<MessageActionsBoxProps> = ({
 
   // Default handlers
   const onReply = onReplyProp ?? ((msg: FormatMessageResponse) => setQuotedMessage(msg));
+  const onForwardHandler = onForward ?? ((msg: FormatMessageResponse) => setForwardingMessage(msg));
   const onPinToggleHandler = onPinToggle ?? (async (msg: FormatMessageResponse, isPinned: boolean) => {
     if (!activeChannel) return;
     try {
@@ -129,10 +130,10 @@ export const MessageActionsBox: React.FC<MessageActionsBoxProps> = ({
         </button>
       )}
 
-      {actions.canQuote && (
+      {actions.canForward && (
         <button
           className="ermis-message-list__actions-trigger"
-          onClick={() => onForward?.(message)}
+          onClick={() => onForwardHandler(message)}
           title="Forward"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

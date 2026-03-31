@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { useChatClient } from '../hooks/useChatClient';
+import { ForwardMessageModal } from './ForwardMessageModal';
 import type { ChannelProps } from '../types';
 
 export type { ChannelProps } from '../types';
@@ -22,8 +23,9 @@ export const Channel: React.FC<ChannelProps> = React.memo(({
   className,
   EmptyStateIndicator = DefaultEmpty,
   HeaderComponent,
+  ForwardMessageModalComponent = ForwardMessageModal,
 }) => {
-  const { activeChannel } = useChatClient();
+  const { activeChannel, forwardingMessage, setForwardingMessage } = useChatClient();
 
   console.log('---activeChannel---', activeChannel)
 
@@ -44,6 +46,12 @@ export const Channel: React.FC<ChannelProps> = React.memo(({
     <div className={`ermis-channel${className ? ` ${className}` : ''}`}>
       {HeaderComponent && headerData && <HeaderComponent {...headerData} />}
       {children}
+      {forwardingMessage && (
+        <ForwardMessageModalComponent
+          message={forwardingMessage}
+          onDismiss={() => setForwardingMessage(null)}
+        />
+      )}
     </div>
   );
 });

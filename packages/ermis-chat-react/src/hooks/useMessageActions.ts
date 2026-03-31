@@ -8,6 +8,7 @@ export type MessageActionList = {
   canDeleteForMe: boolean;
   canReply: boolean;
   canQuote: boolean;
+  canForward: boolean;
   canPin: boolean;
   canCopy: boolean;
   isPinned: boolean;
@@ -28,6 +29,7 @@ export const useMessageActions = (message: FormatMessageResponse, isOwnMessage: 
         canDeleteForMe: false,
         canReply: false,
         canQuote: false,
+        canForward: false,
         canPin: false,
         canCopy: false,
         isPinned: false,
@@ -53,9 +55,10 @@ export const useMessageActions = (message: FormatMessageResponse, isOwnMessage: 
     const canDeleteForMe = !isSystem;
     const canReply = !isSystem && !isSignal && hasCap('send-reply');
     const canQuote = !isSystem && !isSignal && hasCap('quote-message');
+    const canForward = !isSystem && !isSignal && hasCap('quote-message');
     const canPin = !isSystem && !isSignal && hasCap('pin-message');
     const canCopy = !isSystem && !isSignal && Boolean(message.text?.trim());
 
-    return { canEdit, canDelete, canDeleteForMe, canReply, canQuote, canPin, canCopy, isPinned };
+    return { canEdit, canDelete, canDeleteForMe, canReply, canQuote, canForward, canPin, canCopy, isPinned };
   }, [activeChannel, client.userID, messageType, message.text, isPinnedFlag, isOwnMessage]);
 };

@@ -1,5 +1,4 @@
-import React, { createContext, useState, useCallback, useEffect } from 'react';
-import { ErmisChat } from '@ermis-network/ermis-chat-sdk';
+import React, { createContext, useState, useCallback } from 'react';
 import type { Channel, FormatMessageResponse } from '@ermis-network/ermis-chat-sdk';
 import type { Theme, ChatContextValue, ChatProviderProps, ReadStateEntry } from '../types';
 
@@ -18,6 +17,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
   const [quotedMessage, setQuotedMessage] = useState<FormatMessageResponse | null>(null);
   const [editingMessage, setEditingMessage] = useState<FormatMessageResponse | null>(null);
   const [readState, setReadState] = useState<Record<string, ReadStateEntry>>({});
+  const [forwardingMessage, setForwardingMessage] = useState<FormatMessageResponse | null>(null);
 
   const activeChannel = activeChannelRaw;
 
@@ -56,6 +56,8 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
     setEditingMessage,
     readState,
     setReadState,
+    forwardingMessage,
+    setForwardingMessage,
   };
 
   return (

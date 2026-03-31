@@ -25,6 +25,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(({
   const userAvatar = message.user?.avatar;
 
   const quotedMessage = (message as any).quoted_message;
+  const isForwarded = !!(message as any).forward_cid;
   const hasAttachments = message.attachments && message.attachments.length > 0;
 
   const statusClass =
@@ -72,6 +73,9 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(({
         )}
         <div className="ermis-message-list__bubble-wrapper">
           <MessageBubble message={message} isOwnMessage={isOwnMessage}>
+            {isForwarded && (
+              <span className="ermis-message-list__forwarded-indicator">Forwarded</span>
+            )}
             <MessageRenderer message={message} isOwnMessage={isOwnMessage} />
             <span className="ermis-message-list__item-time">
               {formatTime(message.created_at)}

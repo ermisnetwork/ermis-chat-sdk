@@ -37,6 +37,9 @@ export type ChatContextValue = {
   /** Read state per user — maps userId to their read status */
   readState: Record<string, ReadStateEntry>;
   setReadState: React.Dispatch<React.SetStateAction<Record<string, ReadStateEntry>>>;
+  /** Message being forwarded (triggers ForwardMessageModal) */
+  forwardingMessage: FormatMessageResponse | null;
+  setForwardingMessage: (message: FormatMessageResponse | null) => void;
 };
 
 export type ChatProviderProps = {
@@ -71,6 +74,8 @@ export type ChannelProps = {
   EmptyStateIndicator?: React.ComponentType;
   /** Replace the default ChannelHeader entirely */
   HeaderComponent?: React.ComponentType<ChannelHeaderData>;
+  /** Replace the default ForwardMessageModal entirely */
+  ForwardMessageModalComponent?: React.ComponentType<ForwardMessageModalProps>;
 };
 
 export type ChannelHeaderProps = {
@@ -326,6 +331,25 @@ export type MessageActionsBoxProps = {
   onCopy?: (message: FormatMessageResponse) => void;
   onDelete?: (message: FormatMessageResponse) => void;
   onDeleteForMe?: (message: FormatMessageResponse) => void;
+};
+
+/* ----------------------------------------------------------
+   Forward Message Modal types
+   ---------------------------------------------------------- */
+export type ForwardChannelItemProps = {
+  channel: Channel;
+  selected: boolean;
+  onToggle: (channel: Channel) => void;
+  AvatarComponent: React.ComponentType<AvatarProps>;
+};
+
+export type ForwardMessageModalProps = {
+  message: FormatMessageResponse;
+  onDismiss: () => void;
+  /** Custom channel list item for the picker */
+  ChannelItemComponent?: React.ComponentType<ForwardChannelItemProps>;
+  /** Custom search input component */
+  SearchInputComponent?: React.ComponentType<{ value: string; onChange: (v: string) => void }>;
 };
 
 /* ----------------------------------------------------------

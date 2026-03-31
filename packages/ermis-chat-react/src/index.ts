@@ -78,3 +78,6 @@ export { QuotedMessagePreview } from './components/QuotedMessagePreview';
 export type { QuotedMessagePreviewProps } from './components/QuotedMessagePreview';
 export { ReplyPreview } from './components/ReplyPreview';
 export type { ReplyPreviewProps } from './types';
+
+export { ForwardMessageModal } from './components/ForwardMessageModal';
+export type { ForwardMessageModalProps, ForwardChannelItemProps } from './components/ForwardMessageModal';
