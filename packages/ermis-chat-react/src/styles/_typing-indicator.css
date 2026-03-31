@@ -1,14 +1,17 @@
 /* ============================================================
    Typing Indicator
    ============================================================ */
+
+/* Container always rendered with fixed height to prevent layout shifts */
 .ermis-typing-indicator {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 16px 2px;
-  min-height: 24px;
+  padding: 0 16px;
+  height: 24px;
   font-size: 12px;
   color: var(--ermis-color-text-secondary, #8e8e93);
+  overflow: hidden;
 }
 
 .ermis-typing-indicator__dots {

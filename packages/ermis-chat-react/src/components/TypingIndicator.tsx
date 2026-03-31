@@ -13,20 +13,24 @@ export type TypingIndicatorProps = {
 export const TypingIndicator: React.FC<TypingIndicatorProps> = React.memo(({ renderText }) => {
   const { typingUsers } = useTypingIndicator();
 
-  if (typingUsers.length === 0) return null;
+  const isActive = typingUsers.length > 0;
 
-  const text = renderText
-    ? renderText(typingUsers)
-    : formatTypingText(typingUsers);
+  const text = isActive
+    ? (renderText ? renderText(typingUsers) : formatTypingText(typingUsers))
+    : null;
 
   return (
-    <div className="ermis-typing-indicator">
-      <div className="ermis-typing-indicator__dots">
-        <span className="ermis-typing-indicator__dot" />
-        <span className="ermis-typing-indicator__dot" />
-        <span className="ermis-typing-indicator__dot" />
-      </div>
-      <span className="ermis-typing-indicator__text">{text}</span>
+    <div className={`ermis-typing-indicator${isActive ? ' ermis-typing-indicator--active' : ''}`}>
+      {isActive && (
+        <>
+          <div className="ermis-typing-indicator__dots">
+            <span className="ermis-typing-indicator__dot" />
+            <span className="ermis-typing-indicator__dot" />
+            <span className="ermis-typing-indicator__dot" />
+          </div>
+          <span className="ermis-typing-indicator__text">{text}</span>
+        </>
+      )}
     </div>
   );
 });
