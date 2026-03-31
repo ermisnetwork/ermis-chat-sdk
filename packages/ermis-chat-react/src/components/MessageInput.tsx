@@ -154,7 +154,6 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
     clearEditingMessage: () => setEditingMessage(null),
   });
 
-  // Clear input when channel changes
   useEffect(() => {
     reset();
     handleEmojiClose();
@@ -165,6 +164,11 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
       return [];
     });
     setHasContent(false);
+
+    // Stop typing indicator on channel switch / unmount
+    return () => {
+      activeChannel?.stopTyping();
+    };
   }, [activeChannel, reset, handleEmojiClose, setFiles]);
 
   /* ---------- Input event handlers ---------- */
@@ -175,7 +179,9 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
     if (isTeamChannel && !disableMentions) {
       mentionHandleInput();
     }
-  }, [isTeamChannel, disableMentions, mentionHandleInput, files.length]);
+    // Send typing indicator (SDK throttles to 1 event per 2s)
+    activeChannel?.keystroke();
+  }, [isTeamChannel, disableMentions, mentionHandleInput, files.length, activeChannel]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {

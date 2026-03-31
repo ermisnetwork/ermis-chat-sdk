@@ -16,6 +16,7 @@ import { getDateKey, formatDateLabel, getMessageUserId, formatReadTimestamp } fr
 import { QuotedMessagePreview } from './QuotedMessagePreview';
 import { PinnedMessages } from './PinnedMessages';
 import { ReadReceipts } from './ReadReceipts';
+import { TypingIndicator } from './TypingIndicator';
 import type { MessageListProps } from '../types';
 
 /* ----------------------------------------------------------
@@ -93,6 +94,8 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
   ReadReceiptsComponent = ReadReceipts,
   ReadReceiptsTooltipComponent,
   readReceiptsMaxAvatars = 5,
+  showTypingIndicator = true,
+  TypingIndicatorComponent = TypingIndicator,
 }) => {
   const { client, messages, readState, activeChannel } = useChatClient();
   const vlistRef = useRef<VListHandle>(null);
@@ -329,6 +332,9 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
       >
         {messageElements}
       </VList>
+
+      {/* Typing indicator */}
+      {showTypingIndicator && <TypingIndicatorComponent />}
 
       {/* Jump to latest button */}
       {hasNewer && <JumpToLatestButton onClick={jumpToLatest} />}

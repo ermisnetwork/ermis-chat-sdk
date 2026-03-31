@@ -130,6 +130,8 @@ export function useMessageSend({
       clearQuotedMessage?.();
       clearEditingMessage?.();
       onSend?.(payload.text);
+      // Stop typing indicator immediately on send
+      activeChannel?.stopTyping();
 
       // --- 2. DELEGATE TO WEBSOCKET ---
       // The API call runs in background. We do not block the UI for resolution.

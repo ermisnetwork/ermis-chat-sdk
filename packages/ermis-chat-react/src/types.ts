@@ -200,6 +200,10 @@ export type MessageListProps = {
   ReadReceiptsTooltipComponent?: React.ComponentType<ReadReceiptsTooltipProps>;
   /** Max visible avatars in read receipts before showing +N (default: 5) */
   readReceiptsMaxAvatars?: number;
+  /** Show typing indicator (default: true) */
+  showTypingIndicator?: boolean;
+  /** Custom typing indicator component */
+  TypingIndicatorComponent?: React.ComponentType;
 };
 
 /* ----------------------------------------------------------

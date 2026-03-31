@@ -81,3 +81,8 @@ export type { ReplyPreviewProps } from './types';
 
 export { ForwardMessageModal } from './components/ForwardMessageModal';
 export type { ForwardMessageModalProps, ForwardChannelItemProps } from './components/ForwardMessageModal';
+
+export { TypingIndicator } from './components/TypingIndicator';
+export type { TypingIndicatorProps } from './components/TypingIndicator';
+export { useTypingIndicator } from './hooks/useTypingIndicator';
+export type { TypingUser } from './hooks/useTypingIndicator';
