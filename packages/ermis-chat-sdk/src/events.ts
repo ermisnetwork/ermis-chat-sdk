@@ -17,6 +17,7 @@ export const EVENT_MAP = {
   'member.blocked': true,
   'member.unblocked': true,
   'message.deleted': true,
+  'message.deleted_for_me': true,
   'message.new': true,
   'message.read': true,
   'message.updated': true,

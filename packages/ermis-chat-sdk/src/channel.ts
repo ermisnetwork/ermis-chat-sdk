@@ -916,13 +916,10 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
   }
 
   async deleteMessageForMe(messageId: string) {
-    const message = this.state.messages.find(m => m.id === messageId);
-    if (message) {
-      this.state.removeMessage(message);
-    }
-    return Promise.resolve({
-      message: (message || { id: messageId }) as MessageResponse<ErmisChatGenerics>,
-    });
+    return await this.getClient().delete<APIResponse & { message: MessageResponse<ErmisChatGenerics> }>(
+      this.getClient().baseURL + `/messages/${this.type}/${this.id}/${messageId}`,
+      { for_me: true },
+    );
   }
 
   async getThumbBlobVideo(file: File): Promise<Blob | null> {
@@ -1161,6 +1158,16 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
               // Clear last_read_message_id if the deleted message is the last_read_message_id
               channelState.read[userId] = { ...channelState.read[userId], last_read_message_id: undefined };
             }
+          }
+        }
+        break;
+      case 'message.deleted_for_me':
+        if (event.message) {
+          channelState.removeMessage(event.message);
+          channelState.removeQuotedMessageReferences(event.message);
+
+          if ([...channelState.pinnedMessages].some((msg) => msg.id === event.message?.id)) {
+            channelState.removePinnedMessage(event.message);
           }
         }
         break;

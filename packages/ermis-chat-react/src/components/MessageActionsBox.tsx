@@ -24,7 +24,7 @@ export const MessageActionsBox: React.FC<MessageActionsBoxProps> = ({
   onDelete,
   onDeleteForMe,
 }) => {
-  const { setQuotedMessage, setEditingMessage, setForwardingMessage, activeChannel, syncMessages } = useChatClient();
+  const { setQuotedMessage, setEditingMessage, setForwardingMessage, activeChannel } = useChatClient();
   const [anchorRect, setAnchorRect] = React.useState<DOMRect | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceId = useRef(Math.random().toString(36).slice(2));
@@ -59,15 +59,7 @@ export const MessageActionsBox: React.FC<MessageActionsBoxProps> = ({
   const onDeleteForMeHandler = onDeleteForMe ?? (async (msg: FormatMessageResponse) => {
     if (!activeChannel) return;
     try {
-      // TODO: replace cast once real API is available in SDK types
-      const ch = activeChannel as any;
-      if (ch.deleteMessageForMe) {
-        await ch.deleteMessageForMe(msg.id!);
-        // Sync React state since deleteMessageForMe is local-only (no WS event)
-        syncMessages();
-      } else {
-        console.warn('deleteMessageForMe is not implemented in the current SDK version');
-      }
+      await activeChannel.deleteMessageForMe(msg.id!);
     } catch (err) {
       console.error('Failed to delete message for me', err);
     }
