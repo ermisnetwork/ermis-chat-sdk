@@ -30,7 +30,7 @@
   right: 0;
 }
 
-.ermis-message-list__item:hover .ermis-message-quick-reactions {
+.ermis-message-list__bubble-wrapper:hover .ermis-message-quick-reactions {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;

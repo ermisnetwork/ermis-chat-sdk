@@ -54,9 +54,10 @@ const ConsumerEmojiPicker = ({ onSelect, onClose }: EmojiPickerProps) => {
 /* -------------------------------------------------------
    Login Form
    ------------------------------------------------------- */
-function LoginForm({ onConnect }: { onConnect: (userId: string, token: string) => void }) {
+function LoginForm({ onConnect }: { onConnect: (userId: string, token: string, externalAuth: boolean) => void }) {
   const [userId, setUserId] = useState(() => localStorage.getItem(LS_USER_ID_KEY) ?? '');
   const [userToken, setUserToken] = useState(() => localStorage.getItem(LS_USER_TOKEN_KEY) ?? '');
+  const [externalAuth, setExternalAuth] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -75,7 +76,7 @@ function LoginForm({ onConnect }: { onConnect: (userId: string, token: string) =
     setLoading(true);
 
     try {
-      await onConnect(userId.trim(), userToken.trim());
+      await onConnect(userId.trim(), userToken.trim(), externalAuth);
     } catch (err: any) {
       setError(err?.message ?? 'Failed to connect. Please check your credentials.');
       setLoading(false);
@@ -139,6 +140,30 @@ function LoginForm({ onConnect }: { onConnect: (userId: string, token: string) =
               />
             </div>
 
+            {/* External Auth Toggle */}
+            <div className="mb-6 flex items-center justify-between">
+              <label htmlFor="externalAuth" className="text-sm font-medium text-gray-300 cursor-pointer">
+                Use External Auth
+              </label>
+              <button
+                type="button"
+                id="externalAuth"
+                role="switch"
+                aria-checked={externalAuth}
+                onClick={() => setExternalAuth(!externalAuth)}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500/50 ${
+                  externalAuth ? 'bg-indigo-500' : 'bg-gray-700'
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    externalAuth ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
             {/* Error */}
             {error && (
               <div className="mb-4 px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
@@ -186,11 +211,12 @@ function App() {
     const savedToken = localStorage.getItem(LS_USER_TOKEN_KEY);
 
     if (savedUserId && savedToken) {
-      connectChat(savedUserId, savedToken);
+      // For auto-connect, we default to false or we'd need to store externalAuth in localStorage too
+      connectChat(savedUserId, savedToken, false);
     }
   }, []);
 
-  const connectChat = async (userId: string, token: string) => {
+  const connectChat = async (userId: string, token: string, externalAuth: boolean) => {
     try {
       // Disconnect previous client if any
       if (clientRef.current) {
@@ -198,7 +224,7 @@ function App() {
       }
 
       const chatClient = ErmisChat.getInstance(API_KEY, PROJECT_ID, BASE_URL);
-      await chatClient.connectUser({ id: userId }, token);
+      await chatClient.connectUser({ id: userId }, token, externalAuth);
 
       clientRef.current = chatClient;
       setClient(chatClient);

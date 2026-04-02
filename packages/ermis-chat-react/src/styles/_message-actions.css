@@ -20,7 +20,7 @@
   z-index: 10;
 }
 
-.ermis-message-list__item:hover .ermis-message-list__actions,
+.ermis-message-list__bubble-wrapper:hover .ermis-message-list__actions,
 .ermis-message-list__actions--active {
   opacity: 1;
 }
