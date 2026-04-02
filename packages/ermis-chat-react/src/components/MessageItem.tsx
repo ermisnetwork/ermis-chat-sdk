@@ -71,18 +71,20 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(({
   MessageReactionsComponent = MessageReactions,
 }) => {
   const { activeChannel, client } = useChatClient();
-  
+
   const userName = message.user?.name || message.user_id;
   const userAvatar = message.user?.avatar;
 
   const quotedMessage = (message as any).quoted_message;
   const isForwarded = !!(message as any).forward_cid;
+  const oldTexts = (message as any).old_texts;
+  const isEdited = oldTexts && oldTexts.length > 0;
   const hasAttachments = message.attachments && message.attachments.length > 0;
 
   const handleReactionToggle = React.useCallback(async (type: string) => {
     if (!activeChannel) return;
     const currentUserId = client?.userID;
-    const isOwn = 
+    const isOwn =
       (message as any).own_reactions?.some((r: any) => r.type === type) ||
       (message as any).latest_reactions?.some((r: any) => r.type === type && (r.user?.id === currentUserId || (r as any).user_id === currentUserId));
 
@@ -148,6 +150,14 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(({
             )}
             <MessageRenderer message={message} isOwnMessage={isOwnMessage} />
             <span className="ermis-message-list__item-time">
+              {isEdited && (
+                <span
+                  className="ermis-message-list__edited-indicator"
+                // data-tooltip={oldTexts.map((ot: any) => `[${formatTime(ot.created_at)}] ${ot.text}`).join('\n')}
+                >
+                  Edited
+                </span>
+              )}
               {formatTime(message.created_at)}
               <InlineStatusIcon status={message.status} isOwnMessage={isOwnMessage} isLastInGroup={isLastInGroup} />
             </span>

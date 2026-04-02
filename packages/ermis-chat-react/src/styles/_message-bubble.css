@@ -106,6 +106,10 @@
   gap: 3px;
 }
 
+.ermis-message-list__edited-indicator {
+  margin-right: 2px;
+}
+
 /* --- Inline message status icon (inside bubble, after timestamp) --- */
 .ermis-message-status-icon {
   display: inline-flex;
