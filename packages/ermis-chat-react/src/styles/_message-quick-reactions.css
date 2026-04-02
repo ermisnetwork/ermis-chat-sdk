@@ -1,0 +1,62 @@
+/* ============================================================
+   Message Quick Reactions (Hover popup)
+   ============================================================ */
+
+.ermis-message-quick-reactions {
+  position: absolute;
+  bottom: calc(100% - 10px); /* hover right above the bubble */
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background-color: var(--ermis-bg-primary);
+  border: 1px solid var(--ermis-border);
+  padding: 4px;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 20;
+}
+
+/* Align based on ownership */
+.ermis-message-quick-reactions {
+  left: 0;
+}
+.ermis-message-quick-reactions--own {
+  left: auto;
+  right: 0;
+}
+
+.ermis-message-list__item:hover .ermis-message-quick-reactions {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.ermis-message-quick-reactions__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.15s;
+}
+
+.ermis-message-quick-reactions__btn:hover {
+  transform: scale(1.2);
+  background-color: var(--ermis-bg-hover);
+}
+
+.ermis-message-quick-reactions__btn--active {
+  background-color: var(--ermis-bg-active, rgba(99, 102, 241, 0.12));
+}

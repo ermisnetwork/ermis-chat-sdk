@@ -96,6 +96,7 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
   readReceiptsMaxAvatars = 5,
   showTypingIndicator = true,
   TypingIndicatorComponent = TypingIndicator,
+  MessageReactionsComponent,
 }) => {
   const { client, messages, readState, activeChannel } = useChatClient();
   const vlistRef = useRef<VListHandle>(null);
@@ -281,6 +282,7 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
             onClickQuote={scrollToMessage}
             QuotedMessagePreviewComponent={QuotedMessagePreviewComponent}
             MessageActionsBoxComponent={MessageActionsBoxComponent}
+            MessageReactionsComponent={MessageReactionsComponent}
           />
           {/* Read receipts — full width, right-aligned */}
           {showReadReceipts && (
@@ -311,6 +313,7 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
     SystemMessageItemComponent,
     QuotedMessagePreviewComponent,
     MessageActionsBoxComponent,
+    MessageReactionsComponent,
     readByMap,
     showReadReceipts,
     ReadReceiptsComponent,

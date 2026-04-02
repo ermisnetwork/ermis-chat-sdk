@@ -14,3 +14,5 @@
 @import './_message-actions.css';
 @import './_forward-modal.css';
 @import './_typing-indicator.css';
+@import './_message-reactions.css';
+@import './_message-quick-reactions.css';

@@ -92,6 +92,8 @@ export function useChannelMessages({
     const sub5 = activeChannel.on('message.unpinned', handleMessageChange);
     const sub6 = activeChannel.on('message.read', handleMessageRead);
     const sub7 = activeChannel.on('message.deleted_for_me', handleMessageChange);
+    const sub8 = activeChannel.on('reaction.new', handleMessageChange);
+    const sub9 = activeChannel.on('reaction.deleted', handleMessageChange);
 
     return () => {
       sub1.unsubscribe();
@@ -101,6 +103,8 @@ export function useChannelMessages({
       sub5.unsubscribe();
       sub6.unsubscribe();
       sub7.unsubscribe();
+      sub8.unsubscribe();
+      sub9.unsubscribe();
     };
   }, [activeChannel, scrollToBottom, scheduleScrollToBottom, syncMessages, onChannelSwitch, setReadState]);
 }

@@ -2,6 +2,9 @@ import React from 'react';
 import type { MessageItemProps, SystemMessageItemProps } from '../types';
 import { QuotedMessagePreview } from './QuotedMessagePreview';
 import { MessageActionsBox } from './MessageActionsBox';
+import { MessageReactions } from './MessageReactions';
+import { MessageQuickReactions } from './MessageQuickReactions';
+import { useChatClient } from '../hooks/useChatClient';
 import { formatTime } from '../utils';
 
 export type { MessageItemProps, SystemMessageItemProps } from '../types';
@@ -65,13 +68,34 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(({
   onClickQuote,
   QuotedMessagePreviewComponent = QuotedMessagePreview,
   MessageActionsBoxComponent = MessageActionsBox,
+  MessageReactionsComponent = MessageReactions,
 }) => {
+  const { activeChannel, client } = useChatClient();
+  
   const userName = message.user?.name || message.user_id;
   const userAvatar = message.user?.avatar;
 
   const quotedMessage = (message as any).quoted_message;
   const isForwarded = !!(message as any).forward_cid;
   const hasAttachments = message.attachments && message.attachments.length > 0;
+
+  const handleReactionToggle = React.useCallback(async (type: string) => {
+    if (!activeChannel) return;
+    const currentUserId = client?.userID;
+    const isOwn = 
+      (message as any).own_reactions?.some((r: any) => r.type === type) ||
+      (message as any).latest_reactions?.some((r: any) => r.type === type && (r.user?.id === currentUserId || (r as any).user_id === currentUserId));
+
+    try {
+      if (isOwn) {
+        await activeChannel.deleteReaction(message.id!, type);
+      } else {
+        await activeChannel.sendReaction(message.id!, type);
+      }
+    } catch (err) {
+      console.error('Failed to toggle reaction', err);
+    }
+  }, [activeChannel, message, client?.userID]);
 
   const statusClass =
     message.status === 'sending'
@@ -117,6 +141,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(({
           />
         )}
         <div className="ermis-message-list__bubble-wrapper">
+          <MessageQuickReactions message={message} isOwnMessage={isOwnMessage} />
           <MessageBubble message={message} isOwnMessage={isOwnMessage}>
             {isForwarded && (
               <span className="ermis-message-list__forwarded-indicator">Forwarded</span>
@@ -133,6 +158,16 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(({
             <MessageActionsBoxComponent
               message={message}
               isOwnMessage={isOwnMessage}
+            />
+          )}
+
+          {/* Message Reactions */}
+          {MessageReactionsComponent && (
+            <MessageReactionsComponent
+              reactionCounts={(message as any).reaction_counts}
+              ownReactions={(message as any).own_reactions}
+              latestReactions={(message as any).latest_reactions}
+              onClickReaction={handleReactionToggle}
             />
           )}
         </div>

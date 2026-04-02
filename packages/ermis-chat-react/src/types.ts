@@ -204,6 +204,35 @@ export type MessageListProps = {
   showTypingIndicator?: boolean;
   /** Custom typing indicator component */
   TypingIndicatorComponent?: React.ComponentType;
+  /** Custom component for message reactions */
+  MessageReactionsComponent?: React.ComponentType<MessageReactionsProps>;
+};
+
+/* ----------------------------------------------------------
+   Message Reactions types
+   ---------------------------------------------------------- */
+export type ReactionUser = {
+  id: string;
+  name?: string;
+  avatar?: string;
+};
+
+export type LatestReaction = {
+  user: ReactionUser;
+  type: string;
+};
+
+export type MessageReactionsProps = {
+  /** Map of reaction type to count */
+  reactionCounts?: Record<string, number>;
+  /** Array of current user's reactions */
+  ownReactions?: LatestReaction[];
+  /** Array of latest reactions to show in tooltip/hover */
+  latestReactions?: LatestReaction[];
+  /** Avatar Component if consumer wants to use it in tooltips */
+  AvatarComponent?: React.ComponentType<AvatarProps>;
+  /** Callback when clicking a reaction */
+  onClickReaction?: (type: string) => void;
 };
 
 /* ----------------------------------------------------------
@@ -261,6 +290,8 @@ export type MessageItemProps = {
   MessageActionsBoxComponent?: React.ComponentType<MessageActionsBoxProps>;
   /** Users who have read up to this message */
   readBy?: Array<{ id: string; name?: string; avatar?: string }>;
+  /** Custom component for message reactions */
+  MessageReactionsComponent?: React.ComponentType<MessageReactionsProps>;
 };
 
 export type SystemMessageItemProps = {

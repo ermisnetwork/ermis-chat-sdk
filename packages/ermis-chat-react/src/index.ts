@@ -36,6 +36,11 @@ export { MessageItem, SystemMessageItem } from './components/MessageItem';
 export { MessageActionsBox } from './components/MessageActionsBox';
 export type { MessageActionsBoxProps } from './types';
 
+export { MessageReactions } from './components/MessageReactions';
+export type { MessageReactionsProps, ReactionUser, LatestReaction } from './types';
+
+export { MessageQuickReactions } from './components/MessageQuickReactions';
+
 export { useMessageActions } from './hooks/useMessageActions';
 
 export { formatTime, getDateKey, formatDateLabel, getMessageUserId, replaceMentionsForPreview } from './utils';
