@@ -25,33 +25,66 @@ export const Avatar: React.FC<AvatarProps> = React.memo(({
   size = 36,
   className,
 }) => {
+  const [isLoaded, setIsLoaded] = React.useState(false);
+  const [hasError, setHasError] = React.useState(false);
+
+  // Reset state if image URL changes
+  React.useEffect(() => {
+    if (image) {
+      setIsLoaded(false);
+      setHasError(false);
+    }
+  }, [image]);
+
   const initials = useMemo(() => getInitials(name), [name]);
 
-  const style = useMemo<React.CSSProperties>(() => ({
+  const wrapperStyle = useMemo<React.CSSProperties>(() => ({
     width: size,
     height: size,
     minWidth: size,
+    position: 'relative',
+    borderRadius: '100%', /* Or var(--ermis-radius-full) */
+    overflow: 'hidden',
+    flexShrink: 0,
+  }), [size]);
+
+  const contentStyle = useMemo<React.CSSProperties>(() => ({
+    width: '100%',
+    height: '100%',
     fontSize: size * 0.4,
   }), [size]);
 
-  if (image) {
-    return (
-      <img
-        className={`ermis-avatar${className ? ` ${className}` : ''}`}
-        src={image}
-        alt={name || 'Avatar'}
-        style={style}
-      />
-    );
-  }
-
   return (
-    <div
-      className={`ermis-avatar ermis-avatar--fallback${className ? ` ${className}` : ''}`}
-      style={style}
-      title={name}
-    >
-      {initials}
+    <div className={`ermis-avatar-wrapper${className ? ` ${className}` : ''}`} style={wrapperStyle}>
+      {/* 1. Underlying Fallback (Placeholder) */}
+      <div
+        className="ermis-avatar ermis-avatar--fallback"
+        style={contentStyle}
+        title={name}
+      >
+        {initials}
+      </div>
+
+      {/* 2. Actual Image (Lazy, Fades in natively using CSS opacity) */}
+      {image && !hasError && (
+        <img
+          className="ermis-avatar__img"
+          src={image}
+          alt={name || 'Avatar'}
+          loading="lazy"
+          onLoad={() => setIsLoaded(true)}
+          onError={() => setHasError(true)}
+          style={{
+            ...contentStyle,
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            opacity: isLoaded ? 1 : 0,
+            transition: 'opacity 0.3s ease-in-out',
+            objectFit: 'cover',
+          }}
+        />
+      )}
     </div>
   );
 });
