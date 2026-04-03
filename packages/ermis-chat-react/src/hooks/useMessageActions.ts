@@ -38,9 +38,9 @@ export const useMessageActions = (message: FormatMessageResponse, isOwnMessage: 
 
     const currentUserId = client.userID || '';
     const isTeam = activeChannel.type === 'team';
-    const role = (activeChannel.state as any)?.members?.[currentUserId]?.role;
+    const role = (activeChannel.state as any)?.members?.[currentUserId]?.channel_role;
     const isOwnerOrModerator =
-      role === 'owner' || role === 'moderator' || activeChannel.data?.created_by_id === currentUserId;
+      role === 'owner' || role === 'moder' || activeChannel.data?.created_by_id === currentUserId;
 
     // Member capabilities exist on team channels
     const capabilities: string[] = isTeam ? (activeChannel.data as any)?.member_capabilities || [] : [];
