@@ -4,41 +4,76 @@ sidebar_position: 4
 
 # Theming & Customization
 
-Providing a completely bespoke aesthetic is easy in the default React UI Kit.
+Providing a bespoke aesthetic is incredibly straightforward with the React UI Kit. It is built natively with CSS variables (CSS Custom Properties) tracking a BEM-inspired methodology.
 
-## CSS Customization
+## Toggling Light/Dark Theme
 
-The package exposes variables and class names that you can easily override with standard CSS or SCSS. Avoid using `!important` unless overriding an inline style logic.
-
-```css
-:root {
-  --ermis-chat-primary-color: #005fff;
-  --ermis-chat-bg-color: #ffffff;
-  --ermis-chat-font-family: 'Inter', sans-serif;
-}
-
-/* Override bubble appearance */
-.ermis-chat__message-bubble {
-   border-radius: 10px;
-}
-```
-
-## Component Swapping
-
-Instead of changing CSS, you can replace entire components with your custom React code using the context providers.
-
-For example, to swap how messages are rendered:
+The topmost component `<ChatProvider />` manages the active theme mode state. By default, it uses the `dark` theme but you can initialize it with the light mode or intercept updates.
 
 ```tsx
-import { Channel } from '@ermis-network/ermis-chat-react';
+import { ChatProvider } from '@ermis-network/ermis-chat-react';
 
-const MyMessage = ({ message }) => {
-    return <div className="custom-msg">{message.text}</div>;
-}
-
-<Channel Message={MyMessage}>
-   <VirtualMessageList />
-</Channel>
+<ChatProvider client={chatClient} initialTheme="light">
+   <div className="layout">
+       {/* Other React UI Components */}
+   </div>
+</ChatProvider>
 ```
 
-Virtually every sub-component (`Avatar`, `Attachment`, `DateSeparator`, etc.) can be overridden via Props out of the box.
+When you toggle the theme, the provider automatically injects the corresponding CSS modifier classes (`.ermis-chat--light` or `.ermis-chat--dark`) onto the outer provider wrapper logic so that child components inherit proper contrast.
+
+## Customizing CSS Variables
+
+The entire aesthetic (colors, typography, spacing, radii) relies on a structured dictionary of CSS variables available right out of the box. 
+To customize the visual style completely, simply overwrite the exposed CSS variables in your own global CSS files.
+
+Here is an example demonstrating customizing primary brand accent colors, window backgrounds, message bubbles, spacing radii, and typography metrics for your instance.
+
+```css
+/* Override global UI styles across everywhere in the Chat */
+:root {
+  /* Override the main primary interface background */
+  --ermis-bg-primary: #ffffff;
+  
+  /* Primary brand interactive color */
+  --ermis-accent: #ff4500;
+  --ermis-accent-hover: #e03e00;
+
+  /* Typography metrics */
+  --ermis-font-family: 'Helvetica Neue', sans-serif;
+  --ermis-font-size-base: 18px;
+
+  /* Border radius global spacing */
+  --ermis-radius-sm: 8px;
+  --ermis-radius-lg: 16px;
+}
+
+/* Enforce styling conditionally just for Dark Mode context */
+.ermis-chat--dark {
+  --ermis-bg-primary: #121212;
+  
+  /* Customize the currently logged in user's sent Message Bubble */
+  --ermis-bubble-own-bg: var(--ermis-accent);
+  --ermis-bubble-own-text: #ffffff;
+}
+
+/* Target and manually augment BEM element classes if completely necessary */
+.ermis-chat__message-bubble {
+   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+```
+
+### Essential Design Tokens Map
+
+These are the primary global CSS tracking tokens utilized across the majority of core components:
+
+| Category | Available Custom CSS Variables |
+| -------- | ------------------------------ |
+| **Backgrounds** | `--ermis-bg-primary`, `--ermis-bg-secondary`, `--ermis-bg-hover`, `--ermis-bg-active` |
+| **Brand Colors**| `--ermis-accent`, `--ermis-accent-hover`, `--ermis-border` |
+| **Typography**  | `--ermis-text-primary`, `--ermis-text-secondary`, `--ermis-text-muted`, `--ermis-font-family` |
+| **Chat Bubbles**| `--ermis-bubble-own-bg`, `--ermis-bubble-own-text`, `--ermis-bubble-other-bg`, `--ermis-bubble-other-text` |
+| **Geometries**  | `--ermis-spacing-sm`, `--ermis-radius-md`, `--ermis-radius-full` |
+| **Quoted Msg**  | `--ermis-quote-own-bg`, `--ermis-quote-other-bg`, `--ermis-quote-own-text` |
+
+> **Pro Tip:** Avoid using `!important` inside your tailored classes unless you find severe specificity conflicts. Rely on standard cascade prioritization. All built-in styles map variables gracefully.
