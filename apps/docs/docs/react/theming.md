@@ -37,7 +37,7 @@ const MyMessage = ({ message }) => {
 }
 
 <Channel Message={MyMessage}>
-   <MessageList />
+   <VirtualMessageList />
 </Channel>
 ```
 

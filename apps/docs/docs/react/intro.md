@@ -14,12 +14,12 @@ yarn add @ermis-network/ermis-chat-react @ermis-network/ermis-chat-sdk
 
 ## Setup Code
 
-Wrap your application or route with the `<Chat />` provider. You must pass a client instance.
+Wrap your application or route with the `<ChatProvider />`. You must pass a client instance.
 
 ```tsx
 import { useEffect, useState } from 'react';
 import { ErmisChat } from '@ermis-network/ermis-chat-sdk';
-import { Chat, ChannelList, Channel, MessageList, MessageInput } from '@ermis-network/ermis-chat-react';
+import { ChatProvider, ChannelList, Channel, VirtualMessageList, MessageInput } from '@ermis-network/ermis-chat-react';
 
 // Optional: import default styling
 import '@ermis-network/ermis-chat-react/styles/index.css';
@@ -44,15 +44,15 @@ export default function ChatApp() {
    if (!clientReady) return <div>Loading...</div>;
 
    return (
-       <Chat client={chatClient}>
+       <ChatProvider client={chatClient}>
            <div className="layout">
                <ChannelList />
                <Channel>
-                   <MessageList />
+                   <VirtualMessageList />
                    <MessageInput />
                </Channel>
            </div>
-       </Chat>
+       </ChatProvider>
    );
 }
 ```

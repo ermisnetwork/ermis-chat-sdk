@@ -1,4 +1,4 @@
-import type { FormatMessageResponse, MessageLabel, Attachment, Channel } from '@ermis-network/ermis-chat-sdk';
+import type { FormatMessageResponse, MessageLabel, Attachment, Channel, ChannelFilters, ChannelSort, ChannelQueryOptions } from '@ermis-network/ermis-chat-sdk';
 import type { ErmisChat } from '@ermis-network/ermis-chat-sdk';
 
 /* ----------------------------------------------------------
@@ -117,9 +117,9 @@ export type ChannelItemProps = {
 };
 
 export type ChannelListProps = {
-  filters?: any;
-  sort?: any[];
-  options?: { message_limit?: number };
+  filters?: ChannelFilters;
+  sort?: ChannelSort;
+  options?: ChannelQueryOptions;
   renderChannel?: (channel: Channel, isActive: boolean) => React.ReactNode;
   onChannelSelect?: (channel: Channel) => void;
   className?: string;
