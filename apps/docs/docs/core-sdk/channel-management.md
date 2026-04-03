@@ -41,11 +41,21 @@ await channel.addMembers(['user_2', 'user_3']);
 
 ### Remove Members
 
-Only **`owner`** and **`moder`** can remove members. They can only remove users with the `member` or `pending` role.
+**`owner`** and **`moder`** can remove users with the `member` or `pending` role from the channel.
 
 ```typescript
+// Remove another member (owner/moder only)
 await channel.removeMembers(['user_2']);
 ```
+
+Any member (including `moder`) can also use this method to **leave the channel themselves** by passing their own user ID. A `member` cannot remove other members — only themselves.
+
+```typescript
+// Leave the channel
+await channel.removeMembers(['my_own_user_id']);
+```
+
+> **Note**: If the **`owner`** wants to leave, they should use `channel.delete()` instead — an owner leaving will delete the entire channel.
 
 ### Ban & Unban
 
