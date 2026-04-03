@@ -57,3 +57,30 @@ const response = await chatClient.uploadFile(newAvatarFile);
 
 console.log('New Avatar URL uploaded:', response.avatar);
 ```
+
+## Real-time Profile Sync (SSE)
+
+After `connectUser` succeeds, the SDK automatically opens a **Server-Sent Events (SSE)** connection to receive real-time profile updates. When any user in the project changes their name, avatar, or about-me, the SDK:
+
+1. Updates the user in `client.state.users`.
+2. Propagates changes to every active channel's member list, watchers, and message references.
+3. For **direct messaging** channels, automatically updates the channel name and image to reflect the other user's new profile.
+
+### `connectToSSE`
+
+Called internally by `connectUser`. You can also call it manually with an optional callback to react to profile update events:
+
+```typescript
+await chatClient.connectToSSE((data) => {
+  // data.type === 'AccountUserChainProjects'
+  console.log('User profile updated:', data.name, data.avatar);
+});
+```
+
+### `disconnectFromSSE`
+
+Closes the SSE connection. Useful when tearing down the client manually.
+
+```typescript
+await chatClient.disconnectFromSSE();
+```

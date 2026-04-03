@@ -411,6 +411,25 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     return await this._update({ capabilities });
   }
 
+  /**
+   * Set slow mode (message cooldown) for the channel.
+   * Only applicable to team channels. Prevents members from sending
+   * messages faster than the specified cooldown interval.
+   *
+   * @param cooldown - Cooldown duration in milliseconds.
+   *   Allowed values: 0 (off), 10000 (10s), 30000 (30s),
+   *   60000 (1min), 300000 (5min), 900000 (15min), 3600000 (1h).
+   */
+  async setSlowMode(cooldown: 0 | 10000 | 30000 | 60000 | 300000 | 900000 | 3600000) {
+    const allowedValues = [0, 10000, 30000, 60000, 300000, 900000, 3600000];
+    if (!allowedValues.includes(cooldown)) {
+      throw new Error(
+        `Invalid cooldown value: ${cooldown}. Allowed values are: ${allowedValues.join(', ')} (milliseconds).`,
+      );
+    }
+    return await this.update({ member_message_cooldown: cooldown } as any);
+  }
+
   async queryAttachmentMessages() {
     return await this.getClient().post<AttachmentResponse<ErmisChatGenerics>>(
       this.getClient().baseURL + `/channels/${this.type}/${this.id}/attachment`,
