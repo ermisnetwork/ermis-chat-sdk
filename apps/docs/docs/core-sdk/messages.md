@@ -24,7 +24,9 @@ Messages support **optimistic updates**: the SDK immediately inserts the message
 The SDK provides `uploadAndPrepareAttachments` to handle file uploads in parallel, normalize file names, and automatically generate video thumbnails.
 
 ```typescript
-const files = [/* File or Blob items */];
+const files = [
+  /* File or Blob items */
+];
 const { attachments, failedFiles } = await channel.uploadAndPrepareAttachments(files);
 
 if (failedFiles.length > 0) {
@@ -60,7 +62,6 @@ await channel.sendMessage({
   quoted_message_id: 'original_message_id',
 });
 ```
-
 
 ### Stickers
 
@@ -120,9 +121,9 @@ Forward an existing message to another channel. You can use the `createForwardMe
 import { createForwardMessagePayload } from '@ermis-network/ermis-chat-sdk';
 
 const forwardPayload = createForwardMessagePayload(
-  message,               // The original message object
-  targetChannel.cid,     // The target channel's CID
-  activeChannel.cid      // The current channel's CID
+  message, // The original message object
+  targetChannel.cid, // The target channel's CID
+  activeChannel.cid, // The current channel's CID
 );
 
 await activeChannel.forwardMessage(forwardPayload, {
@@ -165,7 +166,7 @@ Reactions are stored on each message as `latest_reactions` (all reactions) and `
 ```typescript
 await channel.createPoll({
   text: 'What should we do?',
-  poll_type: 'single',       // 'single' or 'multiple'
+  poll_type: 'single', // 'single' or 'multiple'
   poll_choices: ['Option A', 'Option B', 'Option C'],
 });
 ```
@@ -259,9 +260,6 @@ Broadcast typing events to other members:
 // When the user starts typing
 await channel.keystroke();
 
-// For thread replies
-await channel.keystroke('parent_message_id');
-
 // When the user stops typing or submits
 await channel.stopTyping();
 ```
@@ -289,28 +287,28 @@ const text = parseSystemMessage(message.text, userMap);
 
 ### System Message Types
 
-| Code | Event                                          |
-| ---- | ---------------------------------------------- |
-| `1`  | Changed channel name                           |
-| `2`  | Changed channel avatar                         |
-| `3`  | Changed channel description                    |
-| `4`  | Member removed from channel                    |
-| `5`  | Member banned                                  |
-| `6`  | Member unbanned                                |
-| `7`  | Member promoted to moderator                   |
-| `8`  | Member demoted from moderator                  |
-| `9`  | Member permissions updated                     |
-| `10` | User joined the channel                        |
-| `11` | User declined the invitation                   |
-| `12` | User left the channel                          |
-| `13` | Chat history cleared                           |
-| `14` | Channel visibility changed (public/private)    |
-| `15` | Cooldown (slow mode) toggled                   |
-| `16` | Banned words updated                           |
-| `17` | Member added to channel                        |
-| `18` | Admin transferred ownership                    |
-| `19` | Message pinned                                 |
-| `20` | Message unpinned                               |
+| Code | Event                                       |
+| ---- | ------------------------------------------- |
+| `1`  | Changed channel name                        |
+| `2`  | Changed channel avatar                      |
+| `3`  | Changed channel description                 |
+| `4`  | Member removed from channel                 |
+| `5`  | Member banned                               |
+| `6`  | Member unbanned                             |
+| `7`  | Member promoted to moderator                |
+| `8`  | Member demoted from moderator               |
+| `9`  | Member permissions updated                  |
+| `10` | User joined the channel                     |
+| `11` | User declined the invitation                |
+| `12` | User left the channel                       |
+| `13` | Chat history cleared                        |
+| `14` | Channel visibility changed (public/private) |
+| `15` | Cooldown (slow mode) toggled                |
+| `16` | Banned words updated                        |
+| `17` | Member added to channel                     |
+| `18` | Admin transferred ownership                 |
+| `19` | Message pinned                              |
+| `20` | Message unpinned                            |
 
 ## Signal Messages (Call Events)
 
@@ -327,15 +325,15 @@ const text = parseSignalMessage(message.text, userMap);
 
 ### Signal Message Types
 
-| Code | Event                    |
-| ---- | ------------------------ |
-| `1`  | Audio call started       |
-| `2`  | Audio call missed        |
-| `3`  | Audio call ended         |
-| `4`  | Video call started       |
-| `5`  | Video call missed        |
-| `6`  | Video call ended         |
-| `7`  | Audio call rejected      |
-| `8`  | Video call rejected      |
-| `9`  | Audio call busy          |
-| `10` | Video call busy          |
+| Code | Event               |
+| ---- | ------------------- |
+| `1`  | Audio call started  |
+| `2`  | Audio call missed   |
+| `3`  | Audio call ended    |
+| `4`  | Video call started  |
+| `5`  | Video call missed   |
+| `6`  | Video call ended    |
+| `7`  | Audio call rejected |
+| `8`  | Video call rejected |
+| `9`  | Audio call busy     |
+| `10` | Video call busy     |
