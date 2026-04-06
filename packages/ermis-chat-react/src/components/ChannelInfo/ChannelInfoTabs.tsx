@@ -34,6 +34,12 @@ export const DefaultChannelInfoTabs: React.FC<ChannelInfoTabsProps> = React.memo
   const contentTab = useDeferredValue(activeTab);
   const isPending = activeTab !== contentTab;
 
+  // Always reset to the first available tab when the user switches channels
+  useEffect(() => {
+    setActiveTab(availableTabs[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [channel?.cid]);
+
   // Resolve sub-components with defaults
   const MemberItem = MemberItemComponent || MemberListItem;
   const MediaItem = MediaItemComponent || MediaGridItem;

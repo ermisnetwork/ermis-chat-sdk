@@ -3,6 +3,7 @@ import { createForwardMessagePayload } from '@ermis-network/ermis-chat-sdk';
 import type { Channel } from '@ermis-network/ermis-chat-sdk';
 import { useChatClient } from '../hooks/useChatClient';
 import { Avatar } from './Avatar';
+import { Modal } from './Modal';
 import type { ForwardMessageModalProps, ForwardChannelItemProps, AvatarProps } from '../types';
 
 export type { ForwardMessageModalProps, ForwardChannelItemProps } from '../types';
@@ -148,98 +149,86 @@ export const ForwardMessageModal: React.FC<ForwardMessageModalProps> = ({
     : '';
   const attachmentCount = message.attachments?.length ?? 0;
 
-  return (
-    <div className="ermis-forward-modal__backdrop" ref={backdropRef} onClick={handleBackdropClick}>
-      <div className="ermis-forward-modal">
-        {/* Header */}
-        <div className="ermis-forward-modal__header">
-          <h3 className="ermis-forward-modal__title">Forward Message</h3>
-          <button className="ermis-forward-modal__close" onClick={onDismiss}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
+  const footer = (
+    <>
+      <button className="ermis-forward-modal__btn ermis-forward-modal__btn--cancel" onClick={onDismiss}>
+        Cancel
+      </button>
+      <button
+        className="ermis-forward-modal__btn ermis-forward-modal__btn--send"
+        onClick={handleSend}
+        disabled={selectedChannels.size === 0 || sending || results !== null}
+      >
+        {sending ? 'Sending…' : `Forward${selectedChannels.size > 0 ? ` (${selectedChannels.size})` : ''}`}
+      </button>
+    </>
+  );
 
-        {/* Message preview */}
-        <div className="ermis-forward-modal__preview">
-          <div className="ermis-forward-modal__preview-sender">
-            {message.user?.name || message.user_id || 'Unknown'}
+  return (
+    <Modal isOpen onClose={onDismiss} title="Forward Message" footer={footer}>
+      {/* Message preview */}
+      <div className="ermis-forward-modal__preview">
+        <div className="ermis-forward-modal__preview-sender">
+          {message.user?.name || message.user_id || 'Unknown'}
+        </div>
+        {previewText && (
+          <div className="ermis-forward-modal__preview-text">{previewText}</div>
+        )}
+        {attachmentCount > 0 && (
+          <div className="ermis-forward-modal__preview-attachments">
+            📎 {attachmentCount} attachment{attachmentCount > 1 ? 's' : ''}
           </div>
-          {previewText && (
-            <div className="ermis-forward-modal__preview-text">{previewText}</div>
+        )}
+      </div>
+
+      {/* Search */}
+      <div className="ermis-forward-modal__search-wrapper">
+        {SearchInputComponent ? (
+          <SearchInputComponent value={search} onChange={setSearch} />
+        ) : (
+          <input
+            className="ermis-forward-modal__search"
+            type="text"
+            placeholder="Search channels…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            autoFocus
+          />
+        )}
+      </div>
+
+      {/* Channel list */}
+      <div className="ermis-forward-modal__channel-list">
+        {filteredChannels.length === 0 ? (
+          <div className="ermis-forward-modal__empty">No channels found</div>
+        ) : (
+          filteredChannels.map((ch) => (
+            <ChannelItemComponent
+              key={ch.cid}
+              channel={ch}
+              selected={selectedChannels.has(ch.cid)}
+              onToggle={toggleChannel}
+              AvatarComponent={Avatar}
+            />
+          ))
+        )}
+      </div>
+
+      {/* Results feedback */}
+      {results && (
+        <div className="ermis-forward-modal__results">
+          {results.success.length > 0 && (
+            <div className="ermis-forward-modal__results-success">
+              ✓ Sent to {results.success.join(', ')}
+            </div>
           )}
-          {attachmentCount > 0 && (
-            <div className="ermis-forward-modal__preview-attachments">
-              📎 {attachmentCount} attachment{attachmentCount > 1 ? 's' : ''}
+          {results.failed.length > 0 && (
+            <div className="ermis-forward-modal__results-failed">
+              ✗ Failed: {results.failed.join(', ')}
             </div>
           )}
         </div>
-
-        {/* Search */}
-        <div className="ermis-forward-modal__search-wrapper">
-          {SearchInputComponent ? (
-            <SearchInputComponent value={search} onChange={setSearch} />
-          ) : (
-            <input
-              className="ermis-forward-modal__search"
-              type="text"
-              placeholder="Search channels…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              autoFocus
-            />
-          )}
-        </div>
-
-        {/* Channel list */}
-        <div className="ermis-forward-modal__channel-list">
-          {filteredChannels.length === 0 ? (
-            <div className="ermis-forward-modal__empty">No channels found</div>
-          ) : (
-            filteredChannels.map((ch) => (
-              <ChannelItemComponent
-                key={ch.cid}
-                channel={ch}
-                selected={selectedChannels.has(ch.cid)}
-                onToggle={toggleChannel}
-                AvatarComponent={Avatar}
-              />
-            ))
-          )}
-        </div>
-
-        {/* Results feedback */}
-        {results && (
-          <div className="ermis-forward-modal__results">
-            {results.success.length > 0 && (
-              <div className="ermis-forward-modal__results-success">
-                ✓ Sent to {results.success.join(', ')}
-              </div>
-            )}
-            {results.failed.length > 0 && (
-              <div className="ermis-forward-modal__results-failed">
-                ✗ Failed: {results.failed.join(', ')}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Footer */}
-        <div className="ermis-forward-modal__footer">
-          <button className="ermis-forward-modal__btn ermis-forward-modal__btn--cancel" onClick={onDismiss}>
-            Cancel
-          </button>
-          <button
-            className="ermis-forward-modal__btn ermis-forward-modal__btn--send"
-            onClick={handleSend}
-            disabled={selectedChannels.size === 0 || sending || results !== null}
-          >
-            {sending ? 'Sending…' : `Forward${selectedChannels.size > 0 ? ` (${selectedChannels.size})` : ''}`}
-          </button>
-        </div>
-      </div>
-    </div>
+      )}
+    </Modal>
   );
 };

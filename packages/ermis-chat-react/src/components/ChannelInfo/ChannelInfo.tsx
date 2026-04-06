@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useChatClient } from '../../hooks/useChatClient';
 import { Avatar } from '../Avatar';
 import { DefaultChannelInfoTabs } from './ChannelInfoTabs';
+import { AddMemberModal } from './AddMemberModal';
 import type {
   ChannelInfoProps,
   ChannelInfoHeaderProps,
@@ -186,6 +187,12 @@ export const ChannelInfo: React.FC<ChannelInfoProps> = React.memo((props) => {
 
   // Reactivity for real-time member updates since channel.state.members is mutated in-place by the SDK
   const [memberUpdateCount, setMemberUpdateCount] = useState(0);
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+
+  const handleAddMemberClick = useCallback(() => {
+    if (onAddMemberClick) return onAddMemberClick();
+    setShowAddMemberModal(true);
+  }, [onAddMemberClick]);
 
   useEffect(() => {
     if (!channel) return;
@@ -247,7 +254,7 @@ export const ChannelInfo: React.FC<ChannelInfoProps> = React.memo((props) => {
         AvatarComponent={AvatarComponent}
         currentUserId={currentUserId}
         currentUserRole={currentUserRole}
-        onAddMemberClick={isTeamChannel ? onAddMemberClick : undefined}
+        onAddMemberClick={isTeamChannel ? handleAddMemberClick : undefined}
         onRemoveMember={handleRemoveMember}
         onBanMember={handleBanMember}
         onUnbanMember={handleUnbanMember}
@@ -260,6 +267,15 @@ export const ChannelInfo: React.FC<ChannelInfoProps> = React.memo((props) => {
         EmptyStateComponent={EmptyStateComponent}
         LoadingComponent={LoadingComponent}
       />
+
+      {showAddMemberModal && (
+        <AddMemberModal
+          channel={channel}
+          currentMembers={members as any}
+          onClose={() => setShowAddMemberModal(false)}
+          AvatarComponent={AvatarComponent}
+        />
+      )}
     </div>
   );
 });

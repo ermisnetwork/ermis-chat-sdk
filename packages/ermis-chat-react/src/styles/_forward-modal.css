@@ -2,85 +2,6 @@
    Forward Message Modal
    ============================================================ */
 
-/* Backdrop */
-.ermis-forward-modal__backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 100000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  animation: ermis-forward-fadein 150ms ease;
-}
-
-@keyframes ermis-forward-fadein {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Modal container */
-.ermis-forward-modal {
-  width: 420px;
-  max-width: 90vw;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--ermis-bg-secondary);
-  border: 1px solid var(--ermis-border);
-  border-radius: var(--ermis-radius-lg);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-  animation: ermis-forward-slidein 200ms ease;
-  overflow: hidden;
-}
-
-@keyframes ermis-forward-slidein {
-  from {
-    opacity: 0;
-    transform: translateY(12px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* Header */
-.ermis-forward-modal__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--ermis-spacing-md) var(--ermis-spacing-lg);
-  border-bottom: 1px solid var(--ermis-border);
-}
-
-.ermis-forward-modal__title {
-  margin: 0;
-  font-size: var(--ermis-font-size-base);
-  font-weight: 600;
-  color: var(--ermis-text-primary);
-}
-
-.ermis-forward-modal__close {
-  background: none;
-  border: none;
-  padding: 4px;
-  cursor: pointer;
-  color: var(--ermis-text-muted);
-  border-radius: var(--ermis-radius-sm);
-  transition: color var(--ermis-transition), background var(--ermis-transition);
-}
-
-.ermis-forward-modal__close:hover {
-  color: var(--ermis-text-primary);
-  background: var(--ermis-bg-hover);
-}
-
 /* Message preview */
 .ermis-forward-modal__preview {
   padding: var(--ermis-spacing-sm) var(--ermis-spacing-lg);
@@ -206,6 +127,17 @@
 }
 
 /* Results */
+   Forwarded indicator on message items
+   ---------------------------------------------------------- */
+.ermis-message-list__forwarded-indicator {
+  display: block;
+  font-size: var(--ermis-font-size-xs);
+  color: var(--ermis-text-muted);
+  font-style: italic;
+  margin-bottom: 2px;
+  width: 100%;
+}
+/* Results */
 .ermis-forward-modal__results {
   padding: var(--ermis-spacing-sm) var(--ermis-spacing-lg);
   border-top: 1px solid var(--ermis-border);
@@ -222,15 +154,7 @@
   margin-top: 2px;
 }
 
-/* Footer */
-.ermis-forward-modal__footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--ermis-spacing-sm);
-  padding: var(--ermis-spacing-md) var(--ermis-spacing-lg);
-  border-top: 1px solid var(--ermis-border);
-}
-
+/* Footer buttons */
 .ermis-forward-modal__btn {
   padding: 8px 16px;
   border: none;
@@ -264,16 +188,4 @@
 .ermis-forward-modal__btn--send:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-/* ----------------------------------------------------------
-   Forwarded indicator on message items
-   ---------------------------------------------------------- */
-.ermis-message-list__forwarded-indicator {
-  display: block;
-  font-size: var(--ermis-font-size-xs);
-  color: var(--ermis-text-muted);
-  font-style: italic;
-  margin-bottom: 2px;
-  width: 100%;
 }

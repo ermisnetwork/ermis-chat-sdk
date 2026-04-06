@@ -518,6 +518,20 @@ export type FilesPreviewProps = {
   onRemove: (id: string) => void;
 };
 
+/* --------------------------------------------------------------------------
+ * Modal Components
+ * -------------------------------------------------------------------------- */
+
+export interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title?: React.ReactNode;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+  maxWidth?: string;
+  hideCloseButton?: boolean;
+}
+
 /* ----------------------------------------------------------
    Channel Info types
    ---------------------------------------------------------- */

@@ -102,6 +102,8 @@ export {
   DefaultChannelInfoActions,
   DefaultChannelInfoTabs
 } from './components/ChannelInfo';
+
+export { Modal } from './components/Modal';
 export type {
   ChannelInfoProps,
   ChannelInfoHeaderProps,
@@ -114,5 +116,6 @@ export type {
   ChannelInfoFileItemProps,
   ChannelInfoEmptyStateProps,
   AttachmentItem,
-  MediaTab
+  MediaTab,
+  ModalProps
 } from './types';
