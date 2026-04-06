@@ -554,6 +554,14 @@ export type ChannelInfoMemberItemProps = {
   AvatarComponent: React.ComponentType<AvatarProps>;
   onRemove?: (id: string) => void;
   canRemove?: boolean;
+  onBan?: (id: string) => void;
+  canBan?: boolean;
+  onUnban?: (id: string) => void;
+  canUnban?: boolean;
+  onPromote?: (id: string) => void;
+  canPromote?: boolean;
+  onDemote?: (id: string) => void;
+  canDemote?: boolean;
 };
 
 export type ChannelInfoMediaItemProps = {
@@ -612,6 +620,10 @@ export type ChannelInfoTabsProps = {
   currentUserRole?: string;
   onAddMemberClick?: () => void;
   onRemoveMember?: (id: string) => void;
+  onBanMember?: (id: string) => void;
+  onUnbanMember?: (id: string) => void;
+  onPromoteMember?: (id: string) => void;
+  onDemoteMember?: (id: string) => void;
 
   /** Custom sub-component overrides */
   MemberItemComponent?: React.ComponentType<ChannelInfoMemberItemProps>;
@@ -655,5 +667,9 @@ export type ChannelInfoProps = {
   onDeleteChannel?: () => void;
   onAddMemberClick?: () => void;
   onRemoveMember?: (id: string) => void;
+  onBanMember?: (id: string) => void;
+  onUnbanMember?: (id: string) => void;
+  onPromoteMember?: (id: string) => void;
+  onDemoteMember?: (id: string) => void;
 };
 

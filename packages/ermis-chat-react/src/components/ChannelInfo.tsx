@@ -3,6 +3,7 @@ import { VList } from 'virtua';
 import { useChatClient } from '../hooks/useChatClient';
 import { preloadImage, isImagePreloaded, formatFileSize, formatRelativeDate, getDisplayName, extractDomain } from '../utils';
 import { Avatar } from './Avatar';
+import { Dropdown } from './Dropdown';
 import type {
   ChannelInfoProps,
   ChannelInfoHeaderProps,
@@ -233,9 +234,21 @@ const FileListItem: React.FC<{
 (FileListItem as any).displayName = 'FileListItem';
 
 // --- Memoized Member Item ---
-const MemberListItem = React.memo(({ member, AvatarComponent, onRemove, canRemove }: ChannelInfoMemberItemProps) => {
+const MemberListItem = React.memo(({
+  member, AvatarComponent, 
+  onRemove, canRemove, 
+  onBan, canBan, 
+  onUnban, canUnban, 
+  onPromote, canPromote, 
+  onDemote, canDemote 
+}: ChannelInfoMemberItemProps) => {
+  const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
+  const isOpen = anchorRect !== null;
+
   if (!member) return null;
   const role = member.channel_role || 'member';
+  const hasActions = canRemove || canBan || canUnban || canPromote || canDemote;
+
   return (
     <div className="ermis-channel-info__member-item">
       <AvatarComponent image={member.user?.avatar} name={member.user?.name || member.user?.id} size={36} />
@@ -245,27 +258,61 @@ const MemberListItem = React.memo(({ member, AvatarComponent, onRemove, canRemov
           {role.charAt(0).toUpperCase() + role.slice(1)}
         </span>
       </div>
-      {canRemove && onRemove && (
-        <button
-          className="ermis-channel-info__member-remove"
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove(member.user?.id || member.user_id);
-          }}
-          aria-label="Remove member"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
+      
+      {hasActions && (
+        <>
+          <button
+            className="ermis-channel-info__member-actions-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              setAnchorRect(e.currentTarget.getBoundingClientRect());
+            }}
+            aria-label="Member actions"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="1" />
+              <circle cx="12" cy="5" r="1" />
+              <circle cx="12" cy="19" r="1" />
+            </svg>
+          </button>
+          
+          <Dropdown
+            isOpen={isOpen}
+            anchorRect={anchorRect}
+            onClose={() => setAnchorRect(null)}
+            align="right"
+          >
+            <div className="ermis-dropdown__menu">
+              {canPromote && onPromote && (
+                <button className="ermis-dropdown__item" onClick={() => { onPromote(member.user?.id || member.user_id); setAnchorRect(null); }}>Promote to Moder</button>
+              )}
+              {canDemote && onDemote && (
+                <button className="ermis-dropdown__item" onClick={() => { onDemote(member.user?.id || member.user_id); setAnchorRect(null); }}>Demote to Member</button>
+              )}
+              {canBan && onBan && (
+                <button className="ermis-dropdown__item ermis-dropdown__item--danger" onClick={() => { onBan(member.user?.id || member.user_id); setAnchorRect(null); }}>Ban Member</button>
+              )}
+              {canUnban && onUnban && (
+                <button className="ermis-dropdown__item" onClick={() => { onUnban(member.user?.id || member.user_id); setAnchorRect(null); }}>Unban Member</button>
+              )}
+              {canRemove && onRemove && (
+                <button className="ermis-dropdown__item ermis-dropdown__item--danger" onClick={() => { onRemove(member.user?.id || member.user_id); setAnchorRect(null); }}>Remove from Channel</button>
+              )}
+            </div>
+          </Dropdown>
+        </>
       )}
     </div>
   );
 }, (prev, next) => {
   return prev.member?.user_id === next.member?.user_id &&
          prev.member?.channel_role === next.member?.channel_role &&
-         prev.canRemove === next.canRemove;
+         prev.member?.banned === next.member?.banned &&
+         prev.canRemove === next.canRemove &&
+         prev.canBan === next.canBan &&
+         prev.canUnban === next.canUnban &&
+         prev.canPromote === next.canPromote &&
+         prev.canDemote === next.canDemote;
 });
 (MemberListItem as any).displayName = 'MemberListItem';
 
@@ -410,6 +457,10 @@ export const DefaultChannelInfoTabs: React.FC<ChannelInfoTabsProps> = React.memo
   currentUserRole,
   onAddMemberClick,
   onRemoveMember,
+  onBanMember,
+  onUnbanMember,
+  onPromoteMember,
+  onDemoteMember,
   MemberItemComponent,
   MediaItemComponent,
   LinkItemComponent,
@@ -526,12 +577,40 @@ export const DefaultChannelInfoTabs: React.FC<ChannelInfoTabsProps> = React.memo
         }
         sortedMembers.forEach(member => {
           const role = member.channel_role || 'member';
-          const isRemovable = role === 'member' || role === 'pending';
+          const isTargetRemovable = role === 'member' || role === 'pending' || (currentUserRole === 'owner' && role === 'moder');
+          
           const canRemove = Boolean(
             (currentUserRole === 'owner' || currentUserRole === 'moder') &&
-            isRemovable &&
+            isTargetRemovable &&
             member.user_id !== currentUserId
           );
+
+          const canBan = Boolean(
+            (currentUserRole === 'owner' || currentUserRole === 'moder') &&
+            isTargetRemovable &&
+            member.user_id !== currentUserId &&
+            !member.banned
+          );
+
+          const canUnban = Boolean(
+            (currentUserRole === 'owner' || currentUserRole === 'moder') &&
+            isTargetRemovable &&
+            member.user_id !== currentUserId &&
+            member.banned
+          );
+
+          const canPromote = Boolean(
+            currentUserRole === 'owner' &&
+            (role === 'member' || role === 'pending') &&
+            member.user_id !== currentUserId
+          );
+
+          const canDemote = Boolean(
+            currentUserRole === 'owner' &&
+            role === 'moder' &&
+            member.user_id !== currentUserId
+          );
+
           items.push(
             <MemberItem
               key={member?.user_id}
@@ -539,6 +618,14 @@ export const DefaultChannelInfoTabs: React.FC<ChannelInfoTabsProps> = React.memo
               AvatarComponent={AvatarComponent}
               onRemove={onRemoveMember}
               canRemove={canRemove}
+              onBan={onBanMember}
+              canBan={canBan}
+              onUnban={onUnbanMember}
+              canUnban={canUnban}
+              onPromote={onPromoteMember}
+              canPromote={canPromote}
+              onDemote={onDemoteMember}
+              canDemote={canDemote}
             />
           );
         });
@@ -627,7 +714,11 @@ export const ChannelInfo: React.FC<ChannelInfoProps> = React.memo((props) => {
     onLeaveChannel: onLeaveChannelProp,
     onDeleteChannel: onDeleteChannelProp,
     onAddMemberClick,
-    onRemoveMember: onRemoveMemberProp
+    onRemoveMember: onRemoveMemberProp,
+    onBanMember: onBanMemberProp,
+    onUnbanMember: onUnbanMemberProp,
+    onPromoteMember: onPromoteMemberProp,
+    onDemoteMember: onDemoteMemberProp,
   } = props;
 
   const { activeChannel, client } = useChatClient();
@@ -665,6 +756,30 @@ export const ChannelInfo: React.FC<ChannelInfoProps> = React.memo((props) => {
       console.error("Error removing member", e);
     }
   }, [channel, onRemoveMemberProp]);
+
+  const handleBanMember = useCallback(async (memberId: string) => {
+    if (onBanMemberProp) return onBanMemberProp(memberId);
+    if (!channel) return;
+    try { await channel.banMembers([memberId]); } catch (e) { console.error("Error banning member", e); }
+  }, [channel, onBanMemberProp]);
+
+  const handleUnbanMember = useCallback(async (memberId: string) => {
+    if (onUnbanMemberProp) return onUnbanMemberProp(memberId);
+    if (!channel) return;
+    try { await channel.unbanMembers([memberId]); } catch (e) { console.error("Error unbanning member", e); }
+  }, [channel, onUnbanMemberProp]);
+
+  const handlePromoteMember = useCallback(async (memberId: string) => {
+    if (onPromoteMemberProp) return onPromoteMemberProp(memberId);
+    if (!channel) return;
+    try { await channel.addModerators([memberId]); } catch (e) { console.error("Error promoting member", e); }
+  }, [channel, onPromoteMemberProp]);
+
+  const handleDemoteMember = useCallback(async (memberId: string) => {
+    if (onDemoteMemberProp) return onDemoteMemberProp(memberId);
+    if (!channel) return;
+    try { await channel.demoteModerators([memberId]); } catch (e) { console.error("Error demoting member", e); }
+  }, [channel, onDemoteMemberProp]);
 
   const channelName = channel?.data?.name || channel?.cid || 'Unknown Channel';
   const channelImage = channel?.data?.image as string | undefined;
@@ -727,6 +842,10 @@ export const ChannelInfo: React.FC<ChannelInfoProps> = React.memo((props) => {
         currentUserRole={currentUserRole}
         onAddMemberClick={isTeamChannel ? onAddMemberClick : undefined}
         onRemoveMember={handleRemoveMember}
+        onBanMember={handleBanMember}
+        onUnbanMember={handleUnbanMember}
+        onPromoteMember={handlePromoteMember}
+        onDemoteMember={handleDemoteMember}
         MemberItemComponent={MemberItemComponent}
         MediaItemComponent={MediaItemComponent}
         LinkItemComponent={LinkItemComponent}

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { VList } from 'virtua';
-import type { Channel, Event } from '@ermis-network/ermis-chat-sdk';
+import type { Channel, Event, ChannelFilters } from '@ermis-network/ermis-chat-sdk';
 import { parseSystemMessage, parseSignalMessage } from '@ermis-network/ermis-chat-sdk';
 import { useChatClient } from '../hooks/useChatClient';
 import { useChannelListUpdates } from '../hooks/useChannelListUpdates';
@@ -190,9 +190,9 @@ const ChannelRow: React.FC<ChannelRowProps> = React.memo(({
 ChannelRow.displayName = 'ChannelRow';
 
 export const ChannelList: React.FC<ChannelListProps> = React.memo(({
-  filters = { type: ['messaging', 'team'], include_pinned_messages: true },
+  filters = { type: ['messaging', 'team'], include_pinned_messages: true } as ChannelFilters,
   sort = [],
-  options = { message_limit: 25 },
+  options = { message_limit: 25 } as any,
   renderChannel,
   onChannelSelect,
   className,
