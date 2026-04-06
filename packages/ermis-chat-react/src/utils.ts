@@ -188,3 +188,55 @@ export function preloadImage(url: string): void {
 export function isImagePreloaded(url: string): boolean {
   return preloadedUrls.has(url);
 }
+
+/**
+ * Format bytes into a human-readable file size (e.g. "1.2 MB").
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+}
+
+/**
+ * Format a date string into a relative label:
+ * "Today", "Yesterday", "Xd ago", or "Mon DD" / "Mon DD, YYYY".
+ */
+export function formatRelativeDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays}d ago`;
+
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined });
+}
+
+/**
+ * Get a cleaned display name from a raw file_name.
+ * Strips UUID-heavy prefixes that the API sometimes prepends.
+ */
+export function getDisplayName(fileName: string): string {
+  const parts = fileName.split('-');
+  if (parts.length > 5) {
+    const ext = fileName.split('.').pop() || '';
+    return `file.${ext}`;
+  }
+  return fileName;
+}
+
+/**
+ * Extract the hostname from a URL string. Returns the original string on error.
+ */
+export function extractDomain(url: string): string {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
+}

@@ -431,12 +431,21 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
   }
 
   async queryAttachmentMessages() {
-    return await this.getClient().post<AttachmentResponse<ErmisChatGenerics>>(
+    const response = await this.getClient().post<AttachmentResponse<ErmisChatGenerics>>(
       this.getClient().baseURL + `/channels/${this.type}/${this.id}/attachment`,
       {
         attachment_types: ['image', 'video', 'file', 'voiceRecording', 'linkPreview'],
       },
     );
+
+    // Sort newest first
+    if (response.attachments) {
+      response.attachments.sort(
+        (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
+    }
+
+    return response;
   }
 
   async searchMessage(search_term: string, offset: number) {

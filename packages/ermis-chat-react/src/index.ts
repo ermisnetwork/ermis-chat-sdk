@@ -91,3 +91,25 @@ export { TypingIndicator } from './components/TypingIndicator';
 export type { TypingIndicatorProps } from './components/TypingIndicator';
 export { useTypingIndicator } from './hooks/useTypingIndicator';
 export type { TypingUser } from './hooks/useTypingIndicator';
+
+export {
+  ChannelInfo,
+  DefaultChannelInfoHeader,
+  DefaultChannelInfoCover,
+  DefaultChannelInfoActions,
+  DefaultChannelInfoTabs
+} from './components/ChannelInfo';
+export type {
+  ChannelInfoProps,
+  ChannelInfoHeaderProps,
+  ChannelInfoCoverProps,
+  ChannelInfoActionsProps,
+  ChannelInfoTabsProps,
+  ChannelInfoMemberItemProps,
+  ChannelInfoMediaItemProps,
+  ChannelInfoLinkItemProps,
+  ChannelInfoFileItemProps,
+  ChannelInfoEmptyStateProps,
+  AttachmentItem,
+  MediaTab
+} from './types';

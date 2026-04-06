@@ -517,3 +517,133 @@ export type FilesPreviewProps = {
   files: FilePreviewItem[];
   onRemove: (id: string) => void;
 };
+
+/* ----------------------------------------------------------
+   Channel Info types
+   ---------------------------------------------------------- */
+
+/** Attachment item from the channel attachment query API */
+export type AttachmentItem = {
+  id: string;
+  attachment_type: string;
+  user_id: string;
+  cid: string;
+  url: string;
+  thumb_url: string;
+  file_name: string;
+  content_type: string;
+  content_length: number;
+  content_disposition: string;
+  message_id: string;
+  created_at: string;
+  updated_at: string;
+  // for link previews
+  title?: string;
+  title_link?: string;
+  og_scrape_url?: string;
+  image_url?: string;
+  text?: string;
+};
+
+export type MediaTab = 'members' | 'media' | 'links' | 'files';
+
+/* Sub-component prop types for consumer customization */
+
+export type ChannelInfoMemberItemProps = {
+  member: ChannelInfoMember;
+  AvatarComponent: React.ComponentType<AvatarProps>;
+};
+
+export type ChannelInfoMediaItemProps = {
+  item: AttachmentItem;
+  onClick: (url: string) => void;
+};
+
+export type ChannelInfoLinkItemProps = {
+  item: AttachmentItem;
+};
+
+export type ChannelInfoFileItemProps = {
+  item: AttachmentItem;
+  onClick: (url: string) => void;
+};
+
+export type ChannelInfoEmptyStateProps = {
+  label: string;
+};
+
+/* Section component prop types */
+
+export type ChannelInfoHeaderProps = {
+  title: string;
+  onClose?: () => void;
+};
+
+export type ChannelInfoCoverProps = {
+  channelName: string;
+  channelImage?: string;
+  channelDescription?: string;
+  AvatarComponent: React.ComponentType<AvatarProps>;
+};
+
+export type ChannelInfoActionsProps = {
+  onMuteToggle?: () => void;
+  onSearchClick?: () => void;
+  onLeaveChannel?: () => void;
+};
+
+export type ChannelInfoMember = {
+  id: string;
+  name?: string;
+  avatar?: string;
+  [key: string]: any;
+};
+
+export type ChannelInfoTabsProps = {
+  channel: Channel;
+  members: ChannelInfoMember[];
+  AvatarComponent: React.ComponentType<AvatarProps>;
+  onAddMemberClick?: () => void;
+
+  /** Custom sub-component overrides */
+  MemberItemComponent?: React.ComponentType<ChannelInfoMemberItemProps>;
+  MediaItemComponent?: React.ComponentType<ChannelInfoMediaItemProps>;
+  LinkItemComponent?: React.ComponentType<ChannelInfoLinkItemProps>;
+  FileItemComponent?: React.ComponentType<ChannelInfoFileItemProps>;
+  EmptyStateComponent?: React.ComponentType<ChannelInfoEmptyStateProps>;
+  LoadingComponent?: React.ComponentType;
+};
+
+export type ChannelInfoProps = {
+  /** Optional channel override. Defaults to activeChannel from context */
+  channel?: Channel;
+  /** Additional CSS class */
+  className?: string;
+  /** Custom avatar component */
+  AvatarComponent?: React.ComponentType<AvatarProps>;
+  /** Optional callback when the user clicks a close button */
+  onClose?: () => void;
+  /** Custom Title String for the banner */
+  title?: string;
+
+  /** Custom components to replace internal sections */
+  HeaderComponent?: React.ComponentType<ChannelInfoHeaderProps>;
+  CoverComponent?: React.ComponentType<ChannelInfoCoverProps>;
+  ActionsComponent?: React.ComponentType<ChannelInfoActionsProps>;
+  TabsComponent?: React.ComponentType<ChannelInfoTabsProps>;
+
+  /** Custom sub-component overrides (passed through to TabsComponent) */
+  MemberItemComponent?: React.ComponentType<ChannelInfoMemberItemProps>;
+  MediaItemComponent?: React.ComponentType<ChannelInfoMediaItemProps>;
+  LinkItemComponent?: React.ComponentType<ChannelInfoLinkItemProps>;
+  FileItemComponent?: React.ComponentType<ChannelInfoFileItemProps>;
+  EmptyStateComponent?: React.ComponentType<ChannelInfoEmptyStateProps>;
+  LoadingComponent?: React.ComponentType;
+
+  /** Action callbacks */
+  onMuteToggle?: () => void;
+  onSearchClick?: () => void;
+  onLeaveChannel?: () => void;
+  onAddMemberClick?: () => void;
+};
+

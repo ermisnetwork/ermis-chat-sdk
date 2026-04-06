@@ -7,6 +7,7 @@ import {
   ChannelHeader,
   MessageInput,
   VirtualMessageList,
+  ChannelInfo,
   type EmojiPickerProps,
 } from '@ermis-network/ermis-chat-react';
 import EmojiPicker, { type EmojiClickData } from 'emoji-picker-react';
@@ -151,15 +152,13 @@ function LoginForm({ onConnect }: { onConnect: (userId: string, token: string, e
                 role="switch"
                 aria-checked={externalAuth}
                 onClick={() => setExternalAuth(!externalAuth)}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500/50 ${
-                  externalAuth ? 'bg-indigo-500' : 'bg-gray-700'
-                }`}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500/50 ${externalAuth ? 'bg-indigo-500' : 'bg-gray-700'
+                  }`}
               >
                 <span
                   aria-hidden="true"
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                    externalAuth ? 'translate-x-5' : 'translate-x-0'
-                  }`}
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${externalAuth ? 'translate-x-5' : 'translate-x-0'
+                    }`}
                 />
               </button>
             </div>
@@ -203,6 +202,7 @@ function App() {
   const [client, setClient] = useState<ErmisChat | null>(null);
   const [connected, setConnected] = useState(false);
   const [showLogin, setShowLogin] = useState(true);
+  const [showChannelInfo, setShowChannelInfo] = useState(true);
   const clientRef = useRef<ErmisChat | null>(null);
 
   // Auto-connect if credentials exist in localStorage
@@ -275,12 +275,30 @@ function App() {
         {/* Main - Chat Area */}
         <div className="flex-1 flex flex-col min-w-0">
           <Channel>
-            <ChannelHeader />
+            <ChannelHeader
+              renderRight={() => (
+                <button
+                  onClick={() => setShowChannelInfo(!showChannelInfo)}
+                  className="p-2 text-gray-400 hover:text-indigo-400 transition-colors"
+                  aria-label="Toggle Channel Info"
+                >
+                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+              )}
+            />
             <VirtualMessageList />
-            {/* <MessageList /> */}
             <MessageInput placeholder="Type a message..." EmojiPickerComponent={ConsumerEmojiPicker} />
           </Channel>
         </div>
+
+        {/* Right Sidebar - Channel Info */}
+        {showChannelInfo && (
+          <div className="w-90 border-l border-gray-800 flex flex-col bg-white">
+            <ChannelInfo onClose={() => setShowChannelInfo(false)} />
+          </div>
+        )}
       </div>
     </ChatProvider>
   );
