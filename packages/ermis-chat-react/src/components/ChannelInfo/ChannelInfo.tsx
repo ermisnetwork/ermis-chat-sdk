@@ -103,6 +103,7 @@ export const ChannelInfo: React.FC<ChannelInfoProps> = React.memo((props) => {
     CoverComponent = DefaultChannelInfoCover,
     ActionsComponent = DefaultChannelInfoActions,
     TabsComponent = DefaultChannelInfoTabs,
+    AddMemberModalComponent,
     MemberItemComponent,
     MediaItemComponent,
     LinkItemComponent,
@@ -119,6 +120,16 @@ export const ChannelInfo: React.FC<ChannelInfoProps> = React.memo((props) => {
     onUnbanMember: onUnbanMemberProp,
     onPromoteMember: onPromoteMemberProp,
     onDemoteMember: onDemoteMemberProp,
+    // Add Member customization
+    addMemberModalTitle,
+    addMemberSearchPlaceholder,
+    addMemberLoadingText,
+    addMemberEmptyText,
+    addMemberAddLabel,
+    addMemberAddingLabel,
+    addMemberAddedLabel,
+    addMemberButtonLabel,
+    AddMemberButtonComponent,
   } = props;
 
   const { activeChannel, client } = useChatClient();
@@ -260,6 +271,8 @@ export const ChannelInfo: React.FC<ChannelInfoProps> = React.memo((props) => {
         onUnbanMember={handleUnbanMember}
         onPromoteMember={handlePromoteMember}
         onDemoteMember={handleDemoteMember}
+        addMemberButtonLabel={addMemberButtonLabel}
+        AddMemberButtonComponent={AddMemberButtonComponent}
         MemberItemComponent={MemberItemComponent}
         MediaItemComponent={MediaItemComponent}
         LinkItemComponent={LinkItemComponent}
@@ -268,14 +281,24 @@ export const ChannelInfo: React.FC<ChannelInfoProps> = React.memo((props) => {
         LoadingComponent={LoadingComponent}
       />
 
-      {showAddMemberModal && (
-        <AddMemberModal
-          channel={channel}
-          currentMembers={members as any}
-          onClose={() => setShowAddMemberModal(false)}
-          AvatarComponent={AvatarComponent}
-        />
-      )}
+      {showAddMemberModal && (() => {
+        const ModalComp = AddMemberModalComponent || AddMemberModal;
+        return (
+          <ModalComp
+            channel={channel}
+            currentMembers={members as any}
+            onClose={() => setShowAddMemberModal(false)}
+            AvatarComponent={AvatarComponent}
+            title={addMemberModalTitle}
+            searchPlaceholder={addMemberSearchPlaceholder}
+            loadingText={addMemberLoadingText}
+            emptyText={addMemberEmptyText}
+            addLabel={addMemberAddLabel}
+            addingLabel={addMemberAddingLabel}
+            addedLabel={addMemberAddedLabel}
+          />
+        );
+      })()}
     </div>
   );
 });

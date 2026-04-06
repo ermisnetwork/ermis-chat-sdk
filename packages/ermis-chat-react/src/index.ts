@@ -117,5 +117,8 @@ export type {
   ChannelInfoEmptyStateProps,
   AttachmentItem,
   MediaTab,
-  ModalProps
+  ModalProps,
+  AddMemberModalProps,
+  AddMemberUserItemProps,
+  AddMemberButtonProps,
 } from './types';

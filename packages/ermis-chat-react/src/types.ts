@@ -626,6 +626,57 @@ export type ChannelInfoMember = {
   [key: string]: any;
 };
 
+/** Props for the Add Member button rendered at the top of the Members tab */
+export type AddMemberButtonProps = {
+  onClick: () => void;
+  /** Label text for the button (default: 'Add Member') */
+  label?: string;
+};
+
+/** Props for individual user items inside the AddMemberModal */
+export type AddMemberUserItemProps = {
+  user: any;
+  /** Whether the user already belongs to the channel */
+  isExisting: boolean;
+  /** Whether the user is currently being added */
+  isAdding: boolean;
+  /** Callback to add the user */
+  onAdd: (userId: string) => void;
+  AvatarComponent: React.ComponentType<AvatarProps>;
+  /** Label shown when the user is already in the channel (default: 'Added') */
+  addedLabel?: string;
+  /** Label shown while adding (default: 'Adding...') */
+  addingLabel?: string;
+  /** Label for the add button (default: 'Add') */
+  addLabel?: string;
+};
+
+/** Props for the AddMemberModal */
+export type AddMemberModalProps = {
+  channel: Channel;
+  currentMembers: any[];
+  onClose: () => void;
+  AvatarComponent: React.ComponentType<AvatarProps>;
+  /** Modal title (default: 'Add Member') */
+  title?: string;
+  /** Search input placeholder (default: 'Search by name, email or phone...') */
+  searchPlaceholder?: string;
+  /** Text shown while loading users (default: 'Loading users...') */
+  loadingText?: string;
+  /** Text shown when no users match the search (default: 'No users found.') */
+  emptyText?: string;
+  /** Label for the add button on each user row (default: 'Add') */
+  addLabel?: string;
+  /** Label shown while a user is being added (default: 'Adding...') */
+  addingLabel?: string;
+  /** Label shown when a user already belongs to the channel (default: 'Added') */
+  addedLabel?: string;
+  /** Custom user item component (replaces the default row) */
+  UserItemComponent?: React.ComponentType<AddMemberUserItemProps>;
+  /** Custom search input component */
+  SearchInputComponent?: React.ComponentType<{ value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; placeholder: string }>;
+};
+
 export type ChannelInfoTabsProps = {
   channel: Channel;
   members: ChannelInfoMember[];
@@ -638,6 +689,11 @@ export type ChannelInfoTabsProps = {
   onUnbanMember?: (id: string) => void;
   onPromoteMember?: (id: string) => void;
   onDemoteMember?: (id: string) => void;
+
+  /** Label for the 'Add Member' button in the Members tab (default: 'Add Member') */
+  addMemberButtonLabel?: string;
+  /** Custom component for the 'Add Member' button */
+  AddMemberButtonComponent?: React.ComponentType<AddMemberButtonProps>;
 
   /** Custom sub-component overrides */
   MemberItemComponent?: React.ComponentType<ChannelInfoMemberItemProps>;
@@ -665,6 +721,8 @@ export type ChannelInfoProps = {
   CoverComponent?: React.ComponentType<ChannelInfoCoverProps>;
   ActionsComponent?: React.ComponentType<ChannelInfoActionsProps>;
   TabsComponent?: React.ComponentType<ChannelInfoTabsProps>;
+  /** Custom component replacing the entire AddMemberModal */
+  AddMemberModalComponent?: React.ComponentType<AddMemberModalProps>;
 
   /** Custom sub-component overrides (passed through to TabsComponent) */
   MemberItemComponent?: React.ComponentType<ChannelInfoMemberItemProps>;
@@ -673,6 +731,19 @@ export type ChannelInfoProps = {
   FileItemComponent?: React.ComponentType<ChannelInfoFileItemProps>;
   EmptyStateComponent?: React.ComponentType<ChannelInfoEmptyStateProps>;
   LoadingComponent?: React.ComponentType;
+
+  /** Add Member customization (passed through to AddMemberModal) */
+  addMemberModalTitle?: string;
+  addMemberSearchPlaceholder?: string;
+  addMemberLoadingText?: string;
+  addMemberEmptyText?: string;
+  addMemberAddLabel?: string;
+  addMemberAddingLabel?: string;
+  addMemberAddedLabel?: string;
+  /** Label for the 'Add Member' button in Members tab */
+  addMemberButtonLabel?: string;
+  /** Custom component for the 'Add Member' button */
+  AddMemberButtonComponent?: React.ComponentType<AddMemberButtonProps>;
 
   /** Action callbacks */
   onMuteToggle?: () => void;

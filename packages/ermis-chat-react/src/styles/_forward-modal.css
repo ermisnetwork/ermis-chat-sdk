@@ -126,7 +126,7 @@
   font-size: var(--ermis-font-size-sm);
 }
 
-/* Results */
+/* ----------------------------------------------------------
    Forwarded indicator on message items
    ---------------------------------------------------------- */
 .ermis-message-list__forwarded-indicator {
