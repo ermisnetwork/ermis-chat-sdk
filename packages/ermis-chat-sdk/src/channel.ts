@@ -1463,8 +1463,10 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
           const user = getUserInfo(event.member.user_id, users);
           event.member.user = user;
           channelState.members[event.member.user_id] = event.member;
-          channelState.membership = event.member;
-          this.state.membership = event.member;
+          if (event.member.user_id === this.getClient().user?.id) {
+            channelState.membership = event.member;
+            this.state.membership = event.member;
+          }
         }
         break;
       case 'channel.pinned':

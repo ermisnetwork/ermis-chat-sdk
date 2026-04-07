@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useChatClient } from '../hooks/useChatClient';
+import { useBannedState } from '../hooks/useBannedState';
 import { useMentions } from '../hooks/useMentions';
 import { useFileUpload } from '../hooks/useFileUpload';
 import { useEmojiPicker } from '../hooks/useEmojiPicker';
@@ -33,6 +34,7 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
   EditPreviewComponent = EditPreview,
 }) => {
   const { client, activeChannel, syncMessages, quotedMessage, setQuotedMessage, editingMessage, setEditingMessage } = useChatClient();
+  const { isBanned } = useBannedState(activeChannel, client.userID);
   const editableRef = React.useRef<HTMLDivElement>(null);
   const [hasContent, setHasContent] = useState(false);
 
@@ -217,6 +219,21 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
   }, []);
 
   if (!activeChannel) return null;
+
+  // Show banned banner instead of input
+  if (isBanned) {
+    return (
+      <div className={`ermis-message-input ermis-message-input--banned${className ? ` ${className}` : ''}`}>
+        <div className="ermis-message-input__banned-banner">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+          </svg>
+          <span>You have been blocked from this channel</span>
+        </div>
+      </div>
+    );
+  }
 
   const isStillUploading = files.some((f) => f.status === 'uploading');
 

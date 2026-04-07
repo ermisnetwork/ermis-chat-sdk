@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react'
 import { VList, type VListHandle } from 'virtua';
 import type { MessageLabel } from '@ermis-network/ermis-chat-sdk';
 import { useChatClient } from '../hooks/useChatClient';
+import { useBannedState } from '../hooks/useBannedState';
 import { useLoadMessages } from '../hooks/useLoadMessages';
 import { useScrollToMessage } from '../hooks/useScrollToMessage';
 import { useChannelMessages } from '../hooks/useChannelMessages';
@@ -99,6 +100,7 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
   MessageReactionsComponent,
 }) => {
   const { client, messages, readState, activeChannel } = useChatClient();
+  const { isBanned } = useBannedState(activeChannel, client.userID);
   const vlistRef = useRef<VListHandle>(null);
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
@@ -322,26 +324,40 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
   ]);
 
   return (
-    <div ref={containerRef} className={`ermis-message-list${className ? ` ${className}` : ''}`}>
-      {showPinnedMessages && <PinnedMessagesComponent onClickMessage={scrollToMessage} AvatarComponent={AvatarComponent} />}
+    <div ref={containerRef} className={`ermis-message-list${isBanned ? ' ermis-message-list--banned' : ''}${className ? ` ${className}` : ''}`}>
+      {!isBanned && showPinnedMessages && <PinnedMessagesComponent onClickMessage={scrollToMessage} AvatarComponent={AvatarComponent} />}
 
-      {messages.length === 0 && <EmptyStateIndicator />}
+      {messages.length === 0 && !isBanned && <EmptyStateIndicator />}
 
-      <VList
-        key={activeChannel?.cid || 'empty'}
-        ref={vlistRef}
-        shift={shiftMode}
-        onScroll={handleScroll}
-        className="ermis-message-list__vlist"
-      >
-        {messageElements}
-      </VList>
+      {/* Banned overlay — replaces message content entirely */}
+      {isBanned ? (
+        <div className="ermis-message-list__banned-overlay">
+          <div className="ermis-message-list__banned-overlay-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+            </svg>
+          </div>
+          <span className="ermis-message-list__banned-overlay-title">You have been blocked from this channel</span>
+          <span className="ermis-message-list__banned-overlay-subtitle">You can no longer read or send messages here</span>
+        </div>
+      ) : (
+        <VList
+          key={activeChannel?.cid || 'empty'}
+          ref={vlistRef}
+          shift={shiftMode}
+          onScroll={handleScroll}
+          className="ermis-message-list__vlist"
+        >
+          {messageElements}
+        </VList>
+      )}
 
       {/* Typing indicator */}
-      {showTypingIndicator && <TypingIndicatorComponent />}
+      {!isBanned && showTypingIndicator && <TypingIndicatorComponent />}
 
       {/* Jump to latest button */}
-      {hasNewer && <JumpToLatestButton onClick={jumpToLatest} />}
+      {!isBanned && hasNewer && <JumpToLatestButton onClick={jumpToLatest} />}
     </div>
   );
 });

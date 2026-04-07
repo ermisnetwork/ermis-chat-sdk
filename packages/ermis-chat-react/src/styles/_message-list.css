@@ -228,3 +228,33 @@
   right: -10px;
   transform: rotate(45deg);
 }
+
+/* ----------------------------------------------------------
+   Banned State
+   ---------------------------------------------------------- */
+
+.ermis-message-list__banned-overlay {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ermis-spacing-md);
+  user-select: none;
+}
+
+.ermis-message-list__banned-overlay-icon {
+  color: #ef4444;
+  opacity: 0.6;
+}
+
+.ermis-message-list__banned-overlay-title {
+  font-size: var(--ermis-font-size-base);
+  font-weight: 600;
+  color: var(--ermis-text-primary);
+}
+
+.ermis-message-list__banned-overlay-subtitle {
+  font-size: var(--ermis-font-size-sm);
+  color: var(--ermis-text-muted);
+}

@@ -306,3 +306,27 @@
   background-color: var(--ermis-bg-hover);
   color: var(--ermis-text-primary);
 }
+
+/* ----------------------------------------------------------
+   Banned State
+   ---------------------------------------------------------- */
+.ermis-message-input--banned {
+  pointer-events: none;
+}
+
+.ermis-message-input__banned-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ermis-spacing-sm);
+  padding: var(--ermis-spacing-md) var(--ermis-spacing-lg);
+  color: #ef4444;
+  font-size: var(--ermis-font-size-sm);
+  font-weight: 500;
+  user-select: none;
+  opacity: 0.8;
+}
+
+.ermis-message-input__banned-banner svg {
+  flex-shrink: 0;
+}

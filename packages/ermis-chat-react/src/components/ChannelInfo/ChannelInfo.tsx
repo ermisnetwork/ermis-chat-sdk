@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useChatClient } from '../../hooks/useChatClient';
+import { useBannedState } from '../../hooks/useBannedState';
 import { Avatar } from '../Avatar';
 import { DefaultChannelInfoTabs } from './ChannelInfoTabs';
 import { AddMemberModal } from './AddMemberModal';
@@ -179,6 +180,7 @@ export const ChannelInfo: React.FC<ChannelInfoProps> = React.memo((props) => {
 
   const { activeChannel, client } = useChatClient();
   const channel = channelProp || activeChannel;
+  const { isBanned } = useBannedState(channel, client?.userID);
 
   const currentUserId = client?.userID;
   const currentUserRole = currentUserId ? channel?.state?.members?.[currentUserId]?.channel_role : undefined;
@@ -254,8 +256,8 @@ export const ChannelInfo: React.FC<ChannelInfoProps> = React.memo((props) => {
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [showEditChannelModal, setShowEditChannelModal] = useState(false);
 
-  // Permission: only owner or moderator can edit channel info
-  const canEditChannel = isTeamChannel && (currentUserRole === 'owner' || currentUserRole === 'moder');
+  // Permission: only owner or moderator can edit channel info (banned users cannot)
+  const canEditChannel = isTeamChannel && !isBanned && (currentUserRole === 'owner' || currentUserRole === 'moder');
 
   const handleEditChannelClick = useCallback(() => {
     setShowEditChannelModal(true);
@@ -318,80 +320,94 @@ export const ChannelInfo: React.FC<ChannelInfoProps> = React.memo((props) => {
         isTeamChannel={isTeamChannel}
       />
 
-      <ActionsComponent
-        onMuteToggle={onMuteToggle}
-        onSearchClick={onSearchClick}
-        onLeaveChannel={handleLeaveChannel}
-        onDeleteChannel={handleDeleteChannel}
-        isTeamChannel={isTeamChannel}
-        currentUserRole={currentUserRole}
-      />
-
-      <TabsComponent
-        channel={channel}
-        members={members as any}
-        AvatarComponent={AvatarComponent}
-        currentUserId={currentUserId}
-        currentUserRole={currentUserRole}
-        onAddMemberClick={isTeamChannel ? handleAddMemberClick : undefined}
-        onRemoveMember={handleRemoveMember}
-        onBanMember={handleBanMember}
-        onUnbanMember={handleUnbanMember}
-        onPromoteMember={handlePromoteMember}
-        onDemoteMember={handleDemoteMember}
-        addMemberButtonLabel={addMemberButtonLabel}
-        AddMemberButtonComponent={AddMemberButtonComponent}
-        MemberItemComponent={MemberItemComponent}
-        MediaItemComponent={MediaItemComponent}
-        LinkItemComponent={LinkItemComponent}
-        FileItemComponent={FileItemComponent}
-        EmptyStateComponent={EmptyStateComponent}
-        LoadingComponent={LoadingComponent}
-      />
-
-      {showAddMemberModal && (() => {
-        const ModalComp = AddMemberModalComponent || AddMemberModal;
-        return (
-          <ModalComp
-            channel={channel}
-            currentMembers={members as any}
-            onClose={() => setShowAddMemberModal(false)}
-            AvatarComponent={AvatarComponent}
-            title={addMemberModalTitle}
-            searchPlaceholder={addMemberSearchPlaceholder}
-            loadingText={addMemberLoadingText}
-            emptyText={addMemberEmptyText}
-            addLabel={addMemberAddLabel}
-            addingLabel={addMemberAddingLabel}
-            addedLabel={addMemberAddedLabel}
+      {isBanned ? (
+        <div className="ermis-channel-info__banned-banner">
+          <div className="ermis-channel-info__banned-banner-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+            </svg>
+          </div>
+          <span className="ermis-channel-info__banned-banner-text">You have been blocked from this channel</span>
+        </div>
+      ) : (
+        <>
+          <ActionsComponent
+            onMuteToggle={onMuteToggle}
+            onSearchClick={onSearchClick}
+            onLeaveChannel={handleLeaveChannel}
+            onDeleteChannel={handleDeleteChannel}
+            isTeamChannel={isTeamChannel}
+            currentUserRole={currentUserRole}
           />
-        );
-      })()}
 
-      {showEditChannelModal && (() => {
-        const EditComp = EditChannelModalComponent || EditChannelModal;
-        return (
-          <EditComp
+          <TabsComponent
             channel={channel}
-            onClose={() => setShowEditChannelModal(false)}
-            onSave={onEditChannelProp}
+            members={members as any}
             AvatarComponent={AvatarComponent}
-            title={editChannelModalTitle}
-            nameLabel={editChannelNameLabel}
-            descriptionLabel={editChannelDescriptionLabel}
-            namePlaceholder={editChannelNamePlaceholder}
-            descriptionPlaceholder={editChannelDescriptionPlaceholder}
-            publicLabel={editChannelPublicLabel}
-            saveLabel={editChannelSaveLabel}
-            cancelLabel={editChannelCancelLabel}
-            savingLabel={editChannelSavingLabel}
-            changeAvatarLabel={editChannelChangeAvatarLabel}
-            imageAccept={editChannelImageAccept}
-            maxImageSize={editChannelMaxImageSize}
-            maxImageSizeError={editChannelMaxImageSizeError}
+            currentUserId={currentUserId}
+            currentUserRole={currentUserRole}
+            onAddMemberClick={isTeamChannel ? handleAddMemberClick : undefined}
+            onRemoveMember={handleRemoveMember}
+            onBanMember={handleBanMember}
+            onUnbanMember={handleUnbanMember}
+            onPromoteMember={handlePromoteMember}
+            onDemoteMember={handleDemoteMember}
+            addMemberButtonLabel={addMemberButtonLabel}
+            AddMemberButtonComponent={AddMemberButtonComponent}
+            MemberItemComponent={MemberItemComponent}
+            MediaItemComponent={MediaItemComponent}
+            LinkItemComponent={LinkItemComponent}
+            FileItemComponent={FileItemComponent}
+            EmptyStateComponent={EmptyStateComponent}
+            LoadingComponent={LoadingComponent}
           />
-        );
-      })()}
+
+          {showAddMemberModal && (() => {
+            const ModalComp = AddMemberModalComponent || AddMemberModal;
+            return (
+              <ModalComp
+                channel={channel}
+                currentMembers={members as any}
+                onClose={() => setShowAddMemberModal(false)}
+                AvatarComponent={AvatarComponent}
+                title={addMemberModalTitle}
+                searchPlaceholder={addMemberSearchPlaceholder}
+                loadingText={addMemberLoadingText}
+                emptyText={addMemberEmptyText}
+                addLabel={addMemberAddLabel}
+                addingLabel={addMemberAddingLabel}
+                addedLabel={addMemberAddedLabel}
+              />
+            );
+          })()}
+
+          {showEditChannelModal && (() => {
+            const EditComp = EditChannelModalComponent || EditChannelModal;
+            return (
+              <EditComp
+                channel={channel}
+                onClose={() => setShowEditChannelModal(false)}
+                onSave={onEditChannelProp}
+                AvatarComponent={AvatarComponent}
+                title={editChannelModalTitle}
+                nameLabel={editChannelNameLabel}
+                descriptionLabel={editChannelDescriptionLabel}
+                namePlaceholder={editChannelNamePlaceholder}
+                descriptionPlaceholder={editChannelDescriptionPlaceholder}
+                publicLabel={editChannelPublicLabel}
+                saveLabel={editChannelSaveLabel}
+                cancelLabel={editChannelCancelLabel}
+                savingLabel={editChannelSavingLabel}
+                changeAvatarLabel={editChannelChangeAvatarLabel}
+                imageAccept={editChannelImageAccept}
+                maxImageSize={editChannelMaxImageSize}
+                maxImageSizeError={editChannelMaxImageSizeError}
+              />
+            );
+          })()}
+        </>
+      )}
     </div>
   );
 });

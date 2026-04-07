@@ -10,6 +10,7 @@ export { useChatClient } from './hooks/useChatClient';
 export { useChannel } from './hooks/useChannel';
 export type { UseChannelReturn } from './hooks/useChannel';
 export { useChannelListUpdates } from './hooks/useChannelListUpdates';
+export { useBannedState } from './hooks/useBannedState';
 
 // Components
 export { Avatar } from './components/Avatar';

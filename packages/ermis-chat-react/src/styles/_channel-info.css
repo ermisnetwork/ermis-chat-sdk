@@ -890,3 +890,29 @@
 .ermis-channel-info__edit-btn--save:hover:not(:disabled) {
   opacity: 0.9;
 }
+
+/* ============================================
+   Banned State
+   ============================================ */
+
+.ermis-channel-info__banned-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px 16px;
+  text-align: center;
+  flex: 1;
+}
+
+.ermis-channel-info__banned-banner-icon {
+  color: #ef4444;
+  opacity: 0.5;
+}
+
+.ermis-channel-info__banned-banner-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ermis-text-secondary);
+}

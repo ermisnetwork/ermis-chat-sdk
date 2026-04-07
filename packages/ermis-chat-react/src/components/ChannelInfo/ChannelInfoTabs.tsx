@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useDeferredValue } from 'react';
 import { VList } from 'virtua';
 import { ROLE_WEIGHTS, MESSAGING_TABS, ALL_TABS, PENDING_STYLE, READY_STYLE } from './utils';
+import { useBannedState } from '../../hooks/useBannedState';
 import { MediaGridItem, MediaRow } from './MediaGridItem';
 import { LinkListItem } from './LinkListItem';
 import { FileListItem } from './FileListItem';
@@ -31,6 +32,7 @@ export const DefaultChannelInfoTabs: React.FC<ChannelInfoTabsProps> = React.memo
 }) => {
   const isMessaging = channel?.type === 'messaging';
   const availableTabs = isMessaging ? MESSAGING_TABS : ALL_TABS;
+  const { isBanned } = useBannedState(channel, currentUserId);
 
   const [activeTab, setActiveTab] = useState<MediaTab>(availableTabs[0]);
   const contentTab = useDeferredValue(activeTab);
@@ -80,6 +82,13 @@ export const DefaultChannelInfoTabs: React.FC<ChannelInfoTabsProps> = React.memo
   useEffect(() => {
     let active = true;
 
+    // Don't fetch media/files if user is banned
+    if (isBanned) {
+      setAllAttachments([]);
+      setLoading(false);
+      return;
+    }
+
     const fetchMedia = async () => {
       setLoading(true);
       try {
@@ -100,7 +109,7 @@ export const DefaultChannelInfoTabs: React.FC<ChannelInfoTabsProps> = React.memo
     fetchMedia();
 
     return () => { active = false; };
-  }, [channel]);
+  }, [channel, isBanned]);
 
   const tabCounts = useMemo<Record<MediaTab, number>>(() => ({
     members: members.length,

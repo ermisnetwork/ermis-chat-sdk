@@ -30,12 +30,16 @@ export function useChannelListUpdates(
       if (!eventCid) return;
 
       // If the new message is on the active channel and from someone else,
-      // mark it as read immediately so unreadCount resets to 0
+      // mark it as read immediately so unreadCount resets to 0.
+      // Skip markRead if the current user is banned in that channel.
       const active = activeChannelRef.current;
       if (active?.cid === eventCid && event.user?.id !== client.userID) {
-        active.markRead().catch(() => {
-          // silently ignore mark-read errors
-        });
+        const isBannedInActive = Boolean(active.state?.membership?.banned);
+        if (!isBannedInActive) {
+          active.markRead().catch(() => {
+            // silently ignore mark-read errors
+          });
+        }
       }
 
       setChannels((prev) => {
@@ -45,10 +49,17 @@ export function useChannelListUpdates(
           return idx === 0 ? [...prev] : prev;
         }
 
+        const channel = prev[idx];
+
+        // Don't move banned channels to the top
+        if (channel.state?.membership?.banned) {
+          return [...prev];
+        }
+
         // Move channel to the top
         const updated = [...prev];
-        const [channel] = updated.splice(idx, 1);
-        updated.unshift(channel);
+        const [ch] = updated.splice(idx, 1);
+        updated.unshift(ch);
         return updated;
       });
     };

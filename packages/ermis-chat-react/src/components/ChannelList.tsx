@@ -153,6 +153,7 @@ type ChannelRowProps = {
   renderChannel?: (c: Channel, active: boolean) => React.ReactNode;
   ChannelItemComponent: React.ComponentType<ChannelItemProps>;
   AvatarComponent: React.ComponentType<any>;
+  currentUserId?: string;
 };
 
 const ChannelRow: React.FC<ChannelRowProps> = React.memo(({
@@ -162,17 +163,49 @@ const ChannelRow: React.FC<ChannelRowProps> = React.memo(({
   renderChannel,
   ChannelItemComponent,
   AvatarComponent,
+  currentUserId,
 }) => {
-  const unreadCount = (channel.state as any)?.unreadCount ?? 0;
+  // Track banned state for the current user in this channel
+  const [isBannedInChannel, setIsBannedInChannel] = useState(() => Boolean(channel.state?.membership?.banned));
+
+  useEffect(() => {
+    setIsBannedInChannel(Boolean(channel.state?.membership?.banned));
+
+    const handleBanned = (event: any) => {
+      if (event.member?.user_id === currentUserId) {
+        setIsBannedInChannel(true);
+      }
+    };
+    const handleUnbanned = (event: any) => {
+      if (event.member?.user_id === currentUserId) {
+        setIsBannedInChannel(false);
+      }
+    };
+
+    const sub1 = channel.on('member.banned', handleBanned);
+    const sub2 = channel.on('member.unbanned', handleUnbanned);
+
+    return () => {
+      sub1.unsubscribe();
+      sub2.unsubscribe();
+    };
+  }, [channel, currentUserId]);
+
+  const rawUnreadCount = (channel.state as any)?.unreadCount ?? 0;
+  const unreadCount = isBannedInChannel ? 0 : rawUnreadCount;
   const hasUnread = unreadCount > 0;
 
   // Derive last message preview computation is deferred here, 
   // so it only executes when VList actually mounts this visible item
-  const { text: lastMessageText, user: lastMessageUser } = useMemo(
+  const { text: rawLastMessageText, user: rawLastMessageUser } = useMemo(
     () => getLastMessagePreview(channel),
     // Recompute if latestMessage changes
     [channel, channel.state?.latestMessages]
   );
+
+  // Hide last message preview when banned
+  const lastMessageText = isBannedInChannel ? '' : rawLastMessageText;
+  const lastMessageUser = isBannedInChannel ? '' : rawLastMessageUser;
 
   if (renderChannel) {
     return (
@@ -247,8 +280,9 @@ export const ChannelList: React.FC<ChannelListProps> = React.memo(({
       setActiveChannel(channel);
       onChannelSelect?.(channel);
 
-      // Mark as read when user selects a channel
-      if ((channel.state as any)?.unreadCount > 0) {
+      // Mark as read when user selects a channel (skip if banned)
+      const isBannedInChannel = Boolean(channel.state?.membership?.banned);
+      if (!isBannedInChannel && (channel.state as any)?.unreadCount > 0) {
         channel.markRead().catch(() => { });
         // Optimistically reset unread to update UI immediately
         (channel.state as any).unreadCount = 0;
@@ -277,6 +311,7 @@ export const ChannelList: React.FC<ChannelListProps> = React.memo(({
               renderChannel={renderChannel}
               ChannelItemComponent={ChannelItemComponent}
               AvatarComponent={AvatarComponent}
+              currentUserId={client.userID}
             />
           );
         })}
