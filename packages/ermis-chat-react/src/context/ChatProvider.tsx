@@ -18,6 +18,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
   const [editingMessage, setEditingMessage] = useState<FormatMessageResponse | null>(null);
   const [readState, setReadState] = useState<Record<string, ReadStateEntry>>({});
   const [forwardingMessage, setForwardingMessage] = useState<FormatMessageResponse | null>(null);
+  const [jumpToMessageId, setJumpToMessageId] = useState<string | null>(null);
 
   const activeChannel = activeChannelRaw;
 
@@ -58,6 +59,8 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
     setReadState,
     forwardingMessage,
     setForwardingMessage,
+    jumpToMessageId,
+    setJumpToMessageId,
   };
 
   return (

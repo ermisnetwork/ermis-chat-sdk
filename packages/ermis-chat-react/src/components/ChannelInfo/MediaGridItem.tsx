@@ -9,9 +9,17 @@ export const MediaGridItem: React.FC<{
   const src = item.thumb_url || item.url;
   const alreadyCached = isImagePreloaded(src);
   const [loaded, setLoaded] = useState(alreadyCached);
+  const imgRef = React.useRef<HTMLImageElement>(null);
 
   // Trigger background preload (no-op if already cached)
   useMemo(() => { preloadImage(src); }, [src]);
+
+  // Fallback checks for browser cache when JS preload didn't catch it
+  React.useEffect(() => {
+    if (!loaded && imgRef.current?.complete) {
+      setLoaded(true);
+    }
+  }, [loaded, src]);
 
   const isVideo = item.attachment_type === 'video';
 
@@ -28,6 +36,7 @@ export const MediaGridItem: React.FC<{
         <div className="ermis-channel-info__media-video-thumb">
           {item.thumb_url ? (
             <img
+              ref={imgRef}
               src={item.thumb_url}
               alt={item.file_name || 'video'}
               loading="lazy"
@@ -50,6 +59,7 @@ export const MediaGridItem: React.FC<{
         </div>
       ) : (
         <img
+          ref={imgRef}
           src={src}
           alt={item.file_name || 'media'}
           loading="lazy"

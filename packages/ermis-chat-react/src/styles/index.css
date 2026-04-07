@@ -7,6 +7,7 @@
 @import './_base.css';
 @import './_dropdown.css';
 @import './_modal.css';
+@import './_panel.css';
 @import './_channel-list.css';
 @import './_message-list.css';
 @import './_message-bubble.css';
@@ -20,3 +21,4 @@
 @import './_message-quick-reactions.css';
 @import './_channel-info.css';
 @import './_add-member-modal.css';
+@import './_search-panel.css';

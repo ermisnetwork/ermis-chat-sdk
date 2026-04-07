@@ -106,6 +106,7 @@ export {
 } from './components/ChannelInfo';
 
 export { Modal } from './components/Modal';
+export { Panel } from './components/Panel';
 export type {
   ChannelInfoProps,
   ChannelInfoHeaderProps,

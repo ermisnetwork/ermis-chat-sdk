@@ -40,9 +40,16 @@ const ImageAttachment: React.FC<AttachmentProps> = React.memo(({ attachment }) =
 
   const alreadyCached = isImagePreloaded(src);
   const [loaded, setLoaded] = useState(alreadyCached);
+  const imgRef = React.useRef<HTMLImageElement>(null);
 
   // Trigger background preload (no-op if already cached)
   useMemo(() => { preloadImage(src); }, [src]);
+
+  React.useEffect(() => {
+    if (!loaded && imgRef.current?.complete) {
+      setLoaded(true);
+    }
+  }, [loaded, src]);
 
   return (
     <div className="ermis-attachment-aspect-box" style={{ paddingBottom: '75%' }}>
@@ -60,6 +67,7 @@ const ImageAttachment: React.FC<AttachmentProps> = React.memo(({ attachment }) =
         )
       )}
       <img
+        ref={imgRef}
         className={`ermis-attachment ermis-attachment--image${loaded ? ' ermis-attachment--loaded' : ''}`}
         src={src}
         alt={attachment.file_name || attachment.title || 'image'}
@@ -83,10 +91,17 @@ const VideoAttachment: React.FC<AttachmentProps> = React.memo(({ attachment }) =
 
   const alreadyCached = posterSrc ? isImagePreloaded(posterSrc) : true;
   const [loaded, setLoaded] = useState(alreadyCached);
+  const imgRef = React.useRef<HTMLImageElement>(null);
 
   useMemo(() => {
     if (posterSrc) preloadImage(posterSrc);
   }, [posterSrc]);
+
+  React.useEffect(() => {
+    if (!loaded && imgRef.current?.complete) {
+      setLoaded(true);
+    }
+  }, [loaded, posterSrc]);
 
   return (
     <div className="ermis-attachment-aspect-box" style={{ paddingBottom: '75%' }}>
@@ -104,6 +119,7 @@ const VideoAttachment: React.FC<AttachmentProps> = React.memo(({ attachment }) =
       )}
       {posterSrc && !loaded && (
         <img
+          ref={imgRef}
           src={posterSrc}
           style={{ display: 'none' }}
           onLoad={() => setLoaded(true)}
@@ -188,10 +204,17 @@ const LinkPreviewAttachment: React.FC<AttachmentProps> = React.memo(({ attachmen
 
   const alreadyCached = image ? isImagePreloaded(image) : false;
   const [loaded, setLoaded] = useState(alreadyCached);
+  const imgRef = React.useRef<HTMLImageElement>(null);
 
   useMemo(() => {
     if (image) preloadImage(image);
   }, [image]);
+
+  React.useEffect(() => {
+    if (!loaded && imgRef.current?.complete) {
+      setLoaded(true);
+    }
+  }, [loaded, image]);
 
   if (!title) return null;
 
@@ -206,6 +229,7 @@ const LinkPreviewAttachment: React.FC<AttachmentProps> = React.memo(({ attachmen
         <div style={{ position: 'relative', width: '100%', minHeight: '120px', backgroundColor: 'var(--ermis-bg-hover, #2a2a4a)', overflow: 'hidden' }}>
           {!loaded && <div className="ermis-attachment-shimmer" />}
           <img
+            ref={imgRef}
             className={`ermis-attachment__link-image${loaded ? ' ermis-attachment--loaded' : ''}`}
             src={image}
             alt={title || 'preview'}
@@ -488,16 +512,24 @@ export const StickerMessage: React.FC<MessageRendererProps> = ({ message }) => {
 
   const alreadyCached = stickerUrl ? isImagePreloaded(stickerUrl) : false;
   const [loaded, setLoaded] = useState(alreadyCached);
+  const imgRef = React.useRef<HTMLImageElement>(null);
 
   useMemo(() => {
     if (stickerUrl) preloadImage(stickerUrl);
   }, [stickerUrl]);
+
+  React.useEffect(() => {
+    if (!loaded && imgRef.current?.complete) {
+      setLoaded(true);
+    }
+  }, [loaded, stickerUrl]);
 
   if (stickerUrl) {
     return (
       <div style={{ position: 'relative', width: '120px', height: '120px', overflow: 'hidden' }}>
         {!loaded && <div className="ermis-attachment-shimmer" />}
         <img
+          ref={imgRef}
           className="ermis-message-sticker"
           src={stickerUrl}
           alt="sticker"

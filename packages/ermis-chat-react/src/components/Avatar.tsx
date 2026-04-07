@@ -27,12 +27,17 @@ export const Avatar: React.FC<AvatarProps> = React.memo(({
 }) => {
   const [isLoaded, setIsLoaded] = React.useState(false);
   const [hasError, setHasError] = React.useState(false);
+  const imgRef = React.useRef<HTMLImageElement>(null);
 
   // Reset state if image URL changes
   React.useEffect(() => {
     if (image) {
-      setIsLoaded(false);
       setHasError(false);
+      if (imgRef.current?.complete) {
+        setIsLoaded(true);
+      } else {
+        setIsLoaded(false);
+      }
     }
   }, [image]);
 
@@ -72,6 +77,7 @@ export const Avatar: React.FC<AvatarProps> = React.memo(({
       {/* 2. Actual Image (Lazy, Fades in natively using CSS opacity) */}
       {image && !hasError && (
         <img
+          ref={imgRef}
           className="ermis-avatar__img"
           src={image}
           alt={name || 'Avatar'}

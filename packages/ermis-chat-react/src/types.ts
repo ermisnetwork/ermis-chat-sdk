@@ -40,6 +40,9 @@ export type ChatContextValue = {
   /** Message being forwarded (triggers ForwardMessageModal) */
   forwardingMessage: FormatMessageResponse | null;
   setForwardingMessage: (message: FormatMessageResponse | null) => void;
+  /** Message ID to jump/scroll to (set by search, cleared after scroll) */
+  jumpToMessageId: string | null;
+  setJumpToMessageId: (id: string | null) => void;
 };
 
 export type ChatProviderProps = {
@@ -829,3 +832,30 @@ export type ChannelInfoProps = {
   onDemoteMember?: (id: string) => void;
 };
 
+/* ----------------------------------------------------------
+   Message Search Panel types
+   ---------------------------------------------------------- */
+export type SearchResultMessage = {
+  id: string;
+  text?: string;
+  user_id?: string;
+  user?: { id?: string; name?: string; avatar?: string; image?: string; avatar_url?: string };
+  created_at?: string;
+  [key: string]: any;
+};
+
+export type MessageSearchPanelProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  channel: Channel;
+  /** Custom avatar component */
+  AvatarComponent?: React.ComponentType<AvatarProps>;
+  /** Placeholder text for the search input */
+  placeholder?: string;
+  /** Title for the panel */
+  title?: string;
+  /** Text shown when no results are found */
+  emptyText?: string;
+  /** Debounce wait time in ms (default: 500) */
+  debounceMs?: number;
+};

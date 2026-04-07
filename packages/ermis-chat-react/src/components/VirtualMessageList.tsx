@@ -99,7 +99,7 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
   TypingIndicatorComponent = TypingIndicator,
   MessageReactionsComponent,
 }) => {
-  const { client, messages, readState, activeChannel } = useChatClient();
+  const { client, messages, readState, activeChannel, jumpToMessageId, setJumpToMessageId } = useChatClient();
   const { isBanned } = useBannedState(activeChannel, client.userID);
   const vlistRef = useRef<VListHandle>(null);
   const messagesRef = useRef(messages);
@@ -168,6 +168,14 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
     scrollToBottom,
     jumpingRef,
   });
+
+  // React to jumpToMessageId from context (e.g. search panel)
+  useEffect(() => {
+    if (jumpToMessageId) {
+      scrollToMessage(jumpToMessageId);
+      setJumpToMessageId(null);
+    }
+  }, [jumpToMessageId, scrollToMessage, setJumpToMessageId]);
 
   useChannelMessages({
     scrollToBottom,

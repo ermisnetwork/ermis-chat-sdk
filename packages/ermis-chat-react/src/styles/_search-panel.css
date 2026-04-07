@@ -1,0 +1,219 @@
+/* ==========================================================================
+   MessageSearchPanel — Search overlay inside ChannelInfo
+   ========================================================================== */
+
+/* Search box inside panel body */
+.ermis-search-panel__search-box {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--ermis-border, rgba(0, 0, 0, 0.08));
+  flex-shrink: 0;
+}
+
+.ermis-search-panel__input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--ermis-bg-secondary, #f5f5f5);
+  border-radius: 20px;
+  transition: background 0.15s;
+}
+
+.ermis-search-panel__input-wrap:focus-within {
+  background: var(--ermis-bg-hover, #ebebeb);
+}
+
+.ermis-search-panel__input-icon {
+  flex-shrink: 0;
+  color: var(--ermis-text-secondary);
+}
+
+.ermis-search-panel__input {
+  flex: 1;
+  border: none;
+  background: none;
+  outline: none;
+  font-size: 14px;
+  color: var(--ermis-text-primary);
+  line-height: 1.4;
+}
+
+.ermis-search-panel__input::placeholder {
+  color: var(--ermis-text-tertiary, #999);
+}
+
+.ermis-search-panel__input-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: var(--ermis-text-tertiary, #999);
+  color: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  transition: background 0.15s;
+}
+
+.ermis-search-panel__input-clear:hover {
+  background: var(--ermis-text-secondary);
+}
+
+/* Results container */
+.ermis-search-panel__results {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Idle state (no query) */
+.ermis-search-panel__idle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 16px;
+  color: var(--ermis-text-tertiary, #999);
+  text-align: center;
+  font-size: 14px;
+}
+
+/* Loading state */
+.ermis-search-panel__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 16px;
+  color: var(--ermis-text-secondary);
+  font-size: 14px;
+}
+
+/* Spinner */
+.ermis-search-panel__spinner {
+  width: 24px;
+  height: 24px;
+  border: 2.5px solid var(--ermis-border, rgba(0, 0, 0, 0.08));
+  border-top-color: var(--ermis-color-primary, #005fff);
+  border-radius: 50%;
+  animation: ermis-spin 0.7s linear infinite;
+}
+
+.ermis-search-panel__spinner--small {
+  width: 18px;
+  height: 18px;
+  border-width: 2px;
+}
+
+@keyframes ermis-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Empty state */
+.ermis-search-panel__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 16px;
+  color: var(--ermis-text-tertiary, #999);
+  font-size: 14px;
+}
+
+/* Result item */
+.ermis-search-panel__result-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+  border-bottom: 1px solid var(--ermis-border, rgba(0, 0, 0, 0.04));
+}
+
+.ermis-search-panel__result-item:hover {
+  background: var(--ermis-bg-hover, rgba(0, 0, 0, 0.04));
+}
+
+.ermis-search-panel__result-item:active {
+  background: var(--ermis-bg-active, rgba(0, 0, 0, 0.07));
+}
+
+.ermis-search-panel__result-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ermis-search-panel__result-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ermis-search-panel__result-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ermis-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ermis-search-panel__result-time {
+  font-size: 11px;
+  color: var(--ermis-text-tertiary, #999);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ermis-search-panel__result-text {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ermis-text-secondary);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+/* Highlight matching text */
+.ermis-search-panel__highlight {
+  background: rgba(255, 210, 0, 0.35);
+  color: var(--ermis-text-primary);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+/* Loading more indicator */
+.ermis-search-panel__loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+/* End of results indicator */
+.ermis-search-panel__end-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  color: var(--ermis-text-tertiary, #999);
+  font-size: 13px;
+  text-align: center;
+}

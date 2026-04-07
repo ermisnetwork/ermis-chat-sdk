@@ -463,7 +463,7 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
     return {
       ...response?.search_result,
       messages: response?.search_result?.messages.map((message: any) => {
-        const user = getUserInfo(message.user_id, Object.values(this.getClient().state.users));
+        const user = getUserInfo(message.user_id, Object.values(this.getClient().state.users)) || message.user;
         return { ...message, user };
       }),
     };

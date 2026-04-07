@@ -10,8 +10,15 @@ export const LinkListItem: React.FC<{ item: AttachmentItem }> = React.memo(({ it
   const imgSrc = item.image_url;
   const alreadyCached = imgSrc ? isImagePreloaded(imgSrc) : true;
   const [imgLoaded, setImgLoaded] = useState(alreadyCached);
+  const imgRef = React.useRef<HTMLImageElement>(null);
 
   useMemo(() => { if (imgSrc) preloadImage(imgSrc); }, [imgSrc]);
+
+  React.useEffect(() => {
+    if (!imgLoaded && imgRef.current?.complete) {
+      setImgLoaded(true);
+    }
+  }, [imgLoaded, imgSrc]);
 
   return (
     <a
@@ -25,6 +32,7 @@ export const LinkListItem: React.FC<{ item: AttachmentItem }> = React.memo(({ it
           <div style={{ width: '100%', height: '100%', position: 'relative' }}>
             {!imgLoaded && <div className="ermis-channel-info__media-shimmer" style={{ borderRadius: '8px' }} />}
             <img
+              ref={imgRef}
               src={imgSrc}
               alt=""
               className="ermis-channel-info__link-preview-img"

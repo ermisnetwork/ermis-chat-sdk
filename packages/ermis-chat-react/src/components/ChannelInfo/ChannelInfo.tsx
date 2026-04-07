@@ -5,12 +5,12 @@ import { Avatar } from '../Avatar';
 import { DefaultChannelInfoTabs } from './ChannelInfoTabs';
 import { AddMemberModal } from './AddMemberModal';
 import { EditChannelModal } from './EditChannelModal';
+import { MessageSearchPanel } from './MessageSearchPanel';
 import type {
   ChannelInfoProps,
   ChannelInfoHeaderProps,
   ChannelInfoCoverProps,
   ChannelInfoActionsProps,
-  EditChannelData,
 } from '../../types';
 
 export const DefaultChannelInfoHeader: React.FC<ChannelInfoHeaderProps> = React.memo(({ title, onClose }) => {
@@ -255,6 +255,7 @@ export const ChannelInfo: React.FC<ChannelInfoProps> = React.memo((props) => {
   const [memberUpdateCount, setMemberUpdateCount] = useState(0);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [showEditChannelModal, setShowEditChannelModal] = useState(false);
+  const [showSearchPanel, setShowSearchPanel] = useState(false);
 
   // Permission: only owner or moderator can edit channel info (banned users cannot)
   const canEditChannel = isTeamChannel && !isBanned && (currentUserRole === 'owner' || currentUserRole === 'moder');
@@ -334,7 +335,7 @@ export const ChannelInfo: React.FC<ChannelInfoProps> = React.memo((props) => {
         <>
           <ActionsComponent
             onMuteToggle={onMuteToggle}
-            onSearchClick={onSearchClick}
+            onSearchClick={() => setShowSearchPanel(true)}
             onLeaveChannel={handleLeaveChannel}
             onDeleteChannel={handleDeleteChannel}
             isTeamChannel={isTeamChannel}
@@ -407,6 +408,16 @@ export const ChannelInfo: React.FC<ChannelInfoProps> = React.memo((props) => {
             );
           })()}
         </>
+      )}
+
+      {/* Search Panel — slides over entire ChannelInfo body */}
+      {channel && (
+        <MessageSearchPanel
+          isOpen={showSearchPanel}
+          onClose={() => setShowSearchPanel(false)}
+          channel={channel}
+          AvatarComponent={AvatarComponent}
+        />
       )}
     </div>
   );

@@ -1,0 +1,69 @@
+/* ==========================================================================
+   Panel — Reusable sliding overlay panel
+   ========================================================================== */
+
+.ermis-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  background: var(--ermis-bg-primary, #fff);
+  transform: translateX(100%);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+  overflow: hidden;
+}
+
+.ermis-panel--open {
+  transform: translateX(0);
+}
+
+/* Header */
+.ermis-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--ermis-border, rgba(0, 0, 0, 0.08));
+  flex-shrink: 0;
+}
+
+.ermis-panel__back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  color: var(--ermis-text-secondary);
+  cursor: pointer;
+  border-radius: 8px;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.ermis-panel__back:hover {
+  background: var(--ermis-bg-hover);
+  color: var(--ermis-text-primary);
+}
+
+.ermis-panel__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ermis-text-primary);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Body */
+.ermis-panel__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
