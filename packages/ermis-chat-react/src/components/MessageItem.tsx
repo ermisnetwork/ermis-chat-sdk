@@ -4,6 +4,7 @@ import { QuotedMessagePreview } from './QuotedMessagePreview';
 import { MessageActionsBox } from './MessageActionsBox';
 import { MessageReactions } from './MessageReactions';
 import { MessageQuickReactions } from './MessageQuickReactions';
+import { useChannelCapabilities } from '../hooks/useChannelCapabilities';
 import { useChatClient } from '../hooks/useChatClient';
 import { formatTime } from '../utils';
 
@@ -71,6 +72,9 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(({
   MessageReactionsComponent = MessageReactions,
 }) => {
   const { activeChannel, client } = useChatClient();
+  const { hasCapability } = useChannelCapabilities();
+  
+  const canReact = hasCapability('send-reaction');
 
   const userName = message.user?.name || message.user_id;
   const userAvatar = message.user?.avatar;
@@ -82,7 +86,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(({
   const hasAttachments = message.attachments && message.attachments.length > 0;
 
   const handleReactionToggle = React.useCallback(async (type: string) => {
-    if (!activeChannel) return;
+    if (!activeChannel || !canReact) return;
     const currentUserId = client?.userID;
     const isOwn =
       (message as any).own_reactions?.some((r: any) => r.type === type) ||
@@ -143,7 +147,9 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(({
           />
         )}
         <div className="ermis-message-list__bubble-wrapper">
-          <MessageQuickReactions message={message} isOwnMessage={isOwnMessage} />
+          <div style={!canReact ? { opacity: 0.5, pointerEvents: 'none' } : {}}>
+            <MessageQuickReactions message={message} isOwnMessage={isOwnMessage} />
+          </div>
           <MessageBubble message={message} isOwnMessage={isOwnMessage}>
             {isForwarded && (
               <span className="ermis-message-list__forwarded-indicator">Forwarded</span>
@@ -173,12 +179,14 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(({
 
           {/* Message Reactions */}
           {MessageReactionsComponent && (
-            <MessageReactionsComponent
-              reactionCounts={(message as any).reaction_counts}
-              ownReactions={(message as any).own_reactions}
-              latestReactions={(message as any).latest_reactions}
-              onClickReaction={handleReactionToggle}
-            />
+            <div style={!canReact ? { opacity: 0.8, pointerEvents: 'none' } : {}}>
+              <MessageReactionsComponent
+                reactionCounts={(message as any).reaction_counts}
+                ownReactions={(message as any).own_reactions}
+                latestReactions={(message as any).latest_reactions}
+                onClickReaction={handleReactionToggle}
+              />
+            </div>
           )}
         </div>
       </div>

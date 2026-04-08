@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useChatClient } from './useChatClient';
+import { useChannelCapabilities } from './useChannelCapabilities';
 import type { FormatMessageResponse } from '@ermis-network/ermis-chat-sdk';
 
 export type MessageActionList = {
@@ -12,10 +13,17 @@ export type MessageActionList = {
   canPin: boolean;
   canCopy: boolean;
   isPinned: boolean;
+  hasCapEdit: boolean;
+  hasCapDelete: boolean;
+  hasCapDeleteForMe: boolean;
+  hasCapPin: boolean;
+  hasCapReply: boolean;
+  hasCapQuote: boolean;
 };
 
 export const useMessageActions = (message: FormatMessageResponse, isOwnMessage: boolean): MessageActionList => {
   const { activeChannel, client } = useChatClient();
+  const { isTeamChannel: isTeam, isOwner, hasCapability } = useChannelCapabilities();
 
   // Only depend on the specific message fields we actually read
   const messageType = message.type;
@@ -33,40 +41,47 @@ export const useMessageActions = (message: FormatMessageResponse, isOwnMessage: 
         canPin: false,
         canCopy: false,
         isPinned: false,
+        hasCapEdit: false,
+        hasCapDelete: false,
+        hasCapDeleteForMe: false,
+        hasCapPin: false,
+        hasCapReply: false,
+        hasCapQuote: false,
       };
     }
-
-    const currentUserId = client.userID || '';
-    const isTeam = activeChannel.type === 'team';
-    const role = (activeChannel.state as any)?.members?.[currentUserId]?.channel_role;
-    const isOwnerOrModerator =
-      role === 'owner' || role === 'moder' || activeChannel.data?.created_by_id === currentUserId;
-
-    // Member capabilities exist on team channels
-    const capabilities: string[] = isTeam ? (activeChannel.data as any)?.member_capabilities || [] : [];
-    const hasCap = (cap: string) => !isTeam || capabilities.includes(cap) || isOwnerOrModerator;
 
     const isSystem = messageType === 'system';
     const isSignal = messageType === 'signal';
     const isPinned = isPinnedFlag;
 
-    const canEdit = !isSystem && !isSignal && isOwnMessage && hasCap('update-own-message');
+    const canEdit = !isSystem && !isSignal && isOwnMessage;
     
     // Delete for everyone:
-    // + Team channel: only the owner can perform this action
+    // + Team channel: only the owner can perform this action natively.
     // + Messaging channel: only own messages can be deleted
-    const isOwner = role === 'owner' || activeChannel.data?.created_by_id === currentUserId;
     const canDeleteForEveryoneTeam = isTeam && isOwner;
     const canDeleteForEveryoneMessaging = !isTeam && isOwnMessage;
     
     const canDelete = !isSystem && (canDeleteForEveryoneTeam || canDeleteForEveryoneMessaging);
     const canDeleteForMe = !isSystem;
-    const canReply = !isSystem && !isSignal && hasCap('send-reply');
-    const canQuote = !isSystem && !isSignal && hasCap('quote-message');
-    const canForward = !isSystem && !isSignal && hasCap('quote-message');
-    const canPin = !isSystem && !isSignal && hasCap('pin-message');
+    const canReply = !isSystem && !isSignal;
+    const canQuote = !isSystem && !isSignal;
+    const canForward = !isSystem && !isSignal;
+    const canPin = !isSystem && !isSignal;
     const canCopy = !isSystem && !isSignal && Boolean(message.text?.trim());
 
-    return { canEdit, canDelete, canDeleteForMe, canReply, canQuote, canForward, canPin, canCopy, isPinned };
-  }, [activeChannel, client.userID, messageType, message.text, isPinnedFlag, isOwnMessage]);
+    const hasCapEdit = hasCapability('update-own-message');
+    const hasCapDelete = !isTeam || isOwner || (isOwnMessage && hasCapability('delete-own-message'));
+    // Apply the delete-own-message capability to the "delete for me" action for own messages
+    const hasCapDeleteForMe = !isTeam || isOwner || !isOwnMessage || hasCapability('delete-own-message');
+    
+    const hasCapReply = hasCapability('send-reply');
+    const hasCapQuote = hasCapability('quote-message');
+    const hasCapPin = hasCapability('pin-message');
+
+    return { 
+      canEdit, canDelete, canDeleteForMe, canReply, canQuote, canForward, canPin, canCopy, isPinned,
+      hasCapEdit, hasCapDelete, hasCapDeleteForMe, hasCapPin, hasCapReply, hasCapQuote 
+    };
+  }, [activeChannel, isTeam, isOwner, hasCapability, messageType, message.text, isPinnedFlag, isOwnMessage]); // Use capabilities from hook
 };

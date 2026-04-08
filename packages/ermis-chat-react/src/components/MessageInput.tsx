@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useChatClient } from '../hooks/useChatClient';
 import { useBannedState } from '../hooks/useBannedState';
 import { useMentions } from '../hooks/useMentions';
@@ -10,8 +10,9 @@ import { MentionSuggestions } from './MentionSuggestions';
 import { FilesPreview } from './FilesPreview';
 import { ReplyPreview } from './ReplyPreview';
 import { EditPreview } from './EditPreview';
-import { buildUserMap, replaceMentionsForPreview, moveCaretToEnd, isUserManagedAttachment } from '../utils';
+import { buildUserMap, replaceMentionsForPreview, moveCaretToEnd } from '../utils';
 import { getMentionHtml } from '../hooks/useMentions';
+import { useChannelCapabilities } from '../hooks/useChannelCapabilities';
 import type { MentionMember, MessageInputProps, FilePreviewItem } from '../types';
 
 export type { MessageInputProps, SendButtonProps, AttachButtonProps, EmojiPickerProps, EmojiButtonProps } from '../types';
@@ -38,7 +39,135 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
   const editableRef = React.useRef<HTMLDivElement>(null);
   const [hasContent, setHasContent] = useState(false);
 
-  const isTeamChannel = activeChannel?.type === 'team';
+  const { role, isTeamChannel, hasCapability } = useChannelCapabilities();
+
+  // Slow Mode Logic
+  const [memberMessageCooldown, setMemberMessageCooldown] = useState(Number(activeChannel?.data?.member_message_cooldown) || 0);
+
+  useEffect(() => {
+    if (!activeChannel) return;
+    setMemberMessageCooldown(Number(activeChannel.data?.member_message_cooldown) || 0);
+    const handleUpdate = (event: any) => {
+      const channelData = event?.channel || activeChannel.data;
+      setMemberMessageCooldown(Number(channelData?.member_message_cooldown) || 0);
+    };
+    activeChannel.on('channel.updated', handleUpdate);
+    return () => {
+      activeChannel.off('channel.updated', handleUpdate);
+    };
+  }, [activeChannel]);
+
+  const isSlowModeApplied = isTeamChannel && role === 'member' && memberMessageCooldown > 0;
+
+  const [cooldownEnd, setCooldownEnd] = useState<number | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+  const lastMsgSentAtRef = useRef<number>(0);
+
+  // Initialize cooldown state periodically or on change
+  useEffect(() => {
+    if (!isSlowModeApplied) {
+      setCooldownEnd(null);
+      setCooldown(0);
+      return;
+    }
+
+    let lastMsgSentAt = lastMsgSentAtRef.current || 0;
+    const messages = activeChannel?.state?.messages || [];
+
+    // Iterate from newest to oldest to find actual highest timestamp
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].user?.id === client.userID) {
+        const msgTime = new Date(messages[i].created_at).getTime();
+        if (msgTime && !isNaN(msgTime) && msgTime > lastMsgSentAt) {
+          lastMsgSentAt = msgTime;
+        }
+        break;
+      }
+    }
+
+    if (lastMsgSentAt) {
+      const cdEnd = lastMsgSentAt + memberMessageCooldown;
+      if (cdEnd > Date.now()) {
+        setCooldownEnd(cdEnd);
+      } else {
+        setCooldownEnd(null);
+        setCooldown(0);
+      }
+    } else {
+      setCooldownEnd(null);
+      setCooldown(0);
+    }
+  }, [isSlowModeApplied, activeChannel, memberMessageCooldown, client.userID]);
+
+  // Tick the countdown visualization
+  useEffect(() => {
+    if (!cooldownEnd || cooldownEnd <= Date.now()) {
+      setCooldown(0);
+      return;
+    }
+    const updateCd = () => {
+      const remaining = cooldownEnd - Date.now();
+      if (remaining <= 0) {
+        setCooldown(0);
+      } else {
+        setCooldown(Math.ceil(remaining / 1000));
+      }
+    };
+    updateCd();
+    const timer = setInterval(updateCd, 1000);
+    return () => clearInterval(timer);
+  }, [cooldownEnd]);
+
+  const isSlowModeBlocked = isSlowModeApplied && cooldown > 0 && !editingMessage;
+
+  const canSendMessage = hasCapability('send-message');
+  const canSendLinks = hasCapability('send-links');
+
+  const [keywordError, setKeywordError] = useState<string | null>(null);
+
+  // Auto-clear link restriction banner if admin suddenly restores the capability
+  useEffect(() => {
+    if (keywordError?.includes('links') && canSendLinks) {
+      setKeywordError(null);
+    }
+  }, [canSendLinks, keywordError]);
+
+  const localOnBeforeSend = useCallback(async (text: string, attachments: FilePreviewItem[]) => {
+    // Permission validation: Send Links
+    if (!canSendLinks && text) {
+      // Basic URL matching config
+      const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9-]+\.[a-zA-Z]{2,}(\/[^\s]*)?)/i;
+      if (urlRegex.test(text)) {
+        setKeywordError(`Message blocked: Sending links is disabled for members.`);
+        return false;
+      }
+    }
+
+    // Custom Keyword validation
+    const words = (activeChannel?.data?.filter_words as string[]) || [];
+    if (words.length > 0 && text) {
+      const lowerText = text.toLowerCase();
+      const match = words.find(w => lowerText.includes(w.toLowerCase()));
+      if (match) {
+        setKeywordError(`Message blocked: Contains restricted word "${match}".`);
+        // We could also visually shake the input box here
+        return false;
+      }
+    }
+    setKeywordError(null);
+    if (onBeforeSend) {
+      return await onBeforeSend(text, attachments);
+    }
+    return true;
+  }, [activeChannel, onBeforeSend, canSendLinks]);
+
+  const handleMessageSent = useCallback((text: string) => {
+    if (isSlowModeApplied) {
+      lastMsgSentAtRef.current = Date.now();
+      setCooldownEnd(Date.now() + memberMessageCooldown);
+    }
+    onSend?.(text);
+  }, [isSlowModeApplied, memberMessageCooldown, onSend]);
 
   // Auto-focus when channel changes or when reply/edit is selected
   useEffect(() => {
@@ -148,8 +277,8 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
     buildPayload,
     reset,
     syncMessages,
-    onSend,
-    onBeforeSend,
+    onSend: handleMessageSent,
+    onBeforeSend: localOnBeforeSend,
     quotedMessage,
     clearQuotedMessage: () => setQuotedMessage(null),
     editingMessage,
@@ -178,6 +307,7 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
     const el = editableRef.current;
     const content = el?.textContent?.trim() ?? '';
     setHasContent(content.length > 0 || files.length > 0);
+    setKeywordError(null); // clear keyword error if user modifies input
     if (isTeamChannel && !disableMentions) {
       mentionHandleInput();
     }
@@ -206,7 +336,9 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
       }
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        handleSend();
+        if (!isSlowModeBlocked) {
+          handleSend();
+        }
       }
     },
     [isTeamChannel, disableMentions, mentionHandleKeyDown, handleSend, editingMessage, quotedMessage, setEditingMessage, setQuotedMessage, reset],
@@ -261,10 +393,34 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
       {/* File previews */}
       {!disableAttachments && <FilesPreviewComponent files={files} onRemove={handleRemoveFile} />}
 
+      {/* Keyword Error Banner */}
+      {keywordError && (
+        <div style={{ padding: '8px 16px', background: 'var(--ermis-bg-danger-light, #fee2e2)', borderRadius: '8px 8px 0 0', fontSize: '13px', color: 'var(--ermis-text-danger, #ef4444)', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--ermis-border-danger, #fca5a5)' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          {keywordError}
+        </div>
+      )}
+
+      {/* Permission Disabled Banner */}
+      {!canSendMessage && !editingMessage && (
+        <div style={{ padding: '8px 16px', background: 'var(--ermis-bg-secondary)', borderRadius: '8px 8px 0 0', fontSize: '13px', color: 'var(--ermis-text-secondary)', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--ermis-border-color)' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          Sending messages is disabled in this channel.
+        </div>
+      )}
+
+      {/* Slow Mode Cooldown Banner */}
+      {canSendMessage && isSlowModeBlocked && !keywordError && (
+        <div style={{ padding: '8px 16px', background: 'var(--ermis-bg-secondary)', borderRadius: '8px 8px 0 0', fontSize: '13px', color: 'var(--ermis-text-secondary)', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--ermis-border-color)' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          Slow mode is active. You can send another message in <strong style={{ color: 'var(--ermis-text-primary)' }}>{cooldown}s</strong>.
+        </div>
+      )}
+
       {/* Text input + send row */}
-      <div className="ermis-message-input__row">
+      <div className="ermis-message-input__row" style={(!canSendMessage || isSlowModeBlocked || keywordError) ? { borderTopLeftRadius: 0, borderTopRightRadius: 0 } : {}}>
         <div className="ermis-message-input__editable-wrapper">
-          {isTeamChannel && !disableMentions && showSuggestions && (
+          {canSendMessage && isTeamChannel && !disableMentions && showSuggestions && (
             <MentionSuggestionsComponent
               members={filteredMembers}
               highlightIndex={highlightIndex}
@@ -274,7 +430,7 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
 
           {/* Attach button */}
           {!disableAttachments && (
-            <AttachButton disabled={sending || !!editingMessage} onClick={handleAttachClick} />
+            <AttachButton disabled={sending || !!editingMessage || isSlowModeBlocked || !canSendMessage} onClick={handleAttachClick} />
           )}
 
           {/* Hidden file input */}
@@ -288,14 +444,14 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
                 handleFilesSelected(e.target.files);
                 e.target.value = '';
               }}
-              disabled={!!editingMessage}
+              disabled={!!editingMessage || isSlowModeBlocked || !canSendMessage}
             />
           )}
 
           <div
             ref={editableRef}
             className="ermis-message-input__editable"
-            contentEditable={!sending}
+            contentEditable={!sending && !isSlowModeBlocked && canSendMessage}
             role="textbox"
             aria-placeholder={placeholder}
             data-placeholder={placeholder}
@@ -307,10 +463,10 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
 
           {/* Emoji button — shown only when EmojiPickerComponent is provided */}
           {EmojiPickerComponent && (
-            <EmojiButtonComponent active={emojiPickerOpen} onClick={toggleEmojiPicker} />
+            <EmojiButtonComponent active={emojiPickerOpen} onClick={isSlowModeBlocked ? () => { } : toggleEmojiPicker} />
           )}
         </div>
-        <SendButton disabled={!hasContent || sending || isStillUploading} onClick={handleSend} />
+        <SendButton disabled={!hasContent || sending || isStillUploading || isSlowModeBlocked} onClick={handleSend} />
       </div>
 
       {/* Emoji picker — positioned above input */}

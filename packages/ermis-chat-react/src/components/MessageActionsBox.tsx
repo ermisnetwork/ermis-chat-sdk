@@ -85,14 +85,24 @@ export const MessageActionsBox: React.FC<MessageActionsBoxProps> = ({
     <>
       <div className={`ermis-message-list__actions ${isOpen ? 'ermis-message-list__actions--active' : ''}`}>
         {actions.canReply && (
-          <button className="ermis-message-list__actions-trigger" onClick={() => onReply?.(message)} title="Reply">
+          <button 
+            className="ermis-message-list__actions-trigger" 
+            onClick={() => onReply?.(message)} 
+            title="Reply"
+            disabled={!actions.hasCapReply}
+          >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
               <path d="M11.192 15.757c0-.88-.23-1.618-.69-2.217-.326-.412-.768-.683-1.327-.812-.55-.128-1.07-.137-1.54-.028-.16-.95.1-1.956.76-3.022.66-1.065 1.515-1.867 2.558-2.403L9.373 5c-1.368.647-2.525 1.612-3.468 2.895-.943 1.28-1.452 2.673-1.526 4.174-.015.228-.022.463-.022.705 0 1.594.417 2.9 1.25 3.918.835 1.019 1.955 1.53 3.36 1.53 1.048 0 1.903-.311 2.565-.933.66-.622.99-1.465.99-2.53zm10.455 0c0-.88-.23-1.618-.69-2.217-.326-.412-.768-.683-1.327-.812-.55-.128-1.07-.137-1.54-.028-.16-.95.1-1.956.76-3.022.66-1.065 1.515-1.867 2.558-2.403L19.828 5c-1.368.647-2.525 1.612-3.468 2.895-.943 1.28-1.452 2.673-1.526 4.174-.015.228-.022.463-.022.705 0 1.594.417 2.9 1.25 3.918.835 1.019 1.954 1.53 3.36 1.53 1.048 0 1.903-.311 2.565-.933.66-.622.99-1.465.99-2.53z" />
             </svg>
           </button>
         )}
         {actions.canForward && (
-          <button className="ermis-message-list__actions-trigger" onClick={() => onForwardHandler(message)} title="Forward">
+          <button 
+            className="ermis-message-list__actions-trigger" 
+            onClick={() => onForwardHandler(message)} 
+            title="Forward"
+            disabled={!actions.hasCapQuote}
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 14 20 9 15 4" />
               <path d="M4 20v-7a4 4 0 0 1 4-4h12" />
@@ -120,12 +130,20 @@ export const MessageActionsBox: React.FC<MessageActionsBoxProps> = ({
       >
         <div className="ermis-dropdown__menu">
           {actions.canPin && (
-            <button className="ermis-dropdown__item" onClick={() => { onPinToggleHandler(message, actions.isPinned); onClose(); }}>
+            <button 
+              className="ermis-dropdown__item" 
+              onClick={() => { onPinToggleHandler(message, actions.isPinned); onClose(); }}
+              disabled={!actions.hasCapPin}
+            >
               {actions.isPinned ? 'Unpin' : 'Pin'}
             </button>
           )}
           {actions.canEdit && (
-            <button className="ermis-dropdown__item" onClick={() => { onEditHandler(message); onClose(); }}>
+            <button 
+              className="ermis-dropdown__item" 
+              onClick={() => { onEditHandler(message); onClose(); }}
+              disabled={!actions.hasCapEdit}
+            >
               Edit
             </button>
           )}
@@ -138,12 +156,20 @@ export const MessageActionsBox: React.FC<MessageActionsBoxProps> = ({
           {(actions.canDelete || actions.canDeleteForMe) && <div className="ermis-dropdown__divider" />}
 
           {actions.canDeleteForMe && (
-            <button className="ermis-dropdown__item ermis-dropdown__item--danger" onClick={() => { onDeleteForMeHandler(message); onClose(); }}>
+            <button 
+              className="ermis-dropdown__item ermis-dropdown__item--danger" 
+              onClick={() => { onDeleteForMeHandler(message); onClose(); }}
+              disabled={!actions.hasCapDeleteForMe}
+            >
               Delete for me
             </button>
           )}
           {actions.canDelete && (
-            <button className="ermis-dropdown__item ermis-dropdown__item--danger" onClick={() => { onDeleteForEveryoneHandler(message); onClose(); }}>
+            <button 
+              className="ermis-dropdown__item ermis-dropdown__item--danger" 
+              onClick={() => { onDeleteForEveryoneHandler(message); onClose(); }}
+              disabled={!actions.hasCapDelete}
+            >
               Delete for everyone
             </button>
           )}

@@ -71,20 +71,10 @@ export const DefaultChannelInfoCover: React.FC<ChannelInfoCoverProps> = React.me
 DefaultChannelInfoCover.displayName = 'DefaultChannelInfoCover';
 
 export const DefaultChannelInfoActions: React.FC<ChannelInfoActionsProps> = React.memo(({
-  onMuteToggle, onSearchClick, onSettingsClick, onLeaveChannel, onDeleteChannel, isTeamChannel, currentUserRole
+  onSearchClick, onSettingsClick, onLeaveChannel, onDeleteChannel, isTeamChannel, currentUserRole
 }) => {
   return (
     <div className="ermis-channel-info__actions">
-      <button className="ermis-channel-info__action-btn" onClick={onMuteToggle}>
-        <div className="ermis-channel-info__action-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
-            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-          </svg>
-        </div>
-        <span>Mute</span>
-      </button>
       <button className="ermis-channel-info__action-btn" onClick={onSearchClick}>
         <div className="ermis-channel-info__action-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -153,7 +143,6 @@ export const ChannelInfo: React.FC<ChannelInfoProps> = React.memo((props) => {
     FileItemComponent,
     EmptyStateComponent,
     LoadingComponent,
-    onMuteToggle,
     onSearchClick,
     onLeaveChannel: onLeaveChannelProp,
     onDeleteChannel: onDeleteChannelProp,
@@ -347,7 +336,6 @@ export const ChannelInfo: React.FC<ChannelInfoProps> = React.memo((props) => {
       ) : (
         <>
           <ActionsComponent
-            onMuteToggle={onMuteToggle}
             onSearchClick={() => setShowSearchPanel(true)}
             onSettingsClick={() => setShowSettingsPanel(true)}
             onLeaveChannel={handleLeaveChannel}

@@ -49,7 +49,12 @@
   transition: background-color var(--ermis-transition), color var(--ermis-transition);
 }
 
-.ermis-message-list__actions-trigger:hover {
+.ermis-message-list__actions-trigger:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ermis-message-list__actions-trigger:hover:not(:disabled) {
   background-color: var(--ermis-bg-hover);
   color: var(--ermis-text-primary);
 }

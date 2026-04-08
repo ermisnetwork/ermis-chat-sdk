@@ -622,7 +622,6 @@ export type ChannelInfoCoverProps = {
 };
 
 export type ChannelInfoActionsProps = {
-  onMuteToggle?: () => void;
   onSearchClick?: () => void;
   onSettingsClick?: () => void;
   onLeaveChannel?: () => void;
@@ -821,7 +820,6 @@ export type ChannelInfoProps = {
   editChannelMaxImageSizeError?: string;
 
   /** Action callbacks */
-  onMuteToggle?: () => void;
   onSearchClick?: () => void;
   onLeaveChannel?: () => void;
   onDeleteChannel?: () => void;
