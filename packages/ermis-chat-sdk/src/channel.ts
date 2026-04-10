@@ -541,6 +541,7 @@ export class Channel<ErmisChatGenerics extends ExtendableGenerics = DefaultGener
   }
 
   async stopTyping(parent_id?: string, options?: { user_id: string }) {
+    if (!this.isTyping) return;
     this.lastTypingEvent = null;
     this.isTyping = false;
     await this.sendEvent({
