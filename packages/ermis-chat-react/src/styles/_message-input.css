@@ -330,3 +330,27 @@
 .ermis-message-input__banned-banner svg {
   flex-shrink: 0;
 }
+
+/* ----------------------------------------------------------
+   Blocked State (messaging channels — user-initiated block)
+   ---------------------------------------------------------- */
+.ermis-message-input--blocked {
+  pointer-events: none;
+}
+
+.ermis-message-input__blocked-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ermis-spacing-sm);
+  padding: var(--ermis-spacing-md) var(--ermis-spacing-lg);
+  color: var(--ermis-text-secondary, #9ca3af);
+  font-size: var(--ermis-font-size-sm);
+  font-weight: 500;
+  user-select: none;
+  opacity: 0.8;
+}
+
+.ermis-message-input__blocked-banner svg {
+  flex-shrink: 0;
+}

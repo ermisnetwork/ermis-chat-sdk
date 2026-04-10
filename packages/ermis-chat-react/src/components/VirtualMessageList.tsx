@@ -3,6 +3,7 @@ import { VList, type VListHandle } from 'virtua';
 import type { MessageLabel } from '@ermis-network/ermis-chat-sdk';
 import { useChatClient } from '../hooks/useChatClient';
 import { useBannedState } from '../hooks/useBannedState';
+import { useBlockedState } from '../hooks/useBlockedState';
 import { useLoadMessages } from '../hooks/useLoadMessages';
 import { useScrollToMessage } from '../hooks/useScrollToMessage';
 import { useChannelMessages } from '../hooks/useChannelMessages';
@@ -103,9 +104,12 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
   jumpToLatestLabel = '↓ Jump to latest',
   bannedOverlayTitle = 'You have been blocked from this channel',
   bannedOverlaySubtitle = 'You can no longer read or send messages here',
+  blockedOverlayTitle = 'You have blocked this user',
+  blockedOverlaySubtitle = 'Unblock to continue the conversation',
 }) => {
   const { client, messages, readState, activeChannel, jumpToMessageId, setJumpToMessageId } = useChatClient();
   const { isBanned } = useBannedState(activeChannel, client.userID);
+  const { isBlocked } = useBlockedState(activeChannel, client.userID);
   const vlistRef = useRef<VListHandle>(null);
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
@@ -325,9 +329,11 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
     readReceiptsMaxAvatars,
   ]);
 
+  const blockedClass = isBlocked ? ' ermis-message-list--blocked' : '';
+
   return (
-    <div ref={containerRef} className={`ermis-message-list${isBanned ? ' ermis-message-list--banned' : ''}${className ? ` ${className}` : ''}`}>
-      {!isBanned && showPinnedMessages && <PinnedMessagesComponent onClickMessage={scrollToMessage} AvatarComponent={AvatarComponent} />}
+    <div ref={containerRef} className={`ermis-message-list${isBanned ? ' ermis-message-list--banned' : ''}${blockedClass}${className ? ` ${className}` : ''}`}>
+      {!isBanned && !isBlocked && showPinnedMessages && <PinnedMessagesComponent onClickMessage={scrollToMessage} AvatarComponent={AvatarComponent} />}
 
       {messages.length === 0 && !isBanned && (
         EmptyStateIndicator === DefaultEmpty
@@ -335,8 +341,8 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
           : <EmptyStateIndicator />
       )}
 
-      {/* Banned overlay — replaces message content entirely */}
-      {isBanned ? (
+      {/* Banned/Blocked overlay — replaces message content entirely */}
+      {(isBanned || isBlocked) ? (
         <div className="ermis-message-list__banned-overlay">
           <div className="ermis-message-list__banned-overlay-icon">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -344,8 +350,16 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
               <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
             </svg>
           </div>
-          <span className="ermis-message-list__banned-overlay-title">{bannedOverlayTitle}</span>
-          <span className="ermis-message-list__banned-overlay-subtitle">{bannedOverlaySubtitle}</span>
+          <span className="ermis-message-list__banned-overlay-title">{isBlocked ? blockedOverlayTitle : bannedOverlayTitle}</span>
+          <span className="ermis-message-list__banned-overlay-subtitle">{isBlocked ? blockedOverlaySubtitle : bannedOverlaySubtitle}</span>
+          {isBlocked && activeChannel && (
+            <button
+              className="ermis-message-list__unblock-btn"
+              onClick={() => { activeChannel.unblockUser().catch((e: any) => console.error('Error unblocking user', e)); }}
+            >
+              Unblock
+            </button>
+          )}
         </div>
       ) : (
         <VList
@@ -360,10 +374,10 @@ export const VirtualMessageList: React.FC<MessageListProps> = React.memo(({
       )}
 
       {/* Typing indicator */}
-      {!isBanned && showTypingIndicator && <TypingIndicatorComponent />}
+      {!isBanned && !isBlocked && showTypingIndicator && <TypingIndicatorComponent />}
 
       {/* Jump to latest button */}
-      {!isBanned && hasNewer && (
+      {!isBanned && !isBlocked && hasNewer && (
         JumpToLatestButton === DefaultJumpToLatest
           ? <DefaultJumpToLatest onClick={jumpToLatest} label={jumpToLatestLabel} />
           : <JumpToLatestButton onClick={jumpToLatest} />

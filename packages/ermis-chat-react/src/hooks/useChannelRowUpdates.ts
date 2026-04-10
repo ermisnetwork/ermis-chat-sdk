@@ -8,12 +8,19 @@ import type { Channel } from '@ermis-network/ermis-chat-sdk';
 export function useChannelRowUpdates(channel: Channel, currentUserId?: string) {
   // Track banned state for the current user in this channel
   const [isBannedInChannel, setIsBannedInChannel] = useState(() => Boolean(channel.state?.membership?.banned));
+  const [isBlockedInChannel, setIsBlockedInChannel] = useState(() => {
+    if (channel.type !== 'messaging') return false;
+    return Boolean(channel.state?.membership?.blocked);
+  });
 
   // Force re-render when messages, members, or read state changes
   const [updateCount, setUpdateCount] = useState(0);
 
   useEffect(() => {
     setIsBannedInChannel(Boolean(channel.state?.membership?.banned));
+    setIsBlockedInChannel(
+      channel.type === 'messaging' ? Boolean(channel.state?.membership?.blocked) : false
+    );
 
     const handleBanned = (event: any) => {
       if (event.member?.user_id === currentUserId) {
@@ -38,6 +45,20 @@ export function useChannelRowUpdates(channel: Channel, currentUserId?: string) {
     const sub8 = channel.on('member.added', handleUpdate);
     const sub9 = channel.on('member.removed', handleUpdate);
 
+    // Blocked state (messaging channels only)
+    const handleBlocked = (event: any) => {
+      if (event.member?.user_id === currentUserId) {
+        setIsBlockedInChannel(true);
+      }
+    };
+    const handleUnblocked = (event: any) => {
+      if (event.member?.user_id === currentUserId) {
+        setIsBlockedInChannel(false);
+      }
+    };
+    const sub10 = channel.on('member.blocked', handleBlocked);
+    const sub11 = channel.on('member.unblocked', handleUnblocked);
+
     return () => {
       sub1.unsubscribe();
       sub2.unsubscribe();
@@ -48,8 +69,10 @@ export function useChannelRowUpdates(channel: Channel, currentUserId?: string) {
       sub7.unsubscribe();
       sub8.unsubscribe();
       sub9.unsubscribe();
+      sub10.unsubscribe();
+      sub11.unsubscribe();
     };
   }, [channel, currentUserId]);
 
-  return { isBannedInChannel, updateCount };
+  return { isBannedInChannel, isBlockedInChannel, updateCount };
 }

@@ -91,6 +91,20 @@ export function useChannelMessages({
       setReadState({ ...activeChannel.state.read });
     };
 
+    const handleUnblocked = (event: Event) => {
+      // If the current user's block status was updated (meaning we unblocked someone)
+      if (event.member?.user_id === client.userID) {
+        // Refetch latest messages to fill in any missed during the block period
+        activeChannel.query({ messages: { limit: 30 } })
+          .then(() => {
+            syncMessages();
+            scheduleScrollToBottom(false);
+            activeChannel.markRead().catch(() => {});
+          })
+          .catch((e) => console.error('Failed to sync messages after unblock', e));
+      }
+    };
+
     const sub1 = activeChannel.on('message.new', handleNewMessage);
     const sub2 = activeChannel.on('message.updated', handleMessageChange);
     const sub3 = activeChannel.on('message.deleted', handleMessageChange);
@@ -100,6 +114,7 @@ export function useChannelMessages({
     const sub7 = activeChannel.on('message.deleted_for_me', handleMessageChange);
     const sub8 = activeChannel.on('reaction.new', handleMessageChange);
     const sub9 = activeChannel.on('reaction.deleted', handleMessageChange);
+    const sub10 = activeChannel.on('member.unblocked', handleUnblocked);
 
     return () => {
       sub1.unsubscribe();
@@ -111,6 +126,7 @@ export function useChannelMessages({
       sub7.unsubscribe();
       sub8.unsubscribe();
       sub9.unsubscribe();
+      sub10.unsubscribe();
     };
   }, [activeChannel, scrollToBottom, scheduleScrollToBottom, syncMessages, onChannelSwitch, setReadState]);
 }

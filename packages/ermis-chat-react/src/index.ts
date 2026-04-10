@@ -12,6 +12,7 @@ export type { UseChannelReturn } from './hooks/useChannel';
 export { useChannelListUpdates } from './hooks/useChannelListUpdates';
 export { useChannelRowUpdates } from './hooks/useChannelRowUpdates';
 export { useBannedState } from './hooks/useBannedState';
+export { useBlockedState } from './hooks/useBlockedState';
 
 // Components
 export { Avatar } from './components/Avatar';

@@ -85,6 +85,7 @@ export const ChannelItem: React.FC<ChannelItemProps> = React.memo(({
   lastMessageUser,
   onSelect,
   AvatarComponent,
+  isBlocked,
 }) => {
   // Subscribe to channel.updated so that when name/image/description change,
   // we re-render from within (bypasses React.memo which only blocks parent-driven re-renders)
@@ -106,6 +107,7 @@ export const ChannelItem: React.FC<ChannelItemProps> = React.memo(({
     'ermis-channel-list__item',
     isActive ? 'ermis-channel-list__item--active' : '',
     showUnread ? 'ermis-channel-list__item--unread' : '',
+    isBlocked ? 'ermis-channel-list__item--blocked' : '',
   ].filter(Boolean).join(' ');
 
   return (
@@ -127,6 +129,14 @@ export const ChannelItem: React.FC<ChannelItemProps> = React.memo(({
       {showUnread && unreadCount > 0 && (
         <span className="ermis-channel-list__unread-badge">
           {unreadCount > 99 ? '99+' : unreadCount}
+        </span>
+      )}
+      {isBlocked && (
+        <span className="ermis-channel-list__blocked-icon" title="Blocked">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+          </svg>
         </span>
       )}
     </div>
@@ -167,10 +177,10 @@ const ChannelRow: React.FC<ChannelRowProps> = React.memo(({
   currentUserId,
 }) => {
   // Use the new custom hook to handle all row-level realtime updates
-  const { isBannedInChannel, updateCount } = useChannelRowUpdates(channel, currentUserId);
+  const { isBannedInChannel, isBlockedInChannel, updateCount } = useChannelRowUpdates(channel, currentUserId);
 
   const rawUnreadCount = (channel.state as any)?.unreadCount ?? 0;
-  const unreadCount = isBannedInChannel ? 0 : rawUnreadCount;
+  const unreadCount = (isBannedInChannel || isBlockedInChannel) ? 0 : rawUnreadCount;
   const hasUnread = unreadCount > 0;
 
   // Derive last message preview computation is deferred here, 
@@ -182,9 +192,9 @@ const ChannelRow: React.FC<ChannelRowProps> = React.memo(({
     [channel, channel.state?.latestMessages, updateCount]
   );
 
-  // Hide last message preview when banned
-  const lastMessageText = isBannedInChannel ? '' : rawLastMessageText;
-  const lastMessageUser = isBannedInChannel ? '' : rawLastMessageUser;
+  // Hide last message preview when banned or blocked
+  const lastMessageText = (isBannedInChannel || isBlockedInChannel) ? '' : rawLastMessageText;
+  const lastMessageUser = (isBannedInChannel || isBlockedInChannel) ? '' : rawLastMessageUser;
 
   if (renderChannel) {
     return (
@@ -204,6 +214,7 @@ const ChannelRow: React.FC<ChannelRowProps> = React.memo(({
       lastMessageUser={lastMessageUser}
       onSelect={handleSelect}
       AvatarComponent={AvatarComponent}
+      isBlocked={isBlockedInChannel}
     />
   );
 });
@@ -251,9 +262,10 @@ export const ChannelList: React.FC<ChannelListProps> = React.memo(({
       setActiveChannel(channel);
       onChannelSelect?.(channel);
 
-      // Mark as read when user selects a channel (skip if banned)
+      // Mark as read when user selects a channel (skip if banned or blocked)
       const isBannedInChannel = Boolean(channel.state?.membership?.banned);
-      if (!isBannedInChannel && (channel.state as any)?.unreadCount > 0) {
+      const isBlockedInChannel = channel.type === 'messaging' && Boolean(channel.state?.membership?.blocked);
+      if (!isBannedInChannel && !isBlockedInChannel && (channel.state as any)?.unreadCount > 0) {
         channel.markRead().catch(() => { });
         // Optimistically reset unread to update UI immediately
         (channel.state as any).unreadCount = 0;

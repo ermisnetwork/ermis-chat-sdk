@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useChatClient } from '../hooks/useChatClient';
 import { useBannedState } from '../hooks/useBannedState';
+import { useBlockedState } from '../hooks/useBlockedState';
 import { ForwardMessageModal } from './ForwardMessageModal';
 import type { ChannelProps } from '../types';
 
@@ -28,10 +29,14 @@ export const Channel: React.FC<ChannelProps> = React.memo(({
 }) => {
   const { activeChannel, client, forwardingMessage, setForwardingMessage } = useChatClient();
   const { isBanned } = useBannedState(activeChannel, client.userID);
+  const { isBlocked } = useBlockedState(activeChannel, client.userID);
 
   // Force re-render when channel info is updated via WS
   const [channelUpdateCount, setChannelUpdateCount] = useState(0);
   useEffect(() => {
+
+    console.log('---activeChannel--', activeChannel)
+
     if (!activeChannel) return;
     const sub = activeChannel.on('channel.updated', () => setChannelUpdateCount((c) => c + 1));
     return () => sub.unsubscribe();
@@ -52,9 +57,10 @@ export const Channel: React.FC<ChannelProps> = React.memo(({
   }
 
   const bannedClass = isBanned ? ' ermis-channel--banned' : '';
+  const blockedClass = isBlocked ? ' ermis-channel--blocked' : '';
 
   return (
-    <div className={`ermis-channel${bannedClass}${className ? ` ${className}` : ''}`}>
+    <div className={`ermis-channel${bannedClass}${blockedClass}${className ? ` ${className}` : ''}`}>
       {HeaderComponent && headerData && <HeaderComponent {...headerData} />}
       {children}
       {forwardingMessage && (

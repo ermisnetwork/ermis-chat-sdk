@@ -156,6 +156,12 @@
   opacity: 0.8;
 }
 
+.ermis-channel-info__action-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .ermis-channel-info__action-icon {
   width: 36px;
   height: 36px;

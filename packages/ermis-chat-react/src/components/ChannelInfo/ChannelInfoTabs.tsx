@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useDeferredValue } fr
 import { VList } from 'virtua';
 import { ROLE_WEIGHTS, MESSAGING_TABS, ALL_TABS, PENDING_STYLE, READY_STYLE } from './utils';
 import { useBannedState } from '../../hooks/useBannedState';
+import { useBlockedState } from '../../hooks/useBlockedState';
 import { MediaGridItem, MediaRow } from './MediaGridItem';
 import { LinkListItem } from './LinkListItem';
 import { FileListItem } from './FileListItem';
@@ -31,8 +32,10 @@ export const DefaultChannelInfoTabs: React.FC<ChannelInfoTabsProps> = React.memo
   LoadingComponent,
 }) => {
   const isMessaging = channel?.type === 'messaging';
-  const availableTabs = isMessaging ? MESSAGING_TABS : ALL_TABS;
   const { isBanned } = useBannedState(channel, currentUserId);
+  const { isBlocked } = useBlockedState(channel, currentUserId);
+
+  const availableTabs: MediaTab[] = isMessaging ? MESSAGING_TABS : ALL_TABS;
 
   const [activeTab, setActiveTab] = useState<MediaTab>(availableTabs[0]);
   const contentTab = useDeferredValue(activeTab);
@@ -82,8 +85,8 @@ export const DefaultChannelInfoTabs: React.FC<ChannelInfoTabsProps> = React.memo
   useEffect(() => {
     let active = true;
 
-    // Don't fetch media/files if user is banned
-    if (isBanned) {
+    // Don't fetch media/files if user is banned or blocked
+    if (isBanned || isBlocked) {
       setAllAttachments([]);
       setLoading(false);
       return;
@@ -109,7 +112,7 @@ export const DefaultChannelInfoTabs: React.FC<ChannelInfoTabsProps> = React.memo
     fetchMedia();
 
     return () => { active = false; };
-  }, [channel, isBanned]);
+  }, [channel, isBanned, isBlocked]);
 
   const tabCounts = useMemo<Record<MediaTab, number>>(() => ({
     members: members.length,
@@ -162,7 +165,7 @@ export const DefaultChannelInfoTabs: React.FC<ChannelInfoTabsProps> = React.memo
         sortedMembers.forEach(member => {
           const role = member.channel_role || 'member';
           const isTargetRemovable = role === 'member' || role === 'pending' || (currentUserRole === 'owner' && role === 'moder');
-          
+
           const canRemove = Boolean(
             (currentUserRole === 'owner' || currentUserRole === 'moder') &&
             isTargetRemovable &&

@@ -117,6 +117,8 @@ export type ChannelItemProps = {
   lastMessageUser: string;
   onSelect: (channel: Channel) => void;
   AvatarComponent: React.ComponentType<AvatarProps>;
+  /** Whether the current user has blocked this channel (messaging only) */
+  isBlocked?: boolean;
 };
 
 export type ChannelListProps = {
@@ -216,6 +218,8 @@ export type MessageListProps = {
   jumpToLatestLabel?: string;
   bannedOverlayTitle?: string;
   bannedOverlaySubtitle?: string;
+  blockedOverlayTitle?: string;
+  blockedOverlaySubtitle?: string;
 };
 
 /* ----------------------------------------------------------
@@ -366,6 +370,8 @@ export type MessageInputProps = {
   EditPreviewComponent?: React.ComponentType<{ message: FormatMessageResponse; onDismiss: () => void; editingMessageLabel?: string }>;
   /** I18n Label for banned state */
   bannedLabel?: string;
+  /** I18n Label for blocked state (messaging channels) */
+  blockedLabel?: string;
 };
 
 /* ----------------------------------------------------------
@@ -648,12 +654,17 @@ export type ChannelInfoActionsProps = {
   onSettingsClick?: () => void;
   onLeaveChannel?: () => void;
   onDeleteChannel?: () => void;
+  onBlockUser?: () => void;
+  onUnblockUser?: () => void;
   isTeamChannel?: boolean;
+  isBlocked?: boolean;
   currentUserRole?: string;
   searchLabel?: string;
   settingsLabel?: string;
   deleteLabel?: string;
   leaveLabel?: string;
+  blockLabel?: string;
+  unblockLabel?: string;
 };
 
 export type ChannelInfoMember = {
@@ -861,6 +872,13 @@ export type ChannelInfoProps = {
   onUnbanMember?: (id: string) => void;
   onPromoteMember?: (id: string) => void;
   onDemoteMember?: (id: string) => void;
+
+  /** Block/Unblock callbacks (messaging channels only) */
+  onBlockUser?: () => void;
+  onUnblockUser?: () => void;
+  /** I18n labels for block/unblock actions */
+  actionsBlockLabel?: string;
+  actionsUnblockLabel?: string;
 };
 
 /* ----------------------------------------------------------

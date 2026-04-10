@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useChatClient } from '../../hooks/useChatClient';
 import { useBannedState } from '../../hooks/useBannedState';
+import { useBlockedState } from '../../hooks/useBlockedState';
 import { Avatar } from '../Avatar';
 import { DefaultChannelInfoTabs } from './ChannelInfoTabs';
 import { AddMemberModal } from './AddMemberModal';
@@ -72,12 +73,15 @@ export const DefaultChannelInfoCover: React.FC<ChannelInfoCoverProps> = React.me
 DefaultChannelInfoCover.displayName = 'DefaultChannelInfoCover';
 
 export const DefaultChannelInfoActions: React.FC<ChannelInfoActionsProps> = React.memo(({
-  onSearchClick, onSettingsClick, onLeaveChannel, onDeleteChannel, isTeamChannel, currentUserRole,
-  searchLabel = 'Search', settingsLabel = 'Settings', deleteLabel = 'Delete', leaveLabel = 'Leave'
+  onSearchClick, onSettingsClick, onLeaveChannel, onDeleteChannel,
+  onBlockUser, onUnblockUser,
+  isTeamChannel, isBlocked, currentUserRole,
+  searchLabel = 'Search', settingsLabel = 'Settings', deleteLabel = 'Delete', leaveLabel = 'Leave',
+  blockLabel = 'Block', unblockLabel = 'Unblock'
 }) => {
   return (
     <div className="ermis-channel-info__actions">
-      <button className="ermis-channel-info__action-btn" onClick={onSearchClick}>
+      <button className="ermis-channel-info__action-btn" onClick={onSearchClick} disabled={isBlocked}>
         <div className="ermis-channel-info__action-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"></circle>
@@ -118,6 +122,30 @@ export const DefaultChannelInfoActions: React.FC<ChannelInfoActionsProps> = Reac
               </svg>
             </div>
             <span>{leaveLabel}</span>
+          </button>
+        )
+      )}
+      {/* Block/Unblock — messaging (1-1) channels only */}
+      {!isTeamChannel && (
+        isBlocked ? (
+          <button className="ermis-channel-info__action-btn" onClick={onUnblockUser}>
+            <div className="ermis-channel-info__action-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+              </svg>
+            </div>
+            <span>{unblockLabel}</span>
+          </button>
+        ) : (
+          <button className="ermis-channel-info__action-btn ermis-channel-info__action-btn--danger" onClick={onBlockUser}>
+            <div className="ermis-channel-info__action-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+              </svg>
+            </div>
+            <span>{blockLabel}</span>
           </button>
         )
       )}
@@ -183,11 +211,17 @@ export const ChannelInfo: React.FC<ChannelInfoProps> = React.memo((props) => {
     editChannelImageAccept,
     editChannelMaxImageSize,
     editChannelMaxImageSizeError,
+    // Block/Unblock customization (messaging channels)
+    onBlockUser: onBlockUserProp,
+    onUnblockUser: onUnblockUserProp,
+    actionsBlockLabel,
+    actionsUnblockLabel,
   } = props;
 
   const { activeChannel, client } = useChatClient();
   const channel = channelProp || activeChannel;
   const { isBanned } = useBannedState(channel, client?.userID);
+  const { isBlocked } = useBlockedState(channel, client?.userID);
 
   const currentUserId = client?.userID;
   const currentUserRole = currentUserId ? channel?.state?.members?.[currentUserId]?.channel_role : undefined;
@@ -247,6 +281,18 @@ export const ChannelInfo: React.FC<ChannelInfoProps> = React.memo((props) => {
     try { await channel.demoteModerators([memberId]); } catch (e) { console.error("Error demoting member", e); }
   }, [channel, onDemoteMemberProp]);
 
+  const handleBlockUser = useCallback(async () => {
+    if (onBlockUserProp) return onBlockUserProp();
+    if (!channel) return;
+    try { await channel.blockUser(); } catch (e) { console.error('Error blocking user', e); }
+  }, [channel, onBlockUserProp]);
+
+  const handleUnblockUser = useCallback(async () => {
+    if (onUnblockUserProp) return onUnblockUserProp();
+    if (!channel) return;
+    try { await channel.unblockUser(); } catch (e) { console.error('Error unblocking user', e); }
+  }, [channel, onUnblockUserProp]);
+
   const { members } = useChannelMembers(channel);
   const { channelName, channelImage, channelDescription } = useChannelProfile(channel);
 
@@ -303,12 +349,17 @@ export const ChannelInfo: React.FC<ChannelInfoProps> = React.memo((props) => {
             onSettingsClick={() => setShowSettingsPanel(true)}
             onLeaveChannel={handleLeaveChannel}
             onDeleteChannel={handleDeleteChannel}
+            onBlockUser={handleBlockUser}
+            onUnblockUser={handleUnblockUser}
             isTeamChannel={isTeamChannel}
+            isBlocked={isBlocked}
             currentUserRole={currentUserRole}
             searchLabel={actionsSearchLabel}
             settingsLabel={actionsSettingsLabel}
             deleteLabel={actionsDeleteLabel}
             leaveLabel={actionsLeaveLabel}
+            blockLabel={actionsBlockLabel}
+            unblockLabel={actionsUnblockLabel}
           />
 
           <TabsComponent

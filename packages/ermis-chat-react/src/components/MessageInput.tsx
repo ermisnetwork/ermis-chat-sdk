@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useChatClient } from '../hooks/useChatClient';
 import { useBannedState } from '../hooks/useBannedState';
+import { useBlockedState } from '../hooks/useBlockedState';
 import { useMentions } from '../hooks/useMentions';
 import { useFileUpload } from '../hooks/useFileUpload';
 import { useEmojiPicker } from '../hooks/useEmojiPicker';
@@ -34,9 +35,11 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
   ReplyPreviewComponent = ReplyPreview,
   EditPreviewComponent = EditPreview,
   bannedLabel = 'You have been blocked from this channel',
+  blockedLabel = 'You have blocked this user. Unblock to send messages.',
 }) => {
   const { client, activeChannel, syncMessages, quotedMessage, setQuotedMessage, editingMessage, setEditingMessage } = useChatClient();
   const { isBanned } = useBannedState(activeChannel, client.userID);
+  const { isBlocked } = useBlockedState(activeChannel, client.userID);
   const editableRef = React.useRef<HTMLDivElement>(null);
   const [hasContent, setHasContent] = useState(false);
 
@@ -363,6 +366,21 @@ export const MessageInput: React.FC<MessageInputProps> = React.memo(({
             <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
           </svg>
           <span>{bannedLabel}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Show blocked banner instead of input (messaging channels only)
+  if (isBlocked) {
+    return (
+      <div className={`ermis-message-input ermis-message-input--blocked${className ? ` ${className}` : ''}`}>
+        <div className="ermis-message-input__blocked-banner">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+          </svg>
+          <span>{blockedLabel}</span>
         </div>
       </div>
     );

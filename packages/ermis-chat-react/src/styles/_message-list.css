@@ -273,3 +273,39 @@
   font-size: var(--ermis-font-size-sm);
   color: var(--ermis-text-muted);
 }
+
+/* ----------------------------------------------------------
+   Blocked State (messaging channels — user-initiated block)
+   Messages remain visible but actions are disabled.
+   ---------------------------------------------------------- */
+.ermis-message-list--blocked .ermis-message-actions {
+  display: none;
+}
+
+.ermis-message-list--blocked .ermis-message-reactions__add-btn {
+  display: none;
+}
+
+/* Unblock button inside blocked overlay */
+.ermis-message-list__unblock-btn {
+  margin-top: var(--ermis-spacing-md);
+  padding: var(--ermis-spacing-sm) var(--ermis-spacing-xl, 24px);
+  border: none;
+  border-radius: var(--ermis-radius-md, 8px);
+  background-color: var(--ermis-accent);
+  color: #fff;
+  font-size: var(--ermis-font-size-sm);
+  font-weight: 600;
+  font-family: var(--ermis-font-family);
+  cursor: pointer;
+  transition: background-color var(--ermis-transition), transform var(--ermis-transition);
+}
+
+.ermis-message-list__unblock-btn:hover {
+  background-color: var(--ermis-accent-hover);
+  transform: translateY(-1px);
+}
+
+.ermis-message-list__unblock-btn:active {
+  transform: translateY(0);
+}
